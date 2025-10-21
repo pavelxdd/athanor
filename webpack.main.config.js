@@ -40,6 +40,8 @@ module.exports = {
   externals: {
     'node-pty': 'commonjs2 node-pty',
     'node-addon-api': 'commonjs2 node-addon-api',
+    'bufferutil': 'commonjs2 bufferutil',
+    'utf-8-validate': 'commonjs2 utf-8-validate',
   },
   plugins: [
     new CopyWebpackPlugin({

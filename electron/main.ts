@@ -313,7 +313,9 @@ app.whenReady().then(async () => {
     // The call is synchronous, but the error it triggers is an unhandled async rejection later.
     // A try/catch here is good practice but won't solve the main issue.
     try {
-      app.dock.setIcon(icon);
+      if (app.dock) {
+        app.dock.setIcon(icon);
+      }
     } catch (e) {
       console.error('Synchronous error setting dock icon:', e);
     }
