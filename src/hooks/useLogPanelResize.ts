@@ -12,7 +12,7 @@ interface LogPanelResizeHook {
 export function useLogPanelResize(
   minHeight = 50,
   maxHeight = 400,
-  defaultHeight = 96
+  defaultHeight = 192
 ): LogPanelResizeHook {
   const [logPanelHeight, setLogPanelHeight] = useState(defaultHeight);
   const [isResizing, setIsResizing] = useState(false);
