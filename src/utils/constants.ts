@@ -38,10 +38,11 @@ export const SETTINGS = {
     project: {
       projectNameOverride: '',
       projectInfoFilePath: '',
-      includeAiSummaries: true,
+      includeAiSummaries: false,
       useGitignore: true,
     },
     application: {
+      enableSmartFeatures: false,
       enableExperimentalFeatures: false,
       minSmartPreviewLines: 10,
       maxSmartPreviewLines: 20,

@@ -26,6 +26,7 @@ export interface ProjectSettings {
 
 export interface ApplicationSettings {
   // Example application settings for demonstration
+  enableSmartFeatures?: boolean;
   enableExperimentalFeatures?: boolean;
   minSmartPreviewLines?: number;
   maxSmartPreviewLines?: number;

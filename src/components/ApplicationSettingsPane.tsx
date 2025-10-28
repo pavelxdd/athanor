@@ -22,6 +22,9 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   applicationDefaults,
 }) => {
   // Local state for application settings form inputs
+  const [enableSmartFeatures, setEnableSmartFeatures] = useState<boolean>(
+    SETTINGS.defaults.application.enableSmartFeatures
+  );
   const [enableExperimentalFeatures, setEnableExperimentalFeatures] = useState<boolean>(
     SETTINGS.defaults.application.enableExperimentalFeatures
   );
@@ -49,6 +52,11 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   useEffect(() => {
     const defaults = SETTINGS.defaults.application;
     if (applicationSettings) {
+      setEnableSmartFeatures(
+        applicationSettings.enableSmartFeatures ??
+          applicationDefaults.enableSmartFeatures ??
+          defaults.enableSmartFeatures
+      );
       setEnableExperimentalFeatures(
         applicationSettings.enableExperimentalFeatures ??
           applicationDefaults.enableExperimentalFeatures ??
@@ -89,6 +97,10 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
       );
     } else {
       // Set default values when no application settings
+      setEnableSmartFeatures(
+        applicationDefaults.enableSmartFeatures ??
+          defaults.enableSmartFeatures
+      );
       setEnableExperimentalFeatures(
         applicationDefaults.enableExperimentalFeatures ??
           defaults.enableExperimentalFeatures
@@ -153,6 +165,13 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   );
 
   // Application settings handlers
+  const handleSmartFeaturesChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const newValue = e.target.checked;
+    setEnableSmartFeatures(newValue);
+  };
+
   const handleExperimentalFeaturesChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -197,6 +216,7 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
     const finalMax = Math.max(validatedMax, validatedMin);
 
     saveApplicationSettingsCallback({
+      enableSmartFeatures,
       enableExperimentalFeatures,
       minSmartPreviewLines: finalMin,
       maxSmartPreviewLines: finalMax,
@@ -209,6 +229,10 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   // Check if application settings have unsaved changes
   const defaults = SETTINGS.defaults.application;
   const hasUnsavedApplicationChanges =
+    enableSmartFeatures !==
+      (applicationSettings?.enableSmartFeatures ??
+        applicationDefaults.enableSmartFeatures ??
+        defaults.enableSmartFeatures) ||
     enableExperimentalFeatures !==
       (applicationSettings?.enableExperimentalFeatures ??
         applicationDefaults.enableExperimentalFeatures ??
@@ -427,6 +451,36 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
                   <option value="Dark">Dark</option>
                   <option value="Auto">Auto (System)</option>
                 </select>
+              </div>
+
+              {/* Smart Features Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <label
+                    htmlFor="enableSmartFeatures"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Enable Smart Features
+                  </label>
+                  <div
+                    className="relative group"
+                    title="Enables background project analysis for Smart Context suggestions. Disable to improve performance on very large projects."
+                  >
+                    <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
+                  </div>
+                </div>
+                <div className="flex-shrink-0 ml-4">
+                  <input
+                    id="enableSmartFeatures"
+                    type="checkbox"
+                    checked={enableSmartFeatures}
+                    onChange={handleSmartFeaturesChange}
+                    disabled={
+                      isLoadingApplicationSettings || isSavingApplication
+                    }
+                    className="h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded disabled:opacity-50"
+                  />
+                </div>
               </div>
 
               {/* Experimental Features Toggle */}

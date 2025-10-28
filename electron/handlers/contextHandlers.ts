@@ -22,6 +22,12 @@ export function setupContextHandlers(
       try {
         // Fetch application settings to get the token limit
         const appSettings = await settingsService.getApplicationSettings();
+        
+        // If smart features are disabled, return only user-selected files
+        if (!(appSettings?.enableSmartFeatures ?? true)) {
+          return { userSelected: selectedFilePaths, heuristicSeedFiles: [], allNeighbors: [], promptNeighbors: [] };
+        }
+
         const maxTokens = appSettings?.maxSmartContextTokens ?? SETTINGS.defaults.application.maxSmartContextTokens;
 
         return await relevanceEngine.calculateContext(

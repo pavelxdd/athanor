@@ -374,6 +374,7 @@ app.whenReady().then(async () => {
   fileService.on('base-dir-changed', async () => {
     // Update GitService base directory when project changes to fix state sync bug
     gitService.setBaseDir(fileService.getBaseDir());
+    const settings = await settingsService.getApplicationSettings();
 
     const loadedFromCache = await projectGraphService.loadGraphFromCache();
     if (loadedFromCache) {
@@ -384,7 +385,7 @@ app.whenReady().then(async () => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('graph-analysis:finished');
       }
-    } else {
+    } else if (settings?.enableSmartFeatures ?? true) {
       console.log(
         '[ProjectGraphService] Cache not found or invalid, starting full analysis.'
       );
@@ -394,6 +395,11 @@ app.whenReady().then(async () => {
           err
         );
       });
+    } else {
+      console.log('[Main] Smart features disabled. Skipping analysis for new project.');
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('graph-analysis:finished');
+      }
     }
   });
 
@@ -409,10 +415,18 @@ app.whenReady().then(async () => {
     gitService
   );
 
-  ipcMain.handle('graph:force-reanalyze', () => {
-    runProjectAnalysisWorker().catch((err) => {
-      console.error('Error running manual project analysis:', err);
-    });
+  ipcMain.handle('graph:force-reanalyze', async () => {
+    const settings = await settingsService.getApplicationSettings();
+    if (settings?.enableSmartFeatures ?? true) {
+      runProjectAnalysisWorker().catch((err) => {
+        console.error('Error running manual project analysis:', err);
+      });
+    } else {
+      console.log('[Main] Smart features disabled. Skipping manual re-analysis.');
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('graph-analysis:finished');
+      }
+    }
   });
 
   // Read package.json for About panel information
@@ -499,14 +513,25 @@ app.whenReady().then(async () => {
   let graphIsPotentiallyStale = false;
 
   const runAnalysisAndCatch = () => {
-    runProjectAnalysisWorker()
-      .then(() => {
-        console.log('[Main] Analysis complete, graph is now considered fresh.');
-        graphIsPotentiallyStale = false;
-      })
-      .catch((err) => {
-        console.error('[Main] Automatic project analysis failed:', err);
-      });
+    settingsService.getApplicationSettings().then(settings => {
+      if (settings?.enableSmartFeatures ?? true) { // Default to ON if not set
+        runProjectAnalysisWorker()
+          .then(() => {
+            console.log('[Main] Analysis complete, graph is now considered fresh.');
+            graphIsPotentiallyStale = false;
+          })
+          .catch((err) => {
+            console.error('[Main] Automatic project analysis failed:', err);
+          });
+      } else {
+        console.log('[Main] Smart features disabled. Skipping automatic analysis.');
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('graph-analysis:finished');
+        }
+      }
+    }).catch(err => {
+      console.error('[Main] Could not get application settings to check for smart features:', err);
+    });
   };
 
   const scheduleInactivityCheck = () => {
