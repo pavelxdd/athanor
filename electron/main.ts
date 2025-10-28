@@ -7,6 +7,7 @@ import fixPath from 'fix-path';
 import { Worker } from 'worker_threads';
 import * as path from 'path';
 import * as fs from 'fs';
+import { spawn } from 'child_process';
 import { createWindow, mainWindow, getIconPath } from './windowManager';
 import { setupIpcHandlers } from './ipcHandlers';
 import { FileService } from './services/FileService';
@@ -146,6 +147,16 @@ export function getAppBasePath(): string {
   return app.getAppPath();
 }
 
+// Function to create a new instance of the application
+function createNewInstance(projectPath?: string) {
+  const args = projectPath ? [projectPath] : [];
+  // Using spawn is more reliable across platforms than `open -n`
+  spawn(process.execPath, args, {
+    detached: true,
+    stdio: 'ignore',
+  }).unref();
+}
+
 // Dynamic menu builder function
 async function buildMenu() {
   try {
@@ -157,7 +168,12 @@ async function buildMenu() {
         ? recentProjects.map((projectPath) => ({
             label: projectPath,
             click: () => {
-              mainWindow?.webContents.send('menu:open-path', projectPath);
+              // Find the window that is currently focused to send the command to.
+              // This is more robust than using the event's browserWindow which had type issues.
+              const focusedWindow = BrowserWindow.getFocusedWindow();
+              if (focusedWindow) {
+                focusedWindow.webContents.send('menu:open-path', projectPath);
+              }
             },
           }))
         : [{ label: 'No Recent Projects', enabled: false }];
@@ -191,6 +207,14 @@ async function buildMenu() {
       {
         label: 'File',
         submenu: [
+          {
+            label: 'New Instance',
+            accelerator: 'CmdOrCtrl+Shift+N',
+            click: () => {
+              createNewInstance();
+            },
+          },
+          { type: 'separator' as const },
           {
             label: 'Open Folder...',
             accelerator: 'CmdOrCtrl+O',
@@ -319,6 +343,17 @@ app.whenReady().then(async () => {
     } catch (e) {
       console.error('Synchronous error setting dock icon:', e);
     }
+  }
+
+  // Set up custom dock menu for macOS
+  if (process.platform === 'darwin' && app.dock) {
+    const dockMenu = Menu.buildFromTemplate([
+      {
+        label: 'New Instance',
+        click: () => createNewInstance(),
+      },
+    ]);
+    app.dock.setMenu(dockMenu);
   }
 
   // Initialize secure API key service

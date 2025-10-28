@@ -92,38 +92,8 @@ export function setupCoreHandlers(
         }
       }
 
-      // Priority 2: Fallback to the last opened project from settings
-      const applicationSettings =
-        await _settingsService.getApplicationSettings();
-
-      // If no last opened project path, return null
-      if (!applicationSettings?.lastOpenedProjectPath) {
-        return null;
-      }
-
-      const lastPath = applicationSettings.lastOpenedProjectPath;
-
-      // Check if the directory exists
-      const exists = await _fileService.exists(lastPath);
-      if (!exists) {
-        return null;
-      }
-
-      // Check if it's a directory
-      const isDir = await _fileService.isDirectory(lastPath);
-      if (!isDir) {
-        return null;
-      }
-
-      // Check if it contains .athignore file (indicating it's a valid Athanor project)
-      const athignorePath = _fileService.join(lastPath, '.athignore');
-      const hasAthignore = await _fileService.exists(athignorePath);
-      if (!hasAthignore) {
-        return null;
-      }
-
-      // All checks passed, return the path
-      return lastPath;
+      // If no CLI path is provided, always start with an empty window.
+      return null;
     } catch (error) {
       console.error('Error getting initial project path:', error);
       return null;

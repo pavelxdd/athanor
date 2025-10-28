@@ -89,6 +89,8 @@ export async function createWindow() {
       'y' in finalBounds && { x: finalBounds.x, y: finalBounds.y }),
     // Use the universal function to set the icon for all cases.
     icon: getIconPath(),
+    show: false, // Create window hidden to prevent white flash
+    backgroundColor: '#1f2937', // Dark background matching dark:bg-gray-800
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       nodeIntegration: false,
@@ -99,6 +101,13 @@ export async function createWindow() {
 
   // Create the browser window
   mainWindow = new BrowserWindow(browserWindowOptions);
+
+  // Show window gracefully when it's ready
+  mainWindow.once('ready-to-show', () => {
+    if (mainWindow) {
+      mainWindow.show();
+    }
+  });
 
   // Restore maximized state if applicable
   if (lastWindowState?.isMaximized) {
