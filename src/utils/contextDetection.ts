@@ -19,8 +19,8 @@ interface DetectedContext {
 export function detectContexts(content: string): DetectedContext[] {
   const contexts: DetectedContext[] = [];
 
-  // Detect commit references in "# Commit X: description" format
-  const commitRegex = /# Commit (\d+:?.*)/g;
+  // Detect commit references in "# Commit X: description" format, case-insensitive, supports Russian
+  const commitRegex = /# (?:Commit|Коммит) (\d+:?.*)/gi;
   let match;
   while ((match = commitRegex.exec(content)) !== null) {
     contexts.push({
