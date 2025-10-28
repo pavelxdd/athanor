@@ -484,63 +484,6 @@ app.whenReady().then(async () => {
 
   await createWindow();
 
-  if (mainWindow) {
-    let resizeMoveDebounce: NodeJS.Timeout;
-
-    const saveWindowState = async () => {
-      // Don't save state if the window is not valid or is minimized.
-      if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isMinimized()) {
-        return;
-      }
-
-      const isMaximized = mainWindow.isMaximized();
-      // Store bounds directly. On restore, we'll handle maximization separately.
-      const bounds = mainWindow.getBounds();
-
-      const newWindowState = {
-        x: bounds.x,
-        y: bounds.y,
-        width: bounds.width,
-        height: bounds.height,
-        isMaximized: isMaximized,
-      };
-
-      try {
-        const currentSettings =
-          (await settingsService.getApplicationSettings()) || {};
-        const savedWindowState = currentSettings.windowState;
-
-        // Only save if the state has actually changed
-        if (
-          !savedWindowState ||
-          savedWindowState.x !== newWindowState.x ||
-          savedWindowState.y !== newWindowState.y ||
-          savedWindowState.width !== newWindowState.width ||
-          savedWindowState.height !== newWindowState.height ||
-          savedWindowState.isMaximized !== newWindowState.isMaximized
-        ) {
-          const newSettings: ApplicationSettings = {
-            ...currentSettings,
-            windowState: newWindowState,
-          };
-          await settingsService.saveApplicationSettings(newSettings);
-        }
-      } catch (error) {
-        console.error('Error saving window state:', error);
-      }
-    };
-
-    const debouncedSave = () => {
-      clearTimeout(resizeMoveDebounce);
-      resizeMoveDebounce = setTimeout(saveWindowState, 2000); // 2 second debounce
-    };
-
-    mainWindow.on('resize', debouncedSave);
-    mainWindow.on('move', debouncedSave);
-    // 'close' is used instead of 'closed' because the window object is still available.
-    mainWindow.on('close', saveWindowState);
-  }
-
   // --- Automatic Project Analysis Logic ---
   let fsDebounceTimer: NodeJS.Timeout | null = null;
   let inactivityTimer: NodeJS.Timeout | null = null;
