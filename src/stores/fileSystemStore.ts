@@ -64,31 +64,31 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
       // Clear effective configuration
       effectiveConfig: null,
 
-      // Keep smart preview and file tree enabled by default
-      smartPreviewEnabled: true,
-      includeFileTree: true,
-      includeProjectInfo: true,
-      formatType: DOC_FORMAT.DEFAULT || DOC_FORMAT.XML, // Default to XML format
+      // New defaults for prompt generation settings
+      smartPreviewEnabled: false,
+      includeFileTree: false,
+      includeProjectInfo: false,
+      formatType: DOC_FORMAT.MARKDOWN,
       isGraphAnalysisInProgress: false,
     });
   },
 
   // Smart preview setting (true = include non-selected files with truncated preview)
-  smartPreviewEnabled: true,
+  smartPreviewEnabled: false,
   toggleSmartPreview: () =>
     set((state) => ({
       smartPreviewEnabled: !state.smartPreviewEnabled,
     })),
 
   // File tree inclusion setting (true = include file tree in generated prompt)
-  includeFileTree: true,
+  includeFileTree: false,
   toggleFileTree: () =>
     set((state) => ({
       includeFileTree: !state.includeFileTree,
     })),
 
   // Format type setting (XML or Markdown)
-  formatType: DOC_FORMAT.DEFAULT || DOC_FORMAT.XML,
+  formatType: DOC_FORMAT.MARKDOWN,
   toggleFormatType: () =>
     set((state) => ({
       formatType:
@@ -98,7 +98,7 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
     })),
 
   // Project info inclusion setting (true = include project info in generated prompt)
-  includeProjectInfo: true,
+  includeProjectInfo: false,
   toggleProjectInfo: () =>
     set((state) => ({
       includeProjectInfo: !state.includeProjectInfo,
