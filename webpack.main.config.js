@@ -50,6 +50,7 @@ module.exports = {
           from: 'node_modules/node-pty',
           to: 'node_modules/node-pty',
         },
+        { from: 'public/index.html', to: 'main_window/index.html' },
       ],
     }),
   ],

@@ -1,12 +1,31 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Athanor - AI Workbench</title>
+    <script>
+      // Inline script to prevent white flash in dark mode
+      (function() {
+        try {
+          // First, check for a user-set theme in localStorage from a previous session
+          const theme = localStorage.getItem('athanor-ui-theme');
+          if (theme === 'Dark') {
+            document.documentElement.classList.add('dark');
+          } else if (theme === 'Light') {
+            document.documentElement.classList.remove('dark');
+          } else {
+            // If theme is 'Auto' or not set, check system theme
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              document.documentElement.classList.add('dark');
+            }
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+      })();
+    </script>
   </head>
-  <body>
+  <body class="bg-white dark:bg-gray-900">
     <div id="root"></div>
   </body>
 </html>

@@ -106,56 +106,43 @@ async function parseXmlFile<T extends PromptData | TaskData>(
 export async function loadPrompts(): Promise<void> {
   try {
     // Initialize arrays for prompts from each source
-    const defaultPromptsData: PromptData[] = [];
-    const globalPromptsData: PromptData[] = [];
-    const projectPromptsData: PromptData[] = [];
+    let defaultPromptsData: (PromptData | null)[] = [];
+    let globalPromptsData: (PromptData | null)[] = [];
+    let projectPromptsData: (PromptData | null)[] = [];
 
     // Load default prompts from resources
     const resourcesPath = await window.fileSystem.getResourcesPath();
     const promptsDir = await window.fileSystem.joinPaths(resourcesPath, 'prompts');
     const files = await window.fileSystem.readDirectory(promptsDir, false);
 
-    // Parse default prompt files (starting with 'prompt_' and ending with '.xml')
-    for (const file of files) {
-      if (!file.startsWith('prompt_') || !file.endsWith('.xml')) {
-        continue;
-      }
-
-      const filePath = await window.fileSystem.joinPaths(promptsDir, file);
-      const promptData = await parseXmlFile<PromptData>(filePath, 'prompt', 'default');
-      if (promptData) {
-        defaultPromptsData.push(promptData);
-      } else {
-        console.log('Failed to parse default prompt:', file);
-      }
-    }
+    // Parse default prompt files (starting with 'prompt_' and ending with '.xml') in parallel
+    defaultPromptsData = await Promise.all(
+      files
+        .filter(file => file.startsWith('prompt_') && file.endsWith('.xml'))
+        .map(async file => {
+          const filePath = await window.fileSystem.joinPaths(promptsDir, file);
+          return parseXmlFile<PromptData>(filePath, 'prompt', 'default');
+        })
+    );
 
     // Load global user prompts
     try {
       const userDataPath = await window.app.getUserDataPath();
       const globalTemplatesDir = await window.fileSystem.joinPaths(userDataPath, CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME);
       
-      // Ensure global templates directory exists
       await window.fileService.ensureDirectory(globalTemplatesDir);
       
       const globalFiles = await window.fileSystem.readDirectory(globalTemplatesDir, false);
-      console.log(`Global user templates directory: ${globalTemplatesDir}`);
-      console.log(`Found ${globalFiles.length} files in global templates directory:`, globalFiles);
 
-      // Parse global prompt files
-      for (const file of globalFiles) {
-        if (!file.startsWith('prompt_') || !file.endsWith('.xml')) {
-          continue;
-        }
-
-        const filePath = await window.fileSystem.joinPaths(globalTemplatesDir, file);
-        const promptData = await parseXmlFile<PromptData>(filePath, 'prompt', 'global');
-        if (promptData) {
-          globalPromptsData.push(promptData);
-        } else {
-          console.log('Failed to parse global prompt:', file);
-        }
-      }
+      // Parse global prompt files in parallel
+      globalPromptsData = await Promise.all(
+        globalFiles
+          .filter(file => file.startsWith('prompt_') && file.endsWith('.xml'))
+          .map(async file => {
+            const filePath = await window.fileSystem.joinPaths(globalTemplatesDir, file);
+            return parseXmlFile<PromptData>(filePath, 'prompt', 'global');
+          })
+      );
     } catch (error) {
       console.warn('Error accessing global user templates directory:', error);
     }
@@ -165,57 +152,40 @@ export async function loadPrompts(): Promise<void> {
       const materialsDir = await window.fileService.getMaterialsDir();
       const projectTemplatesDir = await window.fileSystem.joinPaths(materialsDir, CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME);
       
-      // Ensure project templates directory exists
       await window.fileService.ensureDirectory(projectTemplatesDir);
       
       const projectFiles = await window.fileSystem.readDirectory(projectTemplatesDir, false);
-      console.log(`Project templates directory: ${projectTemplatesDir}`);
-      console.log(`Found ${projectFiles.length} files in project templates directory:`, projectFiles);
 
-      // Parse project prompt files
-      for (const file of projectFiles) {
-        if (!file.startsWith('prompt_') || !file.endsWith('.xml')) {
-          continue;
-        }
-
-        const filePath = await window.fileSystem.joinPaths(projectTemplatesDir, file);
-        const promptData = await parseXmlFile<PromptData>(filePath, 'prompt', 'project');
-        if (promptData) {
-          projectPromptsData.push(promptData);
-        } else {
-          console.log('Failed to parse project prompt:', file);
-        }
-      }
+      // Parse project prompt files in parallel
+      projectPromptsData = await Promise.all(
+        projectFiles
+          .filter(file => file.startsWith('prompt_') && file.endsWith('.xml'))
+          .map(async file => {
+            const filePath = await window.fileSystem.joinPaths(projectTemplatesDir, file);
+            return parseXmlFile<PromptData>(filePath, 'prompt', 'project');
+          })
+      );
     } catch (error) {
       console.warn('Error accessing project templates directory:', error);
     }
 
+    // Filter out null results from failed parsing
+    const validDefaultPrompts = defaultPromptsData.filter((p): p is PromptData => p !== null);
+    const validGlobalPrompts = globalPromptsData.filter((p): p is PromptData => p !== null);
+    const validProjectPrompts = projectPromptsData.filter((p): p is PromptData => p !== null);
+
     // Implement merging logic with override priority: Default < Global < Project
-    // Templates are overridden by order (position), not by id
     const mergedPromptsMap = new Map<number, PromptData>();
 
-    // Add default prompts first
-    for (const prompt of defaultPromptsData) {
-      mergedPromptsMap.set(prompt.order, prompt);
-    }
+    for (const prompt of validDefaultPrompts) mergedPromptsMap.set(prompt.order, prompt);
+    for (const prompt of validGlobalPrompts) mergedPromptsMap.set(prompt.order, prompt);
+    for (const prompt of validProjectPrompts) mergedPromptsMap.set(prompt.order, prompt);
 
-    // Add global prompts (overrides defaults with same order)
-    for (const prompt of globalPromptsData) {
-      mergedPromptsMap.set(prompt.order, prompt);
-    }
-
-    // Add project prompts (overrides global and defaults with same order)
-    for (const prompt of projectPromptsData) {
-      mergedPromptsMap.set(prompt.order, prompt);
-    }
-
-    // Get final merged prompts list
     const finalMergedPrompts = Array.from(mergedPromptsMap.values());
 
-    console.log(`Loaded ${defaultPromptsData.length} default prompts, ${globalPromptsData.length} global prompts, ${projectPromptsData.length} project prompts`);
+    console.log(`Loaded ${validDefaultPrompts.length} default, ${validGlobalPrompts.length} global, ${validProjectPrompts.length} project prompts`);
     console.log(`Final merged prompts count: ${finalMergedPrompts.length}`);
 
-    // Update store (sorting is handled internally by the store)
     usePromptStore.getState().setPrompts(finalMergedPrompts);
   } catch (error) {
     console.error('Error loading prompts:', error);
@@ -226,117 +196,78 @@ export async function loadPrompts(): Promise<void> {
 // Load all tasks and update the store
 export async function loadTasks(): Promise<void> {
   try {
-    // Initialize arrays for tasks from each source
-    const defaultTasksData: TaskData[] = [];
-    const globalTasksData: TaskData[] = [];
-    const projectTasksData: TaskData[] = [];
+    let defaultTasksData: (TaskData | null)[] = [];
+    let globalTasksData: (TaskData | null)[] = [];
+    let projectTasksData: (TaskData | null)[] = [];
 
-    // Load default tasks from resources
     const resourcesPath = await window.fileSystem.getResourcesPath();
     const promptsDir = await window.fileSystem.joinPaths(resourcesPath, 'prompts');
     const files = await window.fileSystem.readDirectory(promptsDir, false);
 
-    // Parse default task files (starting with 'task_' and ending with '.xml')
-    for (const file of files) {
-      if (!file.startsWith('task_') || !file.endsWith('.xml')) {
-        continue;
-      }
+    defaultTasksData = await Promise.all(
+      files
+        .filter(file => file.startsWith('task_') && file.endsWith('.xml'))
+        .map(async file => {
+          const filePath = await window.fileSystem.joinPaths(promptsDir, file);
+          return parseXmlFile<TaskData>(filePath, 'task', 'default');
+        })
+    );
 
-      const filePath = await window.fileSystem.joinPaths(promptsDir, file);
-      const taskData = await parseXmlFile<TaskData>(filePath, 'task', 'default');
-      if (taskData) {
-        defaultTasksData.push(taskData);
-      } else {
-        console.log('Failed to parse default task:', file);
-      }
-    }
-
-    // Load global user tasks
     try {
       const userDataPath = await window.app.getUserDataPath();
       const globalTemplatesDir = await window.fileSystem.joinPaths(userDataPath, CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME);
       
-      // Ensure global templates directory exists
       await window.fileService.ensureDirectory(globalTemplatesDir);
       
       const globalFiles = await window.fileSystem.readDirectory(globalTemplatesDir, false);
-      console.log(`Global user tasks directory: ${globalTemplatesDir}`);
-      console.log(`Found ${globalFiles.length} files in global tasks directory:`, globalFiles);
 
-      // Parse global task files
-      for (const file of globalFiles) {
-        if (!file.startsWith('task_') || !file.endsWith('.xml')) {
-          continue;
-        }
-
-        const filePath = await window.fileSystem.joinPaths(globalTemplatesDir, file);
-        const taskData = await parseXmlFile<TaskData>(filePath, 'task', 'global');
-        if (taskData) {
-          globalTasksData.push(taskData);
-        } else {
-          console.log('Failed to parse global task:', file);
-        }
-      }
+      globalTasksData = await Promise.all(
+        globalFiles
+          .filter(file => file.startsWith('task_') && file.endsWith('.xml'))
+          .map(async file => {
+            const filePath = await window.fileSystem.joinPaths(globalTemplatesDir, file);
+            return parseXmlFile<TaskData>(filePath, 'task', 'global');
+          })
+      );
     } catch (error) {
       console.warn('Error accessing global user tasks directory:', error);
     }
 
-    // Load project-specific tasks
     try {
       const materialsDir = await window.fileService.getMaterialsDir();
       const projectTemplatesDir = await window.fileSystem.joinPaths(materialsDir, CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME);
       
-      // Ensure project templates directory exists
       await window.fileService.ensureDirectory(projectTemplatesDir);
       
       const projectFiles = await window.fileSystem.readDirectory(projectTemplatesDir, false);
-      console.log(`Project tasks directory: ${projectTemplatesDir}`);
-      console.log(`Found ${projectFiles.length} files in project tasks directory:`, projectFiles);
 
-      // Parse project task files
-      for (const file of projectFiles) {
-        if (!file.startsWith('task_') || !file.endsWith('.xml')) {
-          continue;
-        }
-
-        const filePath = await window.fileSystem.joinPaths(projectTemplatesDir, file);
-        const taskData = await parseXmlFile<TaskData>(filePath, 'task', 'project');
-        if (taskData) {
-          projectTasksData.push(taskData);
-        } else {
-          console.log('Failed to parse project task:', file);
-        }
-      }
+      projectTasksData = await Promise.all(
+        projectFiles
+          .filter(file => file.startsWith('task_') && file.endsWith('.xml'))
+          .map(async file => {
+            const filePath = await window.fileSystem.joinPaths(projectTemplatesDir, file);
+            return parseXmlFile<TaskData>(filePath, 'task', 'project');
+          })
+      );
     } catch (error) {
       console.warn('Error accessing project tasks directory:', error);
     }
+    
+    const validDefaultTasks = defaultTasksData.filter((t): t is TaskData => t !== null);
+    const validGlobalTasks = globalTasksData.filter((t): t is TaskData => t !== null);
+    const validProjectTasks = projectTasksData.filter((t): t is TaskData => t !== null);
 
-    // Implement merging logic with override priority: Default < Global < Project
-    // Templates are overridden by order (position), not by id
     const mergedTasksMap = new Map<number, TaskData>();
 
-    // Add default tasks first
-    for (const task of defaultTasksData) {
-      mergedTasksMap.set(task.order, task);
-    }
+    for (const task of validDefaultTasks) mergedTasksMap.set(task.order, task);
+    for (const task of validGlobalTasks) mergedTasksMap.set(task.order, task);
+    for (const task of validProjectTasks) mergedTasksMap.set(task.order, task);
 
-    // Add global tasks (overrides defaults with same order)
-    for (const task of globalTasksData) {
-      mergedTasksMap.set(task.order, task);
-    }
-
-    // Add project tasks (overrides global and defaults with same order)
-    for (const task of projectTasksData) {
-      mergedTasksMap.set(task.order, task);
-    }
-
-    // Get final merged tasks list
     const finalMergedTasks = Array.from(mergedTasksMap.values());
 
-    console.log(`Loaded ${defaultTasksData.length} default tasks, ${globalTasksData.length} global tasks, ${projectTasksData.length} project tasks`);
+    console.log(`Loaded ${validDefaultTasks.length} default, ${validGlobalTasks.length} global, ${validProjectTasks.length} project tasks`);
     console.log(`Final merged tasks count: ${finalMergedTasks.length}`);
 
-    // Update store (sorting is handled internally by the store)
     useTaskStore.getState().setTasks(finalMergedTasks);
   } catch (error) {
     console.error('Error loading tasks:', error);

@@ -300,47 +300,31 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
   }, [processDirectory, addLog]);
 
   useEffect(() => {
-    const initializeFileSystem = async () => {
+    const initializeApp = async () => {
       if (isInitializedRef.current) return;
       isInitializedRef.current = true;
 
       try {
-        // Load application settings first (independent of project)
+        // Load application settings first, as they are independent of any project.
         await loadApplicationSettings();
-
-        // Get initial project path from main process
+        
+        // Then, in the background, check for an initial path to load.
+        // The UI will show the "Welcome" screen immediately while this runs.
         const initialPath = await window.app.getInitialPath();
-
         if (initialPath) {
-          // If we have a valid initial path, process it (checks for .athignore)
           await processDirectory(initialPath);
         } else {
-          // No project state - set empty state
-          setCurrentDirectory('');
-          currentDirectoryRef.current = '';
-          setFilesData(null);
-          setResourcesData(null);
-          useFileSystemStore.getState().resetState();
-
-          // Still load prompts and tasks for when a project is opened
+          // No project to load, ensure prompts/tasks are still available for the welcome screen.
           await Promise.all([loadPrompts(), loadTasks()]);
-
           addLog('No project loaded - ready to open a folder');
         }
       } catch (error) {
-        console.error('Error initializing file system:', error);
-        addLog('Failed to initialize file system');
-
-        // On error, set to no project state
-        setCurrentDirectory('');
-        currentDirectoryRef.current = '';
-        setFilesData(null);
-        setResourcesData(null);
-        useFileSystemStore.getState().resetState();
+        console.error('Error during app initialization:', error);
+        addLog('Failed to initialize application');
       }
     };
 
-    initializeFileSystem();
+    initializeApp();
 
     return () => {
       watcherUnsubscribeRef.current();
@@ -348,13 +332,8 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
         clearTimeout(refreshTimeoutRef.current);
       }
     };
-  }, [
-    setupWatcher,
-    addLog,
-    loadApplicationSettings,
-    loadProjectSettings,
-    processDirectory,
-  ]);
+  }, [loadApplicationSettings, processDirectory, addLog]);
+
 
   // Effect to update effective config when project settings change
   useEffect(() => {
@@ -448,7 +427,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
       cleanupGraphStarted();
       cleanupGraphFinished();
     };
-  }, [handleOpenFolder, processDirectory, addLog, setIsGraphAnalysisInProgress]);
+  }, [handleOpenFolder, processDirectory, addLog, setIsGraphAnalysisInProgress, fetchContext]);
 
   const handleProjectDialogClose = () => {
     setShowProjectDialog(false);

@@ -659,10 +659,8 @@ app.on('window-all-closed', () => {
   userActivityService.cleanup();
   shellService.killAllShells();
 
-  // Quit on all windows closed (except on macOS)
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  // Quit on all windows closed, including macOS
+  app.quit();
 });
 
 // Handle any uncaught exceptions
