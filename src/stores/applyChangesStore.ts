@@ -10,8 +10,14 @@ interface ApplyChangesState {
   mode: 'ai' | 'git';
   setOperations: (ops: FileOperation[], mode?: 'ai' | 'git') => void;
   clearOperations: () => void;
-  applyChange: (index: number) => Promise<void>;
-  rejectChange: (index: number) => Promise<void>;
+  applyChange: (
+    index: number,
+    options?: { skipRefresh?: boolean }
+  ) => Promise<void>;
+  rejectChange: (
+    index: number,
+    options?: { skipRefresh?: boolean }
+  ) => Promise<void>;
   applyAllChanges: () => Promise<void>;
   rejectAllChanges: () => Promise<void>;
   setChangeAppliedCallback: (
@@ -49,7 +55,7 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
       set({ diffMode: mode });
     },
 
-    applyChange: async (index: number) => {
+    applyChange: async (index: number, options?: { skipRefresh?: boolean }) => {
       const { activeOperations } = get();
       if (index < 0 || index >= activeOperations.length) return;
 
@@ -136,7 +142,7 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
         }
 
         // Call the refresh callback after successful operation
-        if (onChangeApplied) {
+        if (onChangeApplied && !options?.skipRefresh) {
           try {
             // For CREATE operations, pass the file path to the callback
             if (op.file_operation === 'CREATE') {
@@ -160,7 +166,10 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
       }
     },
 
-    rejectChange: async (index: number) => {
+    rejectChange: async (
+      index: number,
+      options?: { skipRefresh?: boolean }
+    ) => {
       const { activeOperations, mode } = get();
       if (index < 0 || index >= activeOperations.length) return;
 
@@ -172,26 +181,37 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
 
       if (mode === 'git') {
         // GIT MODE: Revert the file
+        let changeApplied = false;
         try {
           if (op.file_operation === 'CREATE') {
             // Reverting a new file means deleting it
             await window.fileService.remove(op.file_path);
             addLog(`Reverted (deleted) new file: ${op.file_path}`);
+            changeApplied = true;
           } else {
             // Reverting a modified or deleted file means writing the old content back
             await window.fileService.write(op.file_path, op.old_code);
             addLog(`Reverted changes to file: ${op.file_path}`);
+            changeApplied = true;
           }
           // Mark as rejected in the UI
           const newOps = [...activeOperations];
           newOps[index] = { ...op, rejected: true };
           set({ activeOperations: newOps });
+
+          if (changeApplied && onChangeApplied && !options?.skipRefresh) {
+            await onChangeApplied();
+          }
         } catch (error) {
-        	if (error instanceof Error) {
-        	  addLog(`Failed to revert ${op.file_path}: ${error.message}`);
-      	} else {
-      	  addLog(`An unknown error occurred while reverting ${op.file_path}: ${String(error)}`);
-      	}
+          if (error instanceof Error) {
+            addLog(`Failed to revert ${op.file_path}: ${error.message}`);
+          } else {
+            addLog(
+              `An unknown error occurred while reverting ${op.file_path}: ${String(
+                error
+              )}`
+            );
+          }
         }
       } else {
         // AI MODE: Original logic
@@ -203,14 +223,24 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
     },
 
     rejectAllChanges: async () => {
-      const { activeOperations, rejectChange } = get();
+      const { activeOperations, rejectChange, mode } = get();
       const { addLog } = useLogStore.getState();
       addLog('Rejecting all pending changes...');
+      let changesMade = false;
       for (let i = 0; i < activeOperations.length; i++) {
         const op = activeOperations[i];
         if (!op.accepted && !op.rejected) {
-          await rejectChange(i);
+          await rejectChange(i, { skipRefresh: true });
+          // A change to the filesystem only happens in git mode
+          if (mode === 'git') {
+            changesMade = true;
+          }
         }
+      }
+
+      // If in git mode and changes were made, refresh the file system once.
+      if (mode === 'git' && changesMade && onChangeApplied) {
+        await onChangeApplied();
       }
     },
 
@@ -218,23 +248,42 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
       const { activeOperations, applyChange } = get();
       const { addLog } = useLogStore.getState();
       addLog('Applying all pending changes...');
+      let changesMade = false;
       // Use a classic for loop to get index and process sequentially with await
       for (let i = 0; i < activeOperations.length; i++) {
         const op = activeOperations[i];
         if (!op.accepted && !op.rejected) {
           try {
-            // Await each change to process them one by one
-            await applyChange(i);
+            // Await each change to process them one by one, skipping refresh
+            await applyChange(i, { skipRefresh: true });
+            changesMade = true;
           } catch (error) {
             addLog(
               `Error applying all changes. Process stopped at file: ${op.file_path}.`
             );
-            // Stop processing on first error
-            return;
+            // If some changes were made before the error, refresh the file system
+            if (changesMade && onChangeApplied) {
+              await onChangeApplied();
+            }
+            return; // Stop processing on first error
           }
         }
       }
-      addLog('Finished applying all available changes.');
+
+      // After all operations are done, trigger a single refresh
+      if (changesMade) {
+        if (onChangeApplied) {
+          try {
+            await onChangeApplied();
+          } catch (error) {
+            console.error('Error in final refresh callback:', error);
+            addLog('Warning: Final post-operation refresh failed');
+          }
+        }
+        addLog('Finished applying all available changes.');
+      } else {
+        addLog('No pending changes to apply.');
+      }
     },
   };
 });

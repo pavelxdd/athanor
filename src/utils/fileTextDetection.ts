@@ -54,6 +54,8 @@ export const KNOWN_TEXT_EXTENSIONS = new Set([
   'log',
   'diff',
   'patch',
+  'ass',
+  'srt',
 ]);
 
 // Text MIME types for verification
