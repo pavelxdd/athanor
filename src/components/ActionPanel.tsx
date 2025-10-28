@@ -564,8 +564,8 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                     </button>
                   </div>
                 </div>
-                {/* Dynamic Prompts Row */}
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-2 max-w-2xl mb-4">
+                {/* Combined Prompts and Tasks Row */}
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-2 max-w-2xl">
                   {prompts.map((prompt) => {
                     const variant = getDefaultVariant(prompt.id);
                     if (!variant) return null;
@@ -623,10 +623,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                       </button>
                     );
                   })}
-                </div>
-
-                {/* Dynamic Tasks Row */}
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-2 max-w-2xl">
                   {useTaskStore((state) => state.tasks).map((task) => {
                     const IconComponent = task.icon
                       ? (Icons as any)[task.icon]
