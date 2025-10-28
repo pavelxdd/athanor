@@ -23,6 +23,8 @@ interface ContextState {
   setIsAnalyzingGraph: (isAnalyzing: boolean) => void;
 }
 
+import { useSettingsStore } from './settingsStore';
+
 export const useContextStore = create<ContextState>((set, get) => ({
   selectedFiles: new Set(),
   userSelectedPaths: [],
@@ -36,6 +38,12 @@ export const useContextStore = create<ContextState>((set, get) => ({
   lastKey: '',
 
   fetchContext: async (selectedPaths: string[], taskDescription?: string) => {
+    const { applicationSettings } = useSettingsStore.getState();
+    if (!(applicationSettings?.enableSmartFeatures ?? true)) {
+      get().clearContext();
+      return;
+    }
+
     if (process.env.NODE_ENV !== 'production') {
       console.debug(
         '[CTX] fetchContext called',
