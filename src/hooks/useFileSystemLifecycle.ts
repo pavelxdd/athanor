@@ -7,7 +7,6 @@ import { initializeProjectFiles } from '../services/fileIgnoreService';
 import { useFileSystemStore } from '../stores/fileSystemStore';
 import { useWorkbenchStore } from '../stores/workbenchStore';
 import { useLogStore } from '../stores/logStore';
-import { useCliStore } from '../stores/cliStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useContextStore } from '../stores/contextStore';
 import { loadPrompts, loadTasks } from '../services/promptService';
@@ -152,18 +151,6 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
   const initializeProject = useCallback(
     async (directory: string) => {
       const normalizedDir = await window.pathUtils.toUnix(directory);
-      const oldDirectory = currentDirectoryRef.current;
-      const { getSessionId, removeSession } = useCliStore.getState();
-
-      // Kill previous shell session if it exists
-      if (oldDirectory) {
-        const oldSessionId = getSessionId(oldDirectory);
-        if (oldSessionId) {
-          console.log(`Killing shell session for old project: ${oldDirectory}`);
-          window.electronBridge.shell.kill(oldSessionId);
-          removeSession(oldDirectory);
-        }
-      }
 
       useFileSystemStore.getState().resetState();
       clearContext();

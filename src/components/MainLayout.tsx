@@ -15,7 +15,6 @@ import FileViewerPanel from './FileViewerPanel';
 import ReviewPanel from './ReviewPanel';
 import SettingsPanel from './SettingsPanel';
 import AthanorTabs, { TabType } from './AthanorTabs';
-import CliPanel from './CliPanel';
 import { useFileSystemStore } from '../stores/fileSystemStore';
 import { useApplyChangesStore } from '../stores/applyChangesStore';
 import { useWorkbenchStore } from '../stores/workbenchStore';
@@ -39,7 +38,6 @@ interface MainLayoutProps {
   onRefresh: () => Promise<void>;
   logsRef: React.RefObject<HTMLDivElement | null>;
   logs: LogEntry[];
-  isCliAvailable: boolean;
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({
@@ -54,7 +52,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   onRefresh,
   logsRef,
   logs,
-  isCliAvailable,
 }) => {
   const { leftPanelWidth, isResizing, resizeRef, startResize } =
     usePanelResize();
@@ -327,7 +324,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         <AthanorTabs
           activeTab={activeTab}
           onTabChange={onTabChange}
-          isCliAvailable={isCliAvailable}
         />
 
         {/* Tab content */}
@@ -347,13 +343,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           </div>
           <div style={{ display: activeTab === 'settings' ? 'block' : 'none', height: '100%' }}>
             <SettingsPanel />
-          </div>
-          <div style={{ display: activeTab === 'cli' ? 'block' : 'none', height: '100%' }}>
-            <CliPanel
-              key={currentDirectory}
-              currentDirectory={currentDirectory}
-              isVisible={activeTab === 'cli'}
-            />
           </div>
         </div>
 

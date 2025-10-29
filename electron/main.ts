@@ -20,7 +20,6 @@ import { LLMService, type ApiKeyProvider, type ModelPreset } from 'genai-lite';
 import { RelevanceEngineService } from './services/RelevanceEngineService';
 import { GitService } from './services/GitService';
 import { UserActivityService } from './services/UserActivityService';
-import { ShellService } from './services/ShellService';
 import {
   ProjectGraphService,
   ProjectGraphCache,
@@ -72,7 +71,6 @@ export const relevanceEngine = new RelevanceEngineService(
   projectGraphService,
   userActivityService
 );
-export const shellService = new ShellService();
 export let apiKeyService: ApiKeyServiceMain;
 export let llmService: LLMService;
 
@@ -446,7 +444,6 @@ app.whenReady().then(async () => {
     relevanceEngine,
     projectGraphService,
     userActivityService,
-    shellService,
     gitService
   );
 
@@ -600,7 +597,6 @@ app.on('window-all-closed', () => {
     console.error('Error cleaning up FileService watchers:', err);
   });
   userActivityService.cleanup();
-  shellService.killAllShells();
 
   // Quit on all windows closed, including macOS
   app.quit();

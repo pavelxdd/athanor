@@ -6,7 +6,6 @@
   },
   "main": ".webpack/main",
   "scripts": {
-    "_sign-if-mac": "node -e \"if (process.platform === 'darwin') { require('child_process').execSync('bash ./scripts/sign-dev.sh', {stdio: 'inherit'}) }\"",
     "start": "electron-forge start",
     "dev": "npm start",
     "package": "cross-env DEBUG=electron-forge:* NODE_ENV=production electron-forge package",
@@ -68,7 +67,6 @@
     "cross-env": "^7.0.3",
     "css-loader": "^7.1.2",
     "electron": "^37.7.0",
-    "electron-rebuild": "^3.2.9",
     "electron-squirrel-startup": "^1.0.1",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
@@ -93,9 +91,7 @@
     "webpack": "^5.99.9",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.2",
-    "webpack-merge": "^6.0.1",
-    "bufferutil": "^4.0.8",
-    "utf-8-validate": "^6.0.4"
+    "webpack-merge": "^6.0.1"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
@@ -120,12 +116,7 @@
     "stream-browserify": "^3.0.0",
     "timers-browserify": "^2.0.12",
     "xml2js": "^0.6.2",
-    "xterm": "^5.3.0",
-    "xterm-addon-fit": "^0.8.0",
     "zustand": "^5.0.2"
-  },
-  "optionalDependencies": {
-    "node-pty": "microsoft/node-pty#main"
   },
   "overrides": {
     "prismjs": "1.30.0",

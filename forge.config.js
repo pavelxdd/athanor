@@ -5,35 +5,9 @@ module.exports = {
     asar: true,
     prune: true,
     icon: 'assets/athanor',
-    osxSign: {
-      'hardened-runtime': true,
-      entitlements: './entitlements.mac.plist',
-      'entitlements-inherit': './entitlements.mac.plist',
-
-      postSign: async (context) => {
-        const glob = require('glob');
-        const path = require('path');
-        const { execSync } = require('child_process');
-
-        const nativeBinaries = glob.sync(
-          path.join(context.appPath, '**/*.node')
-        );
-
-        for (const file of nativeBinaries) {
-          execSync(
-            `codesign --force --options=runtime --entitlements ./entitlements.mac.plist --sign - "${file}"`,
-            { stdio: 'inherit' }
-          );
-        }
-      },
-    },
     asarUnpack: [
       'resources/**/*', // Ensure resources directory is not packed into asar
-      //'node_modules/node-pty/**/*',
-      //'node_modules/nan/**/*', // node-pty dependency
       '**/*.node', // All native bindings
-      //'x64/node_modules/node-pty/**/*',
-      //'**/node_modules/node-pty/**/*',
     ],
     // Copy specific resources subfolders
     extraResource: [
