@@ -1,11 +1,11 @@
-<ath_prompt 
+<ath_prompt
     id="autoselect"
     order="0"
     label="Autoselect"
     icon="FileSearch"
     tooltip="Prompt to select task-relevant files from the project">
 
-<ath_prompt_variant 
+<ath_prompt_variant
     id="default"
     label="Default"
     tooltip="Prompt to select task-relevant files from the project">
@@ -32,25 +32,26 @@ Use the included project information as a general guide.
 {{task_context}}
 </next_task>
 
-Consider the next_task described above
+Consider the task described above.
 
-SELECT which files you will need to read in full, change or delete from the file_tree provided above
-- Consider broadly which files you *might* need to see for the feature, even if not immediately related
-- These might include preloaders, utility or global constant files, etc.
-- If in doubt whether you need to include a file, include it
+Your goal is to SELECT which files from the provided `file_tree` you need to read, change, or delete to complete the task.
 
-First, write your reasoning in a detailed summary paragraph and mention all files
-you think you should select
+-   Be broad: include any files you *might* need to see, even if they are not directly related (e.g., utility files, constants, configurations).
+-   If in doubt, include the file.
 
-Then, write the selected files in a code block as:
-```
+First, write down your reasoning in a detailed summary, mentioning all the files you plan to select.
+
+Then, provide the final list of files within a single `<ath command="select">` block. Use the project-relative path for each file.
+
+<example>
+```xml
 <ath command="select">
-file1 file2 [...]
+path/to/file1.ts path/to/another/file2.md
 </ath>
 ```
+</example>
 
-Use the relative path of each file
-Ensure to write valid XML by opening and closing the `ath` tag
+Ensure your XML is valid by properly opening and closing the `<ath>` tag.
 </current_task>
 </ath_prompt_variant>
 
