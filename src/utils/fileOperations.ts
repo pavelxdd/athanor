@@ -34,9 +34,16 @@ export function parseDiffBlocks(content: string): DiffBlock[] {
       throw new Error('Search block cannot be empty');
     }
 
+    // Trim a single trailing newline from the replace block. This prevents an extra
+    // newline from being inserted, as the original newline following the SEARCH
+    // block is preserved during the string replacement operation.
+    const replaceContent = match[2].endsWith('\n')
+      ? match[2].slice(0, -1)
+      : match[2];
+
     blocks.push({
       search: match[1],
-      replace: match[2],
+      replace: replaceContent,
     });
   }
 
