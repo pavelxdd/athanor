@@ -1,212 +1,213 @@
-# ⚗️ <img src="./resources/images/athanor_logo.png" alt="Athanor Logo" height="32"> — AI Workbench <sub><sub></sub></sub>
-
-> _where modern alchemists cook_
-
-[![Version](https://img.shields.io/github/package-json/v/lacerbi/athanor?label=Version)](https://github.com/lacerbi/athanor)
-[![Status: WIP](https://img.shields.io/badge/Status-Work%20In%20Progress-yellow)](https://github.com/lacerbi/athanor)
-[![Stage: Alpha](https://img.shields.io/badge/Stage-Alpha-yellow)](https://github.com/lacerbi/athanor)
-[![Sponsor me on GitHub](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23db61a2.svg?logo=GitHub)](https://github.com/sponsors/lacerbi)
-[![Node.js >=18.x](https://img.shields.io/badge/Node.js-%3E%3D18.x-brightgreen)](https://nodejs.org/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
-Athanor is a desktop app for AI-assisted workflows, from coding to technical writing. **Athanor does not require API keys.**
-
-Open a project folder, select files, specify your task, and quickly create effective prompts with all the relevant context to paste into any LLM chat interface like ChatGPT, Claude, or Gemini.
-Athanor then assists in efficiently integrating the AI-generated responses back into your project or codebase, ensuring **you remain in full control of all changes while minimizing tedious copy-paste**.
-
-<p align="center">
-  <img src="./resources/images/tutorial/athanor_snapshot.png" alt="Athanor AI Workbench Snapshot" width="750">
-  <br>
-  <em>Athanor's interface: File explorer (left), task management and prompt generation (right).</em>
-</p>
-<p align="center">
-  <img src="./resources/images/tutorial/athanor_snapshot_apply_changes.png" alt="Athanor AI Workbench Apply Changes Snapshot" width="750">
-  <br>
-  <em>'Apply Changes' panel: Review and accept/reject diffs generated using any AI chat assistant.</em>
-</p>
-
-> 🚧 **WORK IN PROGRESS & ALPHA STAGE**: 🚧 Expect the glassware to be unpolished, reagents to be unstable, and formulas to occasionally yield unexpected outcomes. Features may evolve, and your feedback during this critical phase is invaluable for shaping Athanor's development. Please see our [Development and Feedback](#-development-and-feedback) section below for how to contribute.
-
-## 📋 Table of Contents
-
-- [Key Features](#-key-features)
-- [Official Resources](#-official-resources)
-- [Installation Setup](#-installation-setup)
-- [Quick Start](#-quick-start)
-- [Development and Feedback](#-development-and-feedback)
-- [License](#-license)
-
-## ✨ Key Features
-
-- **Smart Context Selection**: Easily choose files & folders for your AI prompt, or let the "Autoselect" feature intelligently pick relevant context directly from your local project or codebase.
-- **Seamless AI Chat Integration**: Works effortlessly with your favorite AI assistants (like ChatGPT, Claude, Gemini). Just copy from Athanor to your AI, and paste the response back – no API keys needed for the core workflow!
-- **Workflow-Tailored Prompts**: Jumpstart your coding tasks with specialized prompt templates designed for a natural development flow: "Autoselect" relevant files, "Query" your project, "Architect" new features, "Code" implementations or "Write" text.
-- **Controlled Changes**: Paste AI responses into Athanor. Preview all proposed file changes (creations, updates, deletions) in a clear visual diff viewer, then accept or reject each one individually before any edit is written to disk.
-- **Custom Templates**: Create your own prompt and task templates via global and project-specific configuration to tailor Athanor to your workflow.
-- **Optional Direct API Automation**: For advanced users or specific automated tasks (like "Autoselect"), Athanor allows direct connection to LLMs via API keys.
-
-## 🔗 Official Resources
-
-- **Main Website:** [athanor.works](https://athanor.works/)
-- **Full Tutorial:** [docs.athanor.works/tutorial/introduction](https://athanor.works/docs/tutorial/introduction)
-- **Development Blog:** [athanor.works/blog](https://athanor.works/blog)
-
-## 🚀 Installation Setup
-
-**Prerequisites:** Running Athanor will require **Node.js** (latest LTS version, v18.x+).
-
-<details>
-<summary><strong>Installing Node.js</strong></summary>
-
-- **Windows**: Download and install from [nodejs.org](https://nodejs.org/)
-- **macOS**:
-    - Using Homebrew (recommended): `brew install node`
-    - Download and install from [nodejs.org](https://nodejs.org/)
-- **Linux**:
-  - Ubuntu/Debian: `sudo apt update && sudo apt install nodejs npm`
-  - Fedora: `sudo dnf install nodejs npm`
-  - Or use [NVM](https://github.com/nvm-sh/nvm) (recommended): `nvm install --lts`
-</details>
-
-### Installing Athanor
-
-The easiest way to get started is with the command-line installer:
-
-```bash
-npx setup-athanor [athanor-installation-folder]
-```
-
-This command downloads the Athanor source code, installs all necessary dependencies, and compiles a ready-to-run desktop application. The `[athanor-installation-folder]` is optional and defaults to `athanor`.
-
-### Running Athanor
-
-After the setup script finishes, you can launch the compiled application.
-
-1.  **Locate the application:** The Athanor executable is in the `out` subfolder of your installation directory.
-    - **macOS**: `[athanor-installation-folder]/out/Athanor-darwin-*/Athanor.app`
-    - **Windows**: `[athanor-installation-folder]\out\Athanor-win32-*\Athanor.exe`
-    - **Linux**: `[athanor-installation-folder]/out/Athanor-linux-*/Athanor`
-2.  **Launch Athanor:** Simply double-click the application to run it.
-
-<details>
-<summary>⚠️ <strong>Important: Running the app for the first time</strong></summary>
-
-Because the application is compiled on your machine and not signed by a verified developer, your OS might show a security warning.
-
-- **On macOS:** Gatekeeper will likely block the app.
-
-  1.  Right-click the `Athanor.app` icon and select "Open".
-  2.  A dialog will appear warning you that the developer is unidentified. Click the "Open" button to run the app.
-      You only need to do this the first time you launch the application.
-
-- **On Windows:** You may see a "Windows SmartScreen" popup. Click "More info" and then "Run anyway" to proceed.
-
-</details>
-
-<details>
-<summary><strong>Manual Installation & Alternative Running Methods</strong></summary>
-
-If the `npx` command fails, or if you prefer to set up the project manually, follow these steps.
-
-**1. Clone the Repository:**
-
-```bash
-git clone [https://github.com/lacerbi/athanor.git](https://github.com/lacerbi/athanor.git)
-```
-
-Alternatively, you can [download the source code](https://github.com/lacerbi/athanor/archive/refs/heads/main.zip) as a ZIP file and extract it.
-
-**2. Install Dependencies:**
-
-```bash
-cd athanor
-npm ci
-```
-
-**3. Choose how to run the app:**
-
-- **Option A: Compile the Application (Recommended)**
-  Manually compile the application into a standalone executable.
-
-  ```bash
-  npm run package
-  ```
-
-  This creates the application in the `out` folder, which you can then run as described above.
-
-- **Option B: Run in Development Mode**
-  This method is useful for development but is slower and opens a console with the application.
-
-  ```bash
-  npm start
-  ```
-
-</details>
-
-## 💡 Quick Start
-
-1. When Athanor launches, you'll be prompted to select a project folder
-2. The application will scan your project files and display them in the file explorer
-3. Describe the desired task in the Task Description area (e.g., "implement a new function to sort users by registration date")
-4. Select relevant files or folders for your task from the file manager
-5. Use the prompt templates to generate prompts for your AI assistant, including:
-
-   - **Autoselect**: Ask an LLM to select the best files for your task
-   - **Query**: Ask questions about your existing codebase
-   - **Coder**: Directly implement the desired feature
-   - **Architect**: Plan a complex feature over possibly multiple steps
-
-6. Copy the generated prompt into your AI assistant interface (e.g., Claude, Gemini, ChatGPT)
-
-   - We recommend strong models, such as Claude 4 Sonnet or Gemini 2.5 Pro, but others might work
-
-7. Copy the AI generated response and click on **Apply AI Output** in Athanor
-
-   - Preview proposed changes in the diff viewer and apply them to your project
-
-<details>
-  <summary><strong>View Example Workflows (Click to expand)</strong></summary>
-
-### Example Workflows
-
-- **Simple Feature**: Add a dark mode toggle to the application.
-
-  1.  Task Description: `"Implement a dark mode toggle switch in the settings panel that saves the user's preference."`
-  2.  Select files manually (e.g., `SettingsPanel.tsx`, `themeStore.ts`) or use the **Autoselect** prompt, then **Apply AI Output**.
-  3.  Use the **Coder** prompt, then **Apply AI Output**.
-  4.  Review and apply changes in the diff viewer.
-
-- **Complex Feature**: Integrate a new payment gateway (e.g., Stripe) for subscriptions.
-
-  1.  Task Description: `"Integrate Stripe for handling monthly user subscriptions. This should include creating subscription plans, handling webhooks for payment success/failure, and updating user subscription status."`
-  2.  Use the **Autoselect** prompt to identify relevant files, then **Apply AI Output**.
-  3.  Use the **Architect** prompt to break down the integration into manageable steps, denoted as Commits (e.g., Commit 1: Setup Stripe SDK and API keys; Commit 2: Implement plan selection UI; Commit 3: Handle checkout session creation; Commit 4: Implement webhook endpoint). Then **Apply AI Output**.
-  4.  Select Commit 1 from the "Context" area just below the Task description and use the **Coder** prompt.
-  5.  After each **Coder** response, **Apply AI Output**, review the changes for that step in the diff viewer, and accept/reject.
-  6.  If needed, discuss with your AI assistant to fix issues and apply further changes.
-  7.  Once the commit is completed, proceed to the next step from the Architect's plan either in the same chat (e.g., "Proceed with Commit 2"), or generating a new **Coder** prompt with "Commit 2" as context.
-
-- **Query Project**: Understand how user authentication is currently handled.
-  1.  Task Description: `"Explain the current user authentication flow, including token generation, storage, and validation. Which files are primarily involved?"`
-  2.  Use the **Autoselect** prompt to identify potentially relevant auth-related files, then **Apply AI Output**.
-  3.  Use the **Query** prompt to ask your question, then review the AI's explanation.
-  4.  Continue the discussion in the AI chat if you have follow-up questions based on the AI's response.
-
-</details>
-
-Read the [**full online tutorial**](https://athanor.works/docs/tutorial/introduction) or the [local version](TUTORIAL.md) for more detailed information.
-
-## 👥 Development and Feedback
-
-Athanor is being developed by [Luigi Acerbi](https://lacerbi.github.io/).
-
-This project is in its alpha stage, and your feedback is crucial to help us improve and shape Athanor's development. We are primarily focused on understanding how Athanor fits into real-world development workflows.
-
-- **User Experience Feedback:** Share your workflow experiences, what works well, what doesn't, and how Athanor fits into your development process. This is the most valuable contribution at this stage.
-- **General Questions, Ideas & Discussions:** Join the conversation on [GitHub Discussions](https://github.com/lacerbi/athanor/discussions).
-- **Bug Reports & Specific Feature Requests:** Please submit them via [GitHub Issues](https://github.com/lacerbi/athanor/issues). _(Consider using our issue templates for bugs and features.)_
-- **Contributing:** For those interested in contributing, our [CONTRIBUTING.md](CONTRIBUTING.md) file provides detailed information. While we accept code contributions that align with discussed issues, our current focus is on gathering user feedback. All contributions are licensed under the Apache License 2.0 and require agreement to the Developer Certificate of Origin (DCO) by signing off on commits.
-
-## 📜 License
-
-Athanor is released under the [Apache-2.0 license](LICENSE).
+# Athanor - AI Workbench
+
+## App Description
+
+Athanor is an **Electron-based desktop application** that integrates AI coding assistants into a developer’s workflow. Its primary goal is to streamline two main flows:
+
+1.  **Intelligent Prompt Creation & Refinement**
+    - The user describes a task and manually selects a few key "seed" files.
+    - Athanor's **Relevance Engine** automatically analyzes the project—leveraging dependencies, Git history, file mentions, and user activity—to identify and include other relevant "neighboring" files.
+    - Athanor then generates a comprehensive, context-rich prompt using specialized templates.
+    - The user copies this prompt into an AI assistant (e.g., ChatGPT, Claude, Gemini, etc.).
+    - **Tooltips**: Throughout the application, contextual help is provided via tooltips that appear when hovering over buttons, controls, and interface elements. This is the primary method for providing short helper information without cluttering the UI.
+
+2.  **Applying AI-Generated Changes**
+    - The user copies the AI’s response from the assistant back into the clipboard.
+    - Athanor parses custom XML-like commands (e.g., `ath command="apply changes"...`) to figure out how to create, modify, or delete specific files.
+    - The user can preview diffs, accept or reject each change, and finalize changes to disk.
+
+### Key Features
+
+1.  **Intelligent Context Builder (Relevance Engine)**
+    - At the core of Athanor is a sophisticated `RelevanceEngineService.ts` that automatically discovers contextually relevant files, going far beyond manual selection.
+    - It uses a two-phase scoring engine fueled by multiple heuristics:
+      - **Code Analysis**: Direct dependencies in languages like JavaScript/TypeScript and Python are resolved using `DependencyResolver.ts` and `DependencyScanner.ts`.
+      - **Git History**: `GitService.ts` analyzes commit history to find files that are frequently changed together.
+      - **Project Graph**: Identifies "hub files" (highly interconnected) and files that mention each other.
+      - **User Activity**: `UserActivityService.ts` tracks recently edited files, giving them higher relevance.
+      - **Task Description**: Natural language analysis of the task description identifies keywords and direct path mentions.
+    - The engine produces a token-budgeted list of "neighboring files" that are included in the prompt, providing the AI with rich, relevant context. This state is managed in the UI by `contextStore.ts`.
+
+2.  **Project-Wide Analysis & Caching**
+    - On opening a project, Athanor runs a background analysis using a `projectAnalysisWorker.ts` to build a comprehensive dependency and relationship graph of the entire codebase.
+    - This graph, managed by `ProjectGraphService.ts`, powers the Relevance Engine.
+    - The resulting graph is cached in the `.ath_materials` folder as `project_graph.json` to ensure fast subsequent loads. The analysis automatically re-runs when file changes are detected after a period of user inactivity.
+
+3.  **Direct LLM API Integration (Optional)**
+    - While the core workflow is API-key-free, Athanor includes an optional feature for direct communication with LLM providers (OpenAI, Anthropic, Gemini, Mistral).
+    - API keys are stored securely using Electron's `safeStorage` via the `ApiKeyServiceMain`.
+    - The `LLMService` from the external `genai-lite` package manages these interactions with a custom ApiKeyProvider that supports both secure storage and environment variable fallbacks.
+
+4.  **Git Integration**
+    - Athanor deeply integrates with Git repositories via `GitService.ts`.
+    - It uses Git to find recently committed files and identify files that share commit history, which are key signals for the Relevance Engine.
+    - The service can also retrieve commit history for specific files.
+
+5.  **Dynamic File Explorer**
+    - Displays a tree of the chosen project directory.
+    - Tracks file line counts (for text files) and uses `.athignore` rules to hide excluded paths.
+    - Allows multi-select of files and folders; selecting a folder auto-selects its descendants unless hidden.
+    - Automatically updates when files are added or removed on disk (Chokidar watchers).
+
+6.  **Ignore Rules Management**
+    - By default, Athanor automatically processes rules from the project's `.gitignore` file. This behavior can be toggled in the project settings.
+    - The `.athignore` file is used for Athanor-specific ignore rules or for overriding `.gitignore` rules (e.g., re-including a file with an exception rule like `!path/to/file`).
+    - The main process (via `ignoreRulesManager.ts`) uses the `ignore` library to handle advanced wildcard matching, including an 'ignore all by name' option available via the file explorer's context menu.
+
+7.  **Task & Prompt Management**
+    - Multiple “task tabs,” managed by `workbenchStore.ts`, each containing:
+      - A **task description**: plain-text or markdown instructions.
+      - An **AI output** area: displays the generated prompt for the user to copy.
+      - A **context** field: for ephemeral data (like partial commit messages or specific instructions); includes context suggestions based on task content (`contextDetection.ts`).
+      - A **selected files list** which holds the user's explicitly selected files for that task. This list acts as a "seed" for the Relevance Engine to discover additional relevant files. Each task tab maintains its own distinct list of selected files.
+    - Prompt (`prompt_*.xml`) and Task (`task_*.xml`) templates live in `resources/prompts/` and are loaded on application startup via `promptService.ts`.
+    - The user can dynamically switch between prompt/task _variants_ (e.g., different modes like “Query,” “Coder,” “Architect” or task variations like “Default”, “LaTeX”) using context menus in the Action Panel (`PromptContextMenu.tsx`, `TaskContextMenu.tsx`).
+
+8.  **Clipboard & Code Changes**
+    - Code blocks or raw text can be copied with consistent line endings and optional code fences.
+    - The “apply changes” flow scans for XML blocks from the AI’s output, extracts file operations, and shows them in a diff panel.
+
+9.  **Project Setup & Supplementary Materials**
+    - On folder selection, Athanor can create a `.athignore` file if it does not exist.
+    - A hidden `.ath_materials` folder is automatically created to store extra references (like doc fragments).
+    - If a `.gitignore` file exists, its rules are automatically applied by default.
+
+10. **User Interface Layout**
+    - **Left Panel**: The file explorer with watchers, expansions, checkboxes, and a context menu (right-click to ignore items).
+    - **Right Panel**: Tabs for different tasks, a file viewer, and the “Apply Changes” panel that lists AI-proposed modifications. Action Panel controls prompt generation, preset tasks, and configuration toggles (Smart Preview, Include File Tree, Documentation Format).
+    - A bottom **log panel** shows messages and clickable events for debugging or re-inspection (`logStore.ts`).
+
+11. **Preset Tasks**
+    - Pre-defined tasks (e.g., 'AI Summary', 'Refactor Code') available in the Action Panel, loaded from `task_*.xml` files.
+
+12. **Drag and Drop**
+    - File paths can be dragged from the file explorer and dropped into the Task Description or Context text areas (`useFileDrop.ts`).
+
+## Tech Stack
+
+### Core Architecture
+
+Athanor follows Electron's recommended **“secure by default”** pattern, separating logic between **main** and **renderer** processes:
+
+1.  **Main Process (Electron)**
+    - **`main.ts`**: Application startup, window creation, and core event handling. It creates singleton instances of services like `FileService` and `SettingsService`.
+    - **IPC Handlers**:
+      - `ipcHandlers.ts` collects all handlers from `handlers/` (e.g., `coreHandlers.ts`, `fileOperationHandlers.ts`, `fileWatchHandlers.ts`) into a single registration function.
+      - Handlers receive the `FileService` instance and delegate all file system operations to it, ensuring a single point of control.
+    - **File Service (`electron/services/FileService.ts`)**:
+      - Maintains a global “base directory” to represent the open project folder.
+      - Performs all file reads/writes, folder creation, and error handling using Node's `fs/promises` and Chokidar for watching.
+      - Integrates with `ignoreRulesManager.ts` to handle file exclusion logic.
+      - Cleans up watchers on application exit or directory change.
+      - Delegates pure path manipulation logic to `PathUtils.ts`.
+    - **Ignore Rules Manager (`ignoreRulesManager.ts`):**
+      - Loads `.athignore` and `.gitignore` files for file exclusion.
+      - Provides advanced matching logic using the `ignore` npm library.
+    - **Path Utilities (`electron/services/PathUtils.ts`):**
+      - Provides a set of pure, static functions for all path normalization (Unix-style internally), conversion, and manipulation logic.
+    - **Git Service (`electron/services/GitService.ts`)**:
+      - Executes `git` commands to analyze the repository for the Relevance Engine (e.g., shared commit history, recent changes). It is a core component of the context-building heuristics.
+    - **Project Graph Service (`electron/services/ProjectGraphService.ts`)**:
+      - Runs in a background worker thread to analyze the entire project.
+      - Builds a graph of dependencies, file mentions, and Git-based relationships, which is then cached. This graph is the primary data source for the Relevance Engine.
+    - **Relevance Engine Service (`electron/services/RelevanceEngineService.ts`)**:
+      - The central service for intelligent context discovery. It orchestrates `GitService`, `ProjectGraphService`, and other utilities to score all project files based on their relevance to the current task.
+    - **User Activity Service (`electron/services/UserActivityService.ts`)**:
+      - A lightweight service that listens for file changes from `FileService` to identify which files are being actively edited, providing a real-time relevance signal.
+    - **Dependency Resolver/Scanner (`DependencyResolver.ts`, `DependencyScanner.ts`)**:
+      - Utilities used by the Project Graph Service to perform language-aware dependency analysis for JavaScript/TypeScript and Python.
+    - **LLM & API Key Services**:
+      - LLM functionality provided by external `genai-lite` package with custom ApiKeyProvider
+      - Secure API key storage via `genai-key-storage-lite` package (`ApiKeyServiceMain`)
+      - Shared IPC channel types in `common/types/llm.ts`
+
+2.  **Renderer Process (React)**
+    - **`src/services/fileSystemService.ts`**:
+      - High-level logic for building a file tree from data returned via IPC from the main process's `FileService`.
+      - Normalizes line endings and counts file lines for text files.
+      - Applies ignoring rules or merges them into the UI structure.
+    - **React Components** (`src/components/*`):
+      - **`AthanorApp.tsx`** and **`MainLayout.tsx`** define the overall UI layout:
+        - File explorer on the left (expanded by `FileExplorer.tsx`).
+        - Action tabs (workbench, viewer, review) on the right.
+      - `ApplyChangesPanel.tsx` is the UI for viewing & applying AI-proposed code modifications.
+      - `FileContextMenu.tsx` handles ignoring items and possibly other file actions from the explorer.
+      - `ActionPanel.tsx` controls prompt generation and preset tasks, hooking into `promptStore.ts`, `workbenchStore.ts`, and `taskStore.ts`.
+    - **Global Stores** (Zustand) in `src/stores/*`:
+      - `fileSystemStore.ts`: Tracks selected files/folders, previews, and tree data.
+      - `promptStore.ts`: Manages loaded prompt definitions & active prompt variants.
+      - `workbenchStore.ts`: Maintains multiple “task tabs” used to hold user tasks & AI outputs.
+      - `applyChangesStore.ts`: Handles the ephemeral list of file changes returned by AI, letting the user apply or reject them.
+      - `contextStore.ts`: Manages the state for the intelligent context builder, tracking user-selected "seed" files and the "neighboring" files automatically discovered by the Relevance Engine.
+      - `taskStore.ts`: Manages loaded task definitions & active task variants.
+    - **Utilities** (`src/utils/*`):
+      - `fileTree.ts`: Functions for sorting & iterating nested file structures.
+      - `constants.ts`: Shared config (e.g., thresholds for large files).
+      - `extractTagContent.ts`: Helpers for parsing XML segments.
+      - Others (e.g., `buildPrompt.ts`, `tokenCount.ts` (using `js-tiktoken`)) serve specialized tasks like AI prompt assembly or token counting.
+
+### Technology Stack
+
+- **Electron v33+**: Powers the main/renderer separation. The main process is responsible for file system access, watchers, and launching the application. The renderer hosts the React UI.
+- **React 19+**: Renders the front-end UI, including file explorer trees, task/prompt panels, and the changes diff viewer.
+- **TypeScript 5+**: Provides strict typing across main and renderer processes.
+- **Node.js** (latest LTS): Provides the backend runtime for the main process, including **Worker Threads** for background project analysis.
+- **Zustand**: Maintains local state in separate stores—e.g., file selection state (`fileSystemStore.ts`), prompt management (`promptStore.ts`), multi-tab workbench (`workbenchStore.ts`), task management (`taskStore.ts`), etc.
+- **Chokidar**: Watches the local file system for changes in the open folder.
+- **ignore**: Reads `.athignore` and `.gitignore` to filter out hidden or excluded files in the Explorer.
+- **js-tiktoken**: Used for accurate token counting in prompts.
+- **genai-lite**: Unified LLM integration supporting Claude, GPT, Gemini, and Mistral models.
+- **Webpack & electron-forge**: Build, package, and run the Electron application.
+- **TailwindCSS 3 + Lucide Icons**: Provides a flexible styling system and icon library for a clean UI.
+- **Material-UI (MUI) 5**: Partially integrated for certain UI elements (used in some components).
+- **Prettier**: Code formatting for consistent style (configured via `.prettierrc`).
+- **ESLint**: Currently non-functional due to incompatible configuration format (`.eslintrc.js` uses old format incompatible with ESLint 9+). The `npm run lint` command will not work properly.
+- **Jest & ts-jest**: Provide the unit testing framework. Tests are typically colocated with the source code they validate (e.g., `FileService.test.ts` alongside `FileService.ts`).
+- **Testing Mocks**: Key dependencies, including Electron itself (via `tests/__mocks__/electron.ts`) and Node.js modules like `fs/promises`, are mocked to ensure isolated and reliable unit tests.
+
+### Future Considerations
+
+- **Testing**: Enhance and expand the current unit test coverage, particularly for more complex main process handlers and a broader range of React components to ensure robustness and catch regressions effectively.
+- **Database or Extended Persistence**: If user data or historical tasks become more complex, a storage layer might be beneficial.
+- **Refined Prompt Templates**: Additional dynamic placeholders or user-defined placeholders.
+- **Advanced Visual Diffs**: Implement more advanced color-coded diffs for large or complex changes.
+- **Extending the Relevance Engine**: Incorporate more advanced heuristics for context discovery, such as semantic code search or analysis of runtime behavior.
+- **Security**: Further refine path sanitization and sandboxing, especially if running untrusted AI output.
+
+### Action Points
+
+1.  When working with direct file system operations:
+    - Use **`FileService.ts`** methods in main process code via the singleton instance.
+    - Access through IPC handlers defined in `handlers/` directory.
+    - Handle errors appropriately at each layer.
+
+2.  When building UI features:
+    - Use `fileSystemService.ts` for file tree operations in the renderer.
+    - Access through React hooks and components.
+    - Handle loading states and error conditions.
+
+3.  For new file system features:
+    - Add core functionality to **`FileService.ts`** or **`PathUtils.ts`** as appropriate.
+    - Create corresponding IPC handlers in `handlers/`.
+    - Add interface methods to `preload.ts`.
+    - Implement high-level operations in `fileSystemService.ts` if needed for the UI.
+
+4.  TypeScript & Global Types:
+    - Regularly open and double-check **`src/types/global.d.ts`** to avoid TypeScript mistakes.
+    - This file extends the `window` interface to expose `window.fileSystem`, houses core global interfaces (like `FileOperation`), and organizes key application-level types.
+    - If an IPC method signature changes in the main process or `preload.ts`, update both the main code **and** `global.d.ts` accordingly.
+
+5.  When debugging:
+    - Check main process logs for **`FileService.ts`** or **`PathUtils.ts`** issues.
+    - Verify IPC communication through preload bridge.
+    - Inspect renderer process state using React DevTools, focusing on Zustand stores and `fileSystemService.ts` usage.
+
+6.  Security considerations:
+    - Never bypass the IPC bridge for file operations from the renderer process.
+    - Validate all paths and operations rigorously in the main process handlers.
+    - Handle sensitive data appropriately at each layer.
+
+7.  Testing & Running the App:
+    - Use **`npm run package`** to create local production builds for testing, as this is the standard procedure.
+    - The `npm start` command is for active development with hot-reloading and is deprecated for testing, as it may not reflect the final application behavior.
+    - Note that `npm make` is **unsupported**. Users are expected to compile locally using `npm run package`.

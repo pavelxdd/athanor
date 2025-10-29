@@ -343,6 +343,7 @@ docs/_site/
 !/.ath_materials/**/*
 /.ath_materials/project_graph.json
 /.ath_materials/project_settings.json
+/.athignore
 
 ###############################################################################
 # PROJECT FILES
@@ -354,3 +355,9 @@ temp.txt
 /.prettierrc
 /website
 *.js.map
+
+/tests/
+/assets/
+/prompts/
+/resources/*
+!/resources/prompts
