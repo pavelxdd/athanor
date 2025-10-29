@@ -138,6 +138,8 @@ contextBridge.exposeInMainWorld('fileService', {
   read: (path: string, options?: { encoding?: BufferEncoding } | BufferEncoding) => 
     ipcRenderer.invoke('fs:readFile', path, options),
   write: (path: string, data: string) => ipcRenderer.invoke('fs:writeFile', path, data),
+  append: (path: string, data: string) => ipcRenderer.invoke('fs:appendFile', path, data),
+  prepend: (path: string, data: string) => ipcRenderer.invoke('fs:prependFile', path, data),
   remove: (path: string) => ipcRenderer.invoke('fs:deleteFile', path),
   rename: (oldPath: string, newPath: string) => ipcRenderer.invoke('fs:renameFile', oldPath, newPath),
   

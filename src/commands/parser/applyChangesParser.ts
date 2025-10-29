@@ -171,6 +171,8 @@ class XmlParser {
         'UPDATE_DIFF',
         'DELETE',
         'RENAME',
+        'APPEND',
+        'PREPEND',
       ] as const;
       if (!validOperations.includes(operation)) {
         throw new Error(`Invalid operation type: ${operation}`);
@@ -191,6 +193,10 @@ class XmlParser {
         }
         if (operation === 'RENAME' && !newPath?.trim()) {
           throw new Error('RENAME operation requires a non-empty file_path_new tag');
+        }
+      } else if (operation === 'APPEND' || operation === 'PREPEND') {
+        if (!code.trim()) {
+          throw new Error(`${operation} operation requires non-empty file_code`);
         }
       } else if (!code) {
         throw new Error(`Missing file_code for ${operation} operation`);
@@ -315,6 +321,8 @@ export async function parseXmlContent(
         if (operation === 'DELETE' || operation === 'RENAME') {
           processedNewCode = '';
         } else if (operation === 'CREATE') {
+          processedNewCode = normalizeLineEndings(block.code);
+        } else if (operation === 'APPEND' || operation === 'PREPEND') {
           processedNewCode = normalizeLineEndings(block.code);
         } else if (operation === 'UPDATE_FULL' || operation === 'UPDATE_DIFF') {
           try {

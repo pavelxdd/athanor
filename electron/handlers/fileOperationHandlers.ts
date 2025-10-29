@@ -97,6 +97,44 @@ export function setupFileOperationHandlers(fileService: FileService) {
     }
   });
 
+  // Handle appending file contents
+  ipcMain.handle('fs:appendFile', async (_, filePath: string, data: string) => {
+    try {
+      // Normalize to Unix format
+      const unix = _fileService.toUnix(filePath);
+      
+      // Only relativize if absolute AND inside base directory
+      const pathForFs = 
+        PathUtils.isAbsolute(unix) && PathUtils.isPathInside(_fileService.getBaseDir(), unix)
+          ? _fileService.relativize(unix)
+          : unix;
+
+      await _fileService.append(pathForFs, data);
+      return true;
+    } catch (error) {
+      handleError(error, `appending to file ${filePath}`);
+    }
+  });
+
+  // Handle prepending file contents
+  ipcMain.handle('fs:prependFile', async (_, filePath: string, data: string) => {
+    try {
+      // Normalize to Unix format
+      const unix = _fileService.toUnix(filePath);
+      
+      // Only relativize if absolute AND inside base directory
+      const pathForFs = 
+        PathUtils.isAbsolute(unix) && PathUtils.isPathInside(_fileService.getBaseDir(), unix)
+          ? _fileService.relativize(unix)
+          : unix;
+
+      await _fileService.prepend(pathForFs, data);
+      return true;
+    } catch (error) {
+      handleError(error, `prepending to file ${filePath}`);
+    }
+  });
+
   // Handle deleting files
   ipcMain.handle('fs:deleteFile', async (_, filePath: string) => {
     try {

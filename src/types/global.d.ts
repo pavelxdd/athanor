@@ -394,6 +394,16 @@ declare global {
       write: (path: string, data: string) => Promise<void>;
 
       /**
+       * Append data to a file
+       */
+      append: (path: string, data: string) => Promise<void>;
+
+      /**
+       * Prepend data to a file
+       */
+      prepend: (path: string, data: string) => Promise<void>;
+
+      /**
        * Delete a file
        */
       remove: (path: string) => Promise<void>;
@@ -604,7 +614,9 @@ export type FileOperationType =
   | 'UPDATE_FULL'
   | 'UPDATE_DIFF'
   | 'DELETE'
-  | 'RENAME';
+  | 'RENAME'
+  | 'APPEND'
+  | 'PREPEND';
 
 // Search/Replace block structure for diff updates
 export interface DiffBlock {

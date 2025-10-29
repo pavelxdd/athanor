@@ -15,6 +15,8 @@ export interface IFileService {
   // All methods accept either project-relative paths or absolute paths
   read(pathStr: string, opts?: { encoding?: BufferEncoding }): Promise<string | Buffer>;
   write(pathStr: string, data: string | Buffer): Promise<void>;
+  append(pathStr: string, data: string | Buffer): Promise<void>;
+  prepend(pathStr: string, data: string | Buffer): Promise<void>;
   remove(pathStr: string): Promise<void>;
   rename(oldPath: string, newPath: string): Promise<void>;
   exists(pathStr: string): Promise<boolean>;

@@ -255,6 +255,57 @@ export class FileService extends EventEmitter implements IFileService {
   }
 
   /**
+   * Append data to a file
+   * @param pathStr Path to the file (absolute or project-relative)
+   * @param data Data to append
+   */
+  async append(pathStr: string, data: string | Buffer): Promise<void> {
+    try {
+      const absPath = this.toAbsolute(pathStr);
+      const platformPath = this.toOS(absPath);
+
+      // Verify file exists and is writable
+      await fs.access(platformPath, constants.W_OK);
+
+      const normalizedData =
+        typeof data === 'string' ? data.replace(/\r\n/g, '\n') : data;
+
+      await fs.appendFile(platformPath, normalizedData);
+    } catch (error) {
+      console.error(`Error appending to file ${pathStr}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Prepend data to a file
+   * @param pathStr Path to the file (absolute or project-relative)
+   * @param data Data to prepend
+   */
+  async prepend(pathStr: string, data: string | Buffer): Promise<void> {
+    try {
+      const absPath = this.toAbsolute(pathStr);
+      const platformPath = this.toOS(absPath);
+
+      // Verify file exists and is readable/writable
+      await fs.access(platformPath, constants.R_OK | constants.W_OK);
+
+      const oldContent = await fs.readFile(platformPath);
+      const normalizedData =
+        typeof data === 'string'
+          ? Buffer.from(data.replace(/\r\n/g, '\n'))
+          : Buffer.from(data);
+
+      const newContent = Buffer.concat([normalizedData, oldContent]);
+
+      await fs.writeFile(platformPath, newContent);
+    } catch (error) {
+      console.error(`Error prepending to file ${pathStr}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Rename or move a file
    * @param oldPathStr Path to the source file (absolute or project-relative)
    * @param newPathStr Path to the destination file (absolute or project-relative)

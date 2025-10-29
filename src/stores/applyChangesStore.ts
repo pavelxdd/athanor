@@ -144,6 +144,28 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
             }
             break;
 
+          case 'APPEND':
+            try {
+              await window.fileService.append(relativePath, op.new_code);
+              addLog(`Appended to file: ${relativePath}`);
+            } catch (error) {
+              newOps[index] = { ...op, accepted: false };
+              set({ activeOperations: newOps });
+              throw error;
+            }
+            break;
+
+          case 'PREPEND':
+            try {
+              await window.fileService.prepend(relativePath, op.new_code);
+              addLog(`Prepended to file: ${relativePath}`);
+            } catch (error) {
+              newOps[index] = { ...op, accepted: false };
+              set({ activeOperations: newOps });
+              throw error;
+            }
+            break;
+
           default:
             addLog(`Unknown operation: ${op.file_operation}`);
             // Mark operation as not accepted for unknown types

@@ -330,7 +330,10 @@ const FileOperationItem = React.forwardRef<
                   ? 'bg-green-600'
                   : op.file_operation === 'DELETE'
                     ? 'bg-red-600'
-                    : 'bg-blue-600'
+                    : op.file_operation === 'APPEND' ||
+                        op.file_operation === 'PREPEND'
+                      ? 'bg-purple-600'
+                      : 'bg-blue-600'
               }`}
             >
               {op.file_operation}
@@ -348,7 +351,13 @@ const FileOperationItem = React.forwardRef<
         <div className="min-w-0 w-full">
           <DiffView
             oldText={op.old_code}
-            newText={op.new_code}
+            newText={
+              op.file_operation === 'APPEND'
+                ? op.old_code + op.new_code
+                : op.file_operation === 'PREPEND'
+                  ? op.new_code + op.old_code
+                  : op.new_code
+            }
             filePath={op.file_path}
             onDiffBlocksCalculated={onDiffBlocksCalculated}
             diffViewRef={diffViewRef}
