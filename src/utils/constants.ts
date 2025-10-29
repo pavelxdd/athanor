@@ -36,7 +36,7 @@ export const SETTINGS = {
     project: {
       projectNameOverride: '',
       projectInfoFilePath: '',
-      includeAiSummaries: false,
+
       useGitignore: true,
     },
     application: {

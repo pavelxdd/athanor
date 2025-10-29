@@ -15,7 +15,7 @@ import type { GitDiffData } from '../../common/types/git-service';
 export interface ProjectSettings {
   projectNameOverride?: string;
   projectInfoFilePath?: string;
-  includeAiSummaries?: boolean;
+
   useGitignore?: boolean;
   // Future expansion: other project-specific settings
 }
@@ -577,7 +577,6 @@ export interface AthanorConfig {
   project_info?: string;
   project_info_path?: string; // Path to the file from which project_info was loaded
   system_prompt?: string;
-  includeAiSummaries?: boolean;
   documentation?: {
     includeNonSelected?: boolean;
   };

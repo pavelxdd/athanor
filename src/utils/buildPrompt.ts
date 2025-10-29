@@ -23,7 +23,7 @@ export interface PromptVariables {
   task_context?: string;
   task_tab_name?: string;
   threshold_line_length?: number;
-  include_ai_summaries?: boolean;
+
   supplementary_section?: string;
 }
 
@@ -138,8 +138,7 @@ export async function buildDynamicPrompt(
     config = await readAthanorConfig(rootPath);
   }
 
-  // Determine the includeAiSummaries setting, using true as default
-  const includeAiSummaries = config.includeAiSummaries ?? true;
+
 
   // Prepare project info with source file path if available
   let projectInfoForPrompt = '';
@@ -222,7 +221,7 @@ export async function buildDynamicPrompt(
       ? '## Legend\n\n* = likely relevant file or folder for the current task'
       : '',
     threshold_line_length: activeThresholdLineLength,
-    include_ai_summaries: includeAiSummaries,
+
     supplementary_section: supplementarySection,
     ...codebaseContent, // Contains file_contents and modified file_tree
   };

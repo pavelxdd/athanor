@@ -41,11 +41,7 @@ export async function readAthanorConfig(
       console.log('Applied project name override from settings:', config.project_name);
     }
     
-    // Apply includeAiSummaries from settings
-    if (projectSettings?.includeAiSummaries !== undefined) {
-      config.includeAiSummaries = projectSettings.includeAiSummaries;
-      console.log('Applied includeAiSummaries from settings:', config.includeAiSummaries);
-    }
+
     
     // Handle project info with settings precedence
     let projectInfoHandledBySettings = false;
