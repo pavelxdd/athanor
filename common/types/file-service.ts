@@ -16,6 +16,7 @@ export interface IFileService {
   read(pathStr: string, opts?: { encoding?: BufferEncoding }): Promise<string | Buffer>;
   write(pathStr: string, data: string | Buffer): Promise<void>;
   remove(pathStr: string): Promise<void>;
+  rename(oldPath: string, newPath: string): Promise<void>;
   exists(pathStr: string): Promise<boolean>;
   stats(pathStr: string): Promise<fs.Stats | null>;
   isDirectory(pathStr: string): Promise<boolean>; // Convenience method

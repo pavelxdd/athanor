@@ -255,6 +255,31 @@ export class FileService extends EventEmitter implements IFileService {
   }
 
   /**
+   * Rename or move a file
+   * @param oldPathStr Path to the source file (absolute or project-relative)
+   * @param newPathStr Path to the destination file (absolute or project-relative)
+   */
+  async rename(oldPathStr: string, newPathStr: string): Promise<void> {
+    try {
+      const absOldPath = this.toAbsolute(oldPathStr);
+      const absNewPath = this.toAbsolute(newPathStr);
+      
+      const platformOldPath = this.toOS(absOldPath);
+      const platformNewPath = this.toOS(absNewPath);
+
+      // Ensure parent directory of the new path exists
+      const newDir = PathUtils.dirname(absNewPath);
+      await this.ensureDir(this.relativize(newDir));
+      
+      // Perform the rename operation
+      await fs.rename(platformOldPath, platformNewPath);
+    } catch (error) {
+      console.error(`Error renaming file from ${oldPathStr} to ${newPathStr}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Delete a file
    * @param pathStr Path to the file (absolute or project-relative)
    */

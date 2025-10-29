@@ -139,6 +139,7 @@ contextBridge.exposeInMainWorld('fileService', {
     ipcRenderer.invoke('fs:readFile', path, options),
   write: (path: string, data: string) => ipcRenderer.invoke('fs:writeFile', path, data),
   remove: (path: string) => ipcRenderer.invoke('fs:deleteFile', path),
+  rename: (oldPath: string, newPath: string) => ipcRenderer.invoke('fs:renameFile', oldPath, newPath),
   
   // Watcher operations
   watch: async (path: string, callback: (event: string, filename: string) => void) => {

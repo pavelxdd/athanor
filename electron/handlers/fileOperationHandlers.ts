@@ -116,6 +116,28 @@ export function setupFileOperationHandlers(fileService: FileService) {
     }
   });
 
+  // Handle renaming/moving files
+  ipcMain.handle('fs:renameFile', async (_, oldPath: string, newPath: string) => {
+    try {
+      // Normalize both paths to Unix format
+      const oldUnix = _fileService.toUnix(oldPath);
+      const newUnix = _fileService.toUnix(newPath);
+      
+      // Relativize if they are inside the base directory
+      const oldPathForFs = PathUtils.isAbsolute(oldUnix) && PathUtils.isPathInside(_fileService.getBaseDir(), oldUnix)
+          ? _fileService.relativize(oldUnix)
+          : oldUnix;
+      const newPathForFs = PathUtils.isAbsolute(newUnix) && PathUtils.isPathInside(_fileService.getBaseDir(), newUnix)
+          ? _fileService.relativize(newUnix)
+          : newUnix;
+
+      await _fileService.rename(oldPathForFs, newPathForFs);
+      return true;
+    } catch (error) {
+      handleError(error, `renaming file from ${oldPath} to ${newPath}`);
+    }
+  });
+
   // Handle ensuring directory exists
   ipcMain.handle('fs:ensureDirectory', async (_, dirPath: string) => {
     try {

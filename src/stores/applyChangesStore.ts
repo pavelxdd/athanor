@@ -129,6 +129,20 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
               throw error;
             }
             break;
+          
+          case 'RENAME':
+            if (!op.new_file_path) {
+              throw new Error('New file path is missing for RENAME operation');
+            }
+            try {
+              await window.fileService.rename(relativePath, op.new_file_path);
+              addLog(`Renamed file from ${relativePath} to ${op.new_file_path}`);
+            } catch (error) {
+              newOps[index] = { ...op, accepted: false };
+              set({ activeOperations: newOps });
+              throw error;
+            }
+            break;
 
           default:
             addLog(`Unknown operation: ${op.file_operation}`);

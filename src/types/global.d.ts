@@ -398,6 +398,11 @@ declare global {
        */
       remove: (path: string) => Promise<void>;
 
+      /**
+       * Rename or move a file
+       */
+      rename: (oldPath: string, newPath: string) => Promise<void>;
+
       // Watcher operations
       /**
        * Watch a directory for changes
@@ -598,7 +603,8 @@ export type FileOperationType =
   | 'CREATE'
   | 'UPDATE_FULL'
   | 'UPDATE_DIFF'
-  | 'DELETE';
+  | 'DELETE'
+  | 'RENAME';
 
 // Search/Replace block structure for diff updates
 export interface DiffBlock {
@@ -623,6 +629,7 @@ export interface FileOperation {
   file_message: string;
   file_operation: FileOperationType;
   file_path: string;
+  new_file_path?: string; // Used for RENAME operations
   new_code: string;
   old_code: string;
   accepted: boolean;

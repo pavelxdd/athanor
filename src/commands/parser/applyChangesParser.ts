@@ -129,6 +129,7 @@ class XmlParser {
     message: string;
     operation: FileOperationType;
     path: string;
+    newPath?: string;
     code: string;
   } | null {
     try {
@@ -146,6 +147,11 @@ class XmlParser {
         'file_operation'
       ) as FileOperationType;
       const path = this.extractTagContent('file_path');
+      let newPath: string | undefined;
+
+      if (operation === 'RENAME') {
+        newPath = this.extractTagContent('file_path_new');
+      }
 
       // Find file_code opening tag
       this.skipWhitespace();
@@ -164,6 +170,7 @@ class XmlParser {
         'UPDATE_FULL',
         'UPDATE_DIFF',
         'DELETE',
+        'RENAME',
       ] as const;
       if (!validOperations.includes(operation)) {
         throw new Error(`Invalid operation type: ${operation}`);
@@ -178,15 +185,18 @@ class XmlParser {
       const isDELETE = (op: FileOperationType): op is 'DELETE' =>
         op === 'DELETE';
 
-      if (isDELETE(operation)) {
+      if (isDELETE(operation) || operation === 'RENAME') {
         if (code.trim() !== '') {
-          throw new Error('DELETE operation should have empty file_code');
+          throw new Error(`${operation} operation should have empty file_code`);
+        }
+        if (operation === 'RENAME' && !newPath?.trim()) {
+          throw new Error('RENAME operation requires a non-empty file_path_new tag');
         }
       } else if (!code) {
         throw new Error(`Missing file_code for ${operation} operation`);
       }
 
-      return { message, operation, path, code };
+      return { message, operation, path, newPath, code };
     } catch (error) {
       throw new Error(
         `Error parsing file block: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -199,6 +209,7 @@ class XmlParser {
     message: string;
     operation: FileOperationType;
     path: string;
+    newPath?: string;
     code: string;
   }> {
     const blocks = [];
@@ -264,6 +275,7 @@ export async function parseXmlContent(
         let processedNewCode = '';
         let operation = block.operation;
         const path = block.path;
+        const newPath = block.newPath;
         let warning: string | undefined;
 
         if (operation === 'CREATE') {
@@ -292,7 +304,7 @@ export async function parseXmlContent(
               throw new Error(`Path is a directory: ${path}`);
             }
           } catch (error) {
-            if (operation !== 'DELETE') {
+            if (operation !== 'DELETE' && operation !== 'RENAME') {
               throw error;
             }
             oldCode = '';
@@ -300,7 +312,7 @@ export async function parseXmlContent(
         }
 
         // Process the new code based on operation type
-        if (operation === 'DELETE') {
+        if (operation === 'DELETE' || operation === 'RENAME') {
           processedNewCode = '';
         } else if (operation === 'CREATE') {
           processedNewCode = normalizeLineEndings(block.code);
@@ -331,6 +343,7 @@ export async function parseXmlContent(
           file_message: block.message,
           file_operation: operation,
           file_path: path,
+          new_file_path: newPath,
           new_code: processedNewCode,
           old_code: normalizeLineEndings(oldCode),
           accepted: false,
