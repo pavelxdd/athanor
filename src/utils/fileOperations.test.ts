@@ -1,5 +1,3 @@
-// AI Summary: Comprehensive tests for file operation utilities including diff parsing,
-// line ending normalization, and file update processing. Tests the fix for decorative comment parsing.
 import {
   parseDiffBlocks,
   normalizeLineEndings,

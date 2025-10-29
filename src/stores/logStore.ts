@@ -1,5 +1,3 @@
-// AI Summary: Manages application logs with functionality to add and retrieve log messages.
-// Supports clickable log entries with optional callbacks for interactive logging.
 import { create } from 'zustand';
 
 export interface LogEntry {

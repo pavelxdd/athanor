@@ -1,5 +1,3 @@
-// AI Summary: Custom hook that provides the current dark mode state, respecting user's theme setting.
-// It combines the application's 'uiTheme' setting ('Auto', 'Light', 'Dark') with the OS-level theme for 'Auto' mode.
 import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 

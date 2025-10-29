@@ -1,7 +1,3 @@
-// AI Summary: Main electron process that coordinates window management, file system operations,
-// and IPC communication between processes. Handles application lifecycle events, path resolution,
-// and uncaught exception handling with proper cleanup of file watchers.
-// Configures genai-lite LLM service with Athanor's model presets using replace mode.
 import { app, BrowserWindow, Menu, nativeTheme, ipcMain } from 'electron';
 import fixPath from 'fix-path';
 import { Worker } from 'worker_threads';

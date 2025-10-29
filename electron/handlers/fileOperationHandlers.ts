@@ -1,7 +1,3 @@
-// AI Summary: Handles IPC communication for file system operations using FileService.
-// Provides unified interface for reading/writing files, resolving template paths,
-// and directory traversal with proper path handling and error management.
-
 import { ipcMain } from 'electron';
 import { FileService } from '../services/FileService';
 import { PathUtils } from '../services/PathUtils';

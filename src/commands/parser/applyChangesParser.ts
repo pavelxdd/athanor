@@ -1,6 +1,3 @@
-// AI Summary: Provides robust sequential parsing of XML apply changes commands.
-// Handles CDATA blocks and file operations with precise field validation and error handling.
-// Core functions: parseXmlContent() sequentially processes file blocks and validates operations.
 import { FileOperation, FileOperationType } from '../../types/global';
 import {
   processFileUpdate,

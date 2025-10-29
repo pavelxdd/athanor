@@ -1,6 +1,3 @@
-// AI Summary: Generates codebase documentation including file tree visualization and code content.
-// Handles language detection for code blocks and provides smart previews for large files.
-// Supports strict selection mode through includeNonSelected parameter.
 import { FileItem, sortItems, isEmptyFolder, getBaseName } from './fileTree';
 import { AthanorConfig } from '../types/global';
 import { areAllDescendantsSelected } from './fileSelection';

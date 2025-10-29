@@ -1,5 +1,3 @@
-// AI Summary: Manages vertical panel resize functionality for the log panel.
-// Provides height state and event handlers for vertically resizable panels.
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface LogPanelResizeHook {

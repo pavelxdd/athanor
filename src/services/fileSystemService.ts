@@ -1,6 +1,3 @@
-// AI Summary: Core file system service that builds and maintains the application's file tree structure.
-// Now uses fileService and pathUtils for all file operations and path manipulation.
-// Handles directory traversal, line counting, and content normalization with proper error handling.
 import {
   FileItem,
   sortItems,

@@ -1,5 +1,3 @@
-// AI Summary: Handles selection of files based on provided paths with workbench store integration.
-// Validates paths and updates active tab selection state while providing logging feedback.
 import { useWorkbenchStore } from '../stores/workbenchStore';
 import { useFileSystemStore } from '../stores/fileSystemStore';
 import { getFileItemById } from '../utils/fileTree';

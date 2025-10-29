@@ -1,5 +1,3 @@
-// AI Summary: Handles initial project setup dialog when .athignore is missing.
-// Manages checkbox states for standard rules and gitignore integration.
 import React, { useState, useEffect } from 'react';
 import { HelpCircle } from 'lucide-react';
 

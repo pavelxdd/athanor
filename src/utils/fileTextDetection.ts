@@ -1,7 +1,3 @@
-// AI Summary: Provides robust text file detection using Electron's preload API for file system access.
-// Handles file reading and analysis through Electron's IPC system with proper error handling.
-// Maintains compatibility with existing text detection logic while using Electron's Buffer handling.
-
 import { FILE_SYSTEM } from './constants';
 
 // File detection configuration

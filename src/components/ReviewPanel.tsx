@@ -1,6 +1,3 @@
-// AI Summary: Displays and manages file changes from AI output with diff visualization.
-// Provides GitHub-style diff highlighting with accept/reject controls, including logic to merge nearby diffs into a single block.
-// Handles warnings for large files and tracks change approval state.
 import React, { useState, useEffect, useRef } from 'react';
 import { createPatch } from 'diff';
 import {

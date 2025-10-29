@@ -1,7 +1,3 @@
-// AI Summary: Unit tests for the DependencyScanner service.
-// Verifies correct dependency extraction for various languages (JS/TS, Python, CSS)
-// and handles edge cases like commented-out code and unsupported file types.
-
 import { DependencyScanner } from './DependencyScanner';
 
 describe('DependencyScanner', () => {

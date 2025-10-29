@@ -1,6 +1,3 @@
-// AI Summary: Provides utilities for detecting and extracting context from task descriptions.
-// Handles detection of specific commit formats and maintains proper formatting.
-
 /** Represents a context detected within task content */
 interface DetectedContext {
   /** The formatted context string for display */

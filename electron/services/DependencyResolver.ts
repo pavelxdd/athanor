@@ -1,7 +1,3 @@
-// AI Summary: Centralized dependency resolution service for resolving import specifiers to file paths.
-// Supports both JavaScript/TypeScript and Python module resolution with language-specific logic.
-// Handles Python relative imports (., ..) and absolute imports (my_app.utils).
-
 import { FileService } from './FileService';
 import { PathUtils } from './PathUtils';
 

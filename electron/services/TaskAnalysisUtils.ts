@@ -1,7 +1,3 @@
-// AI Summary: Provides keyword extraction utilities for task description analysis.
-// Core function: extractKeywords() - extracts meaningful keywords from text for context relevance scoring.
-// Uses a comprehensive stop-word list to filter out noise, handles file paths, and normalizes punctuation.
-
 import { ALLOWED_SHORT_WORDS_SET, BASE_STOPWORDS_SET } from './wordFilters';
 
 interface AnalyzedTaskDescription {

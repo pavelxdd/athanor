@@ -1,6 +1,3 @@
-// AI Summary: Generic task builder that handles any task type using dynamic prompts.
-// Uses task data from taskStore to generate prompts with proper template loading.
-// Integrates with workbench store for task description and context management.
 import { FileItem } from '../utils/fileTree';
 import { buildDynamicPrompt } from '../utils/buildPrompt';
 import { TaskData } from '../types/taskTypes';

@@ -1,6 +1,3 @@
-// AI Summary: Main action panel component that coordinates prompt generation and file operations.
-// Provides UI controls for task description, dynamic prompt generators, and preset tasks.
-// Manages state for task inputs, generated prompts, and clipboard operations with contextual tooltips.
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import TaskContextMenu from './action-panel/TaskContextMenu';
 import {

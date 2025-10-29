@@ -1,6 +1,3 @@
-// AI Summary: Parses command blocks from XML-formatted clipboard input.
-// Handles both single and multiple commands with proper content normalization.
-// Supports escaped angle brackets specifically for ath command tags.
 import { CommandType, COMMAND_TYPES } from '../types';
 
 export interface Command {

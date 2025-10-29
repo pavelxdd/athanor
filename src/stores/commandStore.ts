@@ -1,5 +1,3 @@
-// AI Summary: Manages clipboard content state and command validation with periodic updates.
-// Handles both single and multiple command scenarios while maintaining backward compatibility.
 import { create } from 'zustand';
 import { parseCommand, Command } from '../commands';
 

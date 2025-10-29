@@ -1,5 +1,3 @@
-// AI Summary: Application entry point that initializes React and mounts the root component.
-// Configures React Strict Mode and handles root element validation.
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';

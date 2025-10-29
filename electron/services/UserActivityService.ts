@@ -1,7 +1,3 @@
-// AI Summary: A singleton service for tracking recently modified files in memory.
-// Listens to `FileService` events to capture live edits without redundant file watchers,
-// providing a real-time 'actively editing' signal to the RelevanceEngineService.
-
 import { FileService } from './FileService';
 import { PROJECT_ANALYSIS } from '../../src/utils/constants';
 

@@ -1,6 +1,3 @@
-// AI Summary: Manages task data using Zustand with array-based storage.
-// Provides methods for retrieving tasks and variants by ID with automatic sorting by order.
-// Includes active variant tracking with persistence between sessions.
 import { create } from 'zustand';
 import { TaskStore, TaskData, TaskVariant, DEFAULT_TASK_ORDER, ActiveVariants } from '../types/taskTypes';
 import { persist } from 'zustand/middleware';

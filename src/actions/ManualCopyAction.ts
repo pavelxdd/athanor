@@ -1,6 +1,3 @@
-// AI Summary: Handles manual copy operations to clipboard with content formatting and token counting.
-// Provides path-aware code block formatting with language detection.
-// Integrates with application logging for operation tracking and error handling.
 import { countTokens, formatTokenCount } from '../utils/tokenCount';
 import { formatSingleFile } from '../utils/codebaseDocumentation';
 import { useFileSystemStore } from '../stores/fileSystemStore';

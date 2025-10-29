@@ -1,6 +1,3 @@
-// AI Summary: Builds AI prompts dynamically by loading templates, substituting variables (project info, file contents, selected files, task details), and applying user configuration settings.
-// Handles codebase documentation generation, selected file list formatting, and applies settings like smart preview and file tree inclusion from the fileSystemStore.
-// Core function: buildDynamicPrompt.
 import { FileItem } from './fileTree';
 import { generateCodebaseDocumentation } from './codebaseDocumentation';
 import { DOC_FORMAT, FILE_SYSTEM, SETTINGS } from './constants';

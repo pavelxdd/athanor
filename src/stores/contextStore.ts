@@ -1,7 +1,3 @@
-// AI Summary: Manages the state of the intelligent context builder.
-// Stores which files are 'selected' vs. 'neighboring' and handles fetching this context
-// from the main process via an IPC call to the RelevanceEngineService.
-
 import { create } from 'zustand';
 
 interface ContextState {

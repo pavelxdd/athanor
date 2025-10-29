@@ -1,6 +1,3 @@
-// AI Summary: Maps file extensions to programming languages for syntax highlighting.
-// Provides comprehensive language detection for react-syntax-highlighter with fallback handling.
-
 // Map file extensions to language identifiers supported by react-syntax-highlighter
 const extensionToLanguageMap: { [key: string]: string } = {
   // JavaScript/TypeScript

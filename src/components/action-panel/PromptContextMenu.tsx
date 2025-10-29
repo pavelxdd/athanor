@@ -1,4 +1,3 @@
-// AI Summary: Wrapper component around VariantsContextMenu to handle prompt-specific variant selection.
 import React from 'react';
 import { PromptData } from '../../types/promptTypes';
 import VariantsContextMenu from './VariantsContextMenu';

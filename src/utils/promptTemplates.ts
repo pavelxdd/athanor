@@ -1,6 +1,3 @@
-// AI Summary: Handles loading prompt templates.
-// Uses template paths resolved by the main process and properly handles empty values.
-// Provides functions for template loading and task description extraction.
 import { extractTagContent } from './extractTagContent';
 // Load a template from the prompts folder
 export async function loadTemplateContent(

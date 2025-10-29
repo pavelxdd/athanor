@@ -1,6 +1,3 @@
-// AI Summary: Component for managing global application settings including experimental features,
-// smart preview line limits, and threshold line length with form validation and debounced saving.
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { HelpCircle, Info } from 'lucide-react';
 import type { ApplicationSettings } from '../types/global';

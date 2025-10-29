@@ -1,7 +1,3 @@
-// AI Summary: Handles finding and reading project information files from the project root or specific paths.
-// Implements case-insensitive file search with specific basename and extension priorities.
-// Supports both auto-discovery and settings-specified file paths with consistent content normalization.
-
 import { PROJECT_INFO } from './constants';
 
 /**

@@ -1,5 +1,3 @@
-// AI Summary: Context menu for file/folder operations, featuring "Expand all" and "Collapse all" at the top for directories. Also includes ignore actions and closes automatically on selection.
-
 import React, { useEffect, useState } from 'react';
 import { useLogStore } from '../stores/logStore';
 

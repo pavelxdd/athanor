@@ -1,5 +1,3 @@
-// AI Summary: Main file explorer component that coordinates tree rendering and file operations.
-// Uses FileExplorerItem for individual items and manages overall explorer state.
 import React from 'react';
 import { useFileSystemStore } from '../../stores/fileSystemStore';
 import { FileItem } from '../../utils/fileTree';

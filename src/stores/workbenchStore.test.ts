@@ -1,5 +1,3 @@
-// AI Summary: Tests for workbench store including per-tab file selection logic.
-// Validates tab management, file selection/deselection, and folder selection behavior.
 import { useWorkbenchStore } from './workbenchStore';
 import { FileItem } from '../utils/fileTree';
 

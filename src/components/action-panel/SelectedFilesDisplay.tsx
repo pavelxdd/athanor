@@ -1,5 +1,3 @@
-// AI Summary: Displays selected file count with popover for managing, reordering, and removing files.
-// Uses drag-and-drop for file reordering and provides clear all functionality.
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { X, GripVertical, Trash2, Files, Plus } from 'lucide-react';
 import { useContextStore } from '../../stores/contextStore';

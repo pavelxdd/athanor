@@ -1,7 +1,3 @@
-// AI Summary: Handles reading Athanor configuration with settings integration.
-// Implements proper precedence for project information: ProjectSettings -> automatic discovery.
-// Provides fallback values (e.g., project name from base directory name) and handles project name and project info file overrides from project settings.
-
 import { AthanorConfig, ProjectSettings } from '../types/global';
 import { getBaseName } from './fileTree';
 import { readProjectInfo, readProjectInfoFromPath, normalizeContent } from './projectInfoUtils';

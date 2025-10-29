@@ -1,6 +1,3 @@
-// AI Summary: Unit tests for GitService covering command generation, output parsing,
-// and error handling scenarios. Uses mocked child_process to test without actual Git repository.
-
 // This mock function must be defined before it is used in the 'util' mock factory.
 const mockExecAsync = jest.fn();
 

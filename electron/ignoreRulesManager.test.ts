@@ -1,6 +1,3 @@
-// AI Summary: Comprehensive unit tests for the intelligent ignore file scanner covering nested discovery,
-// ignore rule application for pruning, sorting by depth, and integration with project settings.
-
 // Import mock helpers first to ensure mocks are established.
 import {
   setupMockFs,

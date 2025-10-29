@@ -1,6 +1,3 @@
-// AI Summary: Displays file content with syntax highlighting. Handles both text and binary files
-// with appropriate feedback. Maintains line count and path display for valid text files.
-// Now includes a "Replace with Clipboard" button that stages changes and navigates to Apply Changes tab.
 import React, { useEffect, useState } from 'react';
 import { Copy, FileCode, ClipboardPaste, WrapText } from 'lucide-react';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';

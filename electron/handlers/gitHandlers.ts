@@ -1,5 +1,3 @@
-// AI Summary: Defines IPC handlers for Git-related operations like viewing diffs.
-// It orchestrates calls to GitService and FileService to provide uncommitted changes to the renderer process.
 import { ipcMain } from 'electron';
 import type { GitService } from '../services/GitService';
 import type { FileService } from '../services/FileService';

@@ -1,6 +1,3 @@
-// AI Summary: Root application component that coordinates file system lifecycle and layout.
-// Manages application state and delegates rendering to MainLayout component. Now includes listeners
-// for graph analysis events and sends user activity events to the main process.
 import React, { useRef, useEffect } from 'react';
 import { getBaseName } from '../utils/fileTree';
 import MainLayout from './MainLayout';

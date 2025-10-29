@@ -1,7 +1,3 @@
-// AI Summary: Git service providing repository analysis capabilities through command-line interface.
-// Handles commit history queries, file tracking, and repository validation with robust error handling.
-// Core component for context builder heuristics like shared commits and recent activity analysis.
-
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';

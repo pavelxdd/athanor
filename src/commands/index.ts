@@ -1,6 +1,3 @@
-// AI Summary: Centralizes exports for all command-related functionality.
-// Provides a single entry point for command handling capabilities.
-
 // Command executors
 export { executeSelectCommand } from './selectCommand';
 export { executeTaskCommand } from './taskCommand';

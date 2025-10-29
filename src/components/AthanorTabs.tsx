@@ -1,5 +1,3 @@
-// AI Summary: Handles tab navigation UI and logic with conditional content rendering.
-// Provides consistent tab styling and active state management.
 import React, { useState, useEffect } from 'react';
 import { CircleSlashed, CircleDashed, GitCompare } from 'lucide-react';
 import CommandButton from './CommandButton';

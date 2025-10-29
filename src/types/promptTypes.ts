@@ -1,5 +1,3 @@
-// AI Summary: Defines types for prompt data including metadata and variants.
-// Provides interfaces for prompt store state and operations with order configuration.
 export interface PromptVariant {
   id: string;
   label: string;

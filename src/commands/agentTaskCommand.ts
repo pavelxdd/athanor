@@ -1,6 +1,3 @@
-// AI Summary: Command handler for creating agent tasks.
-// Parses file_name and task_content from an XML block, writes the content to a file in the .ath_materials directory,
-// updates the workbench task description, and logs a clickable success message that copies an instruction to the clipboard.
 import { extractTagContent } from '../utils/extractTagContent';
 import { copyToClipboard } from '../actions';
 import { useWorkbenchStore } from '../stores/workbenchStore';

@@ -1,7 +1,3 @@
-// AI Summary: Manages reading and writing of settings JSON files for both project and application settings.
-// Handles project settings in .ath_materials directory and application settings in user data directory.
-// Provides error handling and fallbacks for missing or corrupt settings files.
-
 import { app } from 'electron';
 import type { ProjectSettings, ApplicationSettings } from '../../src/types/global';
 import { FileService } from './FileService';

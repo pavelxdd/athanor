@@ -1,7 +1,3 @@
-// AI Summary: Handles loading and parsing of prompt/task XML files from the resources directory.
-// Uses shared parsing logic for both prompt_*.xml and task_*.xml with proper validation.
-// Key functions: parseXmlFile() for XML parsing, loadPrompts()/loadTasks() for store updates.
-// Maintains proper typing and ordering while integrating with promptStore/taskStore.
 import { PromptData, PromptVariant, DEFAULT_PROMPT_ORDER } from '../types/promptTypes';
 import { TaskData, TaskVariant, DEFAULT_TASK_ORDER } from '../types/taskTypes';
 import { usePromptStore } from '../stores/promptStore';

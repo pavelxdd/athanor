@@ -1,6 +1,3 @@
-// AI Summary: Provides mock implementations and setup utilities for file system operations in Jest tests.
-// Exports setupMockFs to simulate a file structure and clearMockFs to reset mocks between tests.
-
 import { Stats } from 'fs';
 
 // Mock fs/promises functions

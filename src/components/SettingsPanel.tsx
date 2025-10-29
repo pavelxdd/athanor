@@ -1,6 +1,3 @@
-// AI Summary: Enhanced settings panel with form inputs for both project and application settings.
-// Features debounced saving, validation, error handling, and example application settings.
-
 import React, { useEffect } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useFileSystemStore } from '../stores/fileSystemStore';

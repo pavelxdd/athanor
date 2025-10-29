@@ -1,6 +1,3 @@
-// AI Summary: Handles core IPC operations for file system functionality including folder selection,
-// path conversion, directory access, and ignore rule management. Now uses FileService for all operations.
-
 import { ipcMain, dialog, app, nativeTheme, shell } from 'electron';
 import { execSync } from 'child_process';
 import { mainWindow } from '../windowManager';

@@ -1,5 +1,3 @@
-// AI Summary: Custom hook for handling file path drops on text inputs. Provides drag-over 
-// and drop handlers with cursor position preservation and logging.
 import { DragEvent } from 'react';
 import { DRAG_DROP } from '../utils/constants';
 import { useLogStore } from '../stores/logStore';

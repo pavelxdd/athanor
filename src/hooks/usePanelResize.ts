@@ -1,5 +1,3 @@
-// AI Summary: Manages panel resize functionality with mouse event handling.
-// Provides width state and event handlers for resizable panels.
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface PanelResizeHook {

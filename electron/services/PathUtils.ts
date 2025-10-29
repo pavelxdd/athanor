@@ -1,6 +1,3 @@
-// AI Summary: Stateless path utilities providing consistent path manipulation across platforms
-// with Unix-style normalization internally and platform-specific conversion when needed.
-
 import * as path from 'path';
 
 /**

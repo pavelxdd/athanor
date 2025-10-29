@@ -1,6 +1,3 @@
-// AI Summary: Utilities for processing and applying diff-based file updates.
-// Handles initial empty line removal, search/replace block parsing, and supports both exact
-// and fuzzy patching with diff-match-patch library for robust file modifications.
 import { DiffBlock } from '../types/global';
 import { diff_match_patch } from 'diff-match-patch';
 

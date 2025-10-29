@@ -1,6 +1,3 @@
-// AI Summary: Utilities for handling file selection logic, including getting selectable items
-// and checking selection states of files and folders. Provides functions for calculating
-// selection totals and managing selectable items.
 import { FileItem, isEmptyFolder, getFileItemById } from './fileTree';
 
 // Get selectable descendants (non-empty folders and files)

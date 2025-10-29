@@ -1,5 +1,3 @@
-// AI Summary: Utility for extracting content between XML tags.
-// Handles start and end tag matching with proper content trimming.
 export function extractTagContent(content: string, tagName: string): string {
   const startTag = `<${tagName}>`;
   const endTag = `</${tagName}>`;

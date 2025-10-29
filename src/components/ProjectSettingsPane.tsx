@@ -1,7 +1,3 @@
-// AI Summary: Component for managing project-specific settings.
-// Allows users to override project name and specify a project information file.
-// Handles form state, validation, and saving of project settings.
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { HelpCircle, Info } from 'lucide-react';
 import type { ProjectSettings } from '../types/global';

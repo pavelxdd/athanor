@@ -1,6 +1,3 @@
-// AI Summary: Handles IPC communication for file system watching using FileService.
-// Sets up directory watchers with proper path handling and event forwarding to renderer.
-
 import { ipcMain } from 'electron';
 import { FileService } from '../services/FileService';
 import { PathUtils } from '../services/PathUtils';

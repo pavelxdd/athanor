@@ -1,4 +1,3 @@
-// AI Summary: Custom hook for managing file explorer state including folder expansion (now with recursive actions), context menu, and file system operations. Centralizes file explorer logic and state.
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { FileItem, getAllDescendantFolderIds } from '../../../utils/fileTree';
 

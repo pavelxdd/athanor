@@ -1,5 +1,3 @@
-// AI Summary: Manages file system initialization, watching, and refresh lifecycle with consolidated tree loading.
-// Provides hooks for directory operations, file system refresh, and watcher setup using shared tree loading logic.
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { FileItem } from '../utils/fileTree';
 import { buildFileTree } from '../services/fileSystemService';

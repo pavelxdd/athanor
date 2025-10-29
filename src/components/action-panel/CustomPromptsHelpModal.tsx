@@ -1,5 +1,3 @@
-// AI Summary: Modal component providing help and guidance for creating custom prompt and task templates.
-// Includes tutorial links, folder access buttons, and explanatory content for template customization.
 import React, { useState } from 'react';
 import { X, ExternalLink, Folder, Globe, FileText, Copy } from 'lucide-react';
 import { copyToClipboard } from '../../actions/ManualCopyAction';

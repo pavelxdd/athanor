@@ -1,6 +1,3 @@
-// AI Summary: Unit tests for PathUtils covering path normalization, joining, resolution,
-// and edge cases across different platform paths.
-
 import { PathUtils } from './PathUtils';
 import * as path from 'path';
 

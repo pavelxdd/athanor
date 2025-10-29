@@ -1,6 +1,3 @@
-// AI Summary: Defines types for task data including metadata and content.
-// Provides interfaces for task store state and operations with proper validation.
-
 export interface TaskVariant {
   id: string;
   label: string;

@@ -1,5 +1,3 @@
-// AI Summary: Updates task description in workbench store based on command content.
-// Validates task content and provides logging feedback on success or failure.
 import { useWorkbenchStore } from '../stores/workbenchStore';
 
 export interface TaskCommandParams {

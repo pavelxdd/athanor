@@ -1,5 +1,3 @@
-// AI Summary: Stores configuration constants used throughout the application.
-// Defines thresholds for file length, smart preview limits, code refactoring and UI animations.
 // Documentation formats for code content
 export const DOC_FORMAT = {
   MARKDOWN: 'markdown',

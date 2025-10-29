@@ -1,5 +1,3 @@
-// AI Summary: Orchestrates command execution from AI content using dedicated command handlers.
-// Processes SELECT, TASK, and APPLY CHANGES commands through a modular command system, aggregating multiple 'apply changes' blocks.
 import type { FileOperation } from '../types/global';
 import * as commands from '../commands';
 import { useApplyChangesStore } from '../stores/applyChangesStore';

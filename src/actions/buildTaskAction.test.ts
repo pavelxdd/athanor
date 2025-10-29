@@ -1,5 +1,3 @@
-// AI Summary: Comprehensive unit tests for buildTaskAction covering successful execution, guard clauses,
-// error handling, and state management. Tests include proper mocking of dependencies and validation of side effects.
 import { buildTaskAction, BuildTaskActionParams } from './buildTaskAction';
 import { FileItem } from '../utils/fileTree';
 import { TaskData } from '../types/taskTypes';

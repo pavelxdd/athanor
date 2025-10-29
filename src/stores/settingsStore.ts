@@ -1,7 +1,3 @@
-// AI Summary: Zustand store for managing both project and application settings state.
-// Provides actions to load/save settings via IPC, handles loading states and errors.
-// Integrates with the main process SettingsService through window.settingsService.
-
 import { create } from 'zustand';
 import type { ProjectSettings, ApplicationSettings } from '../types/global';
 import { SETTINGS } from '../utils/constants';

@@ -1,6 +1,3 @@
-// AI Summary: Defines interfaces for Git service operations.
-// Includes types for commit logs, file status, and the main IGitService contract for repository interactions.
-
 export interface GitCommitsForFileOptions {
   maxCount?: number;
   since?: string;

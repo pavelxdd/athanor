@@ -1,5 +1,3 @@
-// AI Summary: Provides tooltips and human-readable names for UI action buttons.
-// Handles state-based tooltip generation with proper typing for actions and states.
 import { ActionState } from './types';
 import { TaskData } from '../types/taskTypes';
 

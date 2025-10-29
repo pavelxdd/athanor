@@ -1,6 +1,3 @@
-// AI Summary: Unit tests for FileService covering path resolution, file operations,
-// watchers, and ignore rule handling with mocked file system interactions.
-
 import { FileService } from './FileService';
 import { PathUtils } from './PathUtils';
 import * as fsPromises from 'fs/promises';

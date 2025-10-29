@@ -1,6 +1,3 @@
-// AI Summary: Button component for applying AI-generated changes from clipboard.
-// Handles command validation, clipboard monitoring, and change application.
-// Provides tooltips and disabled states based on command validity.
 import React, { useEffect } from 'react';
 import { Hammer } from 'lucide-react';
 import { useCommandStore } from '../stores/commandStore';

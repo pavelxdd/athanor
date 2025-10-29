@@ -1,5 +1,3 @@
-// AI Summary: Provides human-readable descriptions for command types.
-// Used for tooltip display in the command button UI.
 import { parseCommand } from './parser';
 import { COMMAND_TYPES } from './types';
 

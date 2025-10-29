@@ -1,7 +1,3 @@
-// AI Summary: Unit tests for the DependencyResolver service.
-// Validates Python absolute/relative import resolution and JavaScript/TypeScript resolution
-// with comprehensive mock FileService setup and edge case coverage.
-
 import { DependencyResolver } from './DependencyResolver';
 import { FileService } from './FileService';
 

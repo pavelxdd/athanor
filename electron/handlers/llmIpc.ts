@@ -1,6 +1,3 @@
-// AI Summary: IPC handlers for LLM operations, routing requests between renderer and main process.
-// Registers handlers for getting providers/models, sending messages to LLMs, and fetching presets.
-
 import { ipcMain } from 'electron';
 import type { LLMService, LLMChatRequest, ApiProviderId } from 'genai-lite';
 import type { ApiKeyServiceMain } from 'genai-key-storage-lite';

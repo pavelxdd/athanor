@@ -1,6 +1,3 @@
-// AI Summary: Manages file change operations from AI output including CREATE, UPDATE, and DELETE.
-// Handles both full file updates and diff-based changes with validation and error handling.
-// Tracks operation state (accepted/rejected) and provides methods for applying/rejecting changes.
 import { create } from 'zustand';
 import { useLogStore } from './logStore';
 import { FileOperation, FileOperationType } from '../types/global';

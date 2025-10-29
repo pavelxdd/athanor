@@ -1,7 +1,3 @@
-// AI Summary: Manages nested ignore rules by discovering all .athignore/.gitignore files and compiling them
-// into a single, unified ruleset. Enforces "Athanor-First" precedence by loading .gitignore rules before
-// .athignore rules. Uses found rules to prune directory scanning for performance.
-
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import ignore from 'ignore';

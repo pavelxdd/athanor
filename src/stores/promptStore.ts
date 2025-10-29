@@ -1,6 +1,3 @@
-// AI Summary: Manages prompt data using Zustand with array-based storage.
-// Provides methods for retrieving prompts and variants by ID with automatic sorting by order.
-// Includes active variant tracking with persistence between sessions.
 import { create } from 'zustand';
 import { PromptStore, PromptData, PromptVariant, DEFAULT_PROMPT_ORDER, ActiveVariants } from '../types/promptTypes';
 import { persist } from 'zustand/middleware';

@@ -1,7 +1,3 @@
-// AI Summary: A stateless utility for fast, regex-based dependency scanning.
-// Supports multiple languages by mapping file extensions to language-specific regex patterns.
-// Designed for high-performance analysis without building a full AST.
-
 import * as path from 'path';
 
 // Regex patterns for different languages. They aim to capture the module specifier.

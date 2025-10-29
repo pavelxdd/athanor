@@ -1,7 +1,3 @@
-// AI Summary: Unit tests for TaskAnalysisUtils keyword extraction and task analysis functionality.
-// Tests both the deprecated extractKeywords function and the new analyzeTaskDescription function
-// that separates path mentions from general keywords for hierarchical scoring.
-
 import { extractKeywords, analyzeTaskDescription } from './TaskAnalysisUtils';
 
 describe('TaskAnalysisUtils', () => {

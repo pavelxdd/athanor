@@ -1,6 +1,3 @@
-// AI Summary: Component for managing "Send via API" functionality including LLM preset selection,
-// API key validation, and sending prompts to LLM services with response processing.
-// Uses genai-lite for model presets via the IPC bridge.
 import React, { useState, useEffect, useRef } from 'react';
 import { Info } from 'lucide-react';
 import type { ModelPreset } from 'genai-lite';

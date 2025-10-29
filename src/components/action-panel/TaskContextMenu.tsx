@@ -1,4 +1,3 @@
-// AI Summary: Wrapper component around VariantsContextMenu to handle task-specific variant selection
 import React from 'react';
 import { TaskData } from '../../types/taskTypes';
 import VariantsContextMenu from './VariantsContextMenu';

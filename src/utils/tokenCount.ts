@@ -1,6 +1,3 @@
-// AI Summary: Provides token counting functionality using js-tiktoken with efficient encoder caching.
-// Handles edge cases like empty input and maintains singleton tokenizer instance.
-// Includes formatting utilities for displaying token counts.
 import { Tiktoken, encodingForModel } from 'js-tiktoken';
 
 let tokenizer: Tiktoken | null = null;

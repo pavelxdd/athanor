@@ -1,6 +1,3 @@
-// AI Summary: Handles Electron window creation, lifecycle management and error handling.
-// Manages main window instance with proper web preferences and development/production
-// environment handling. Implements window failure handling and cleanup.
 import { BrowserWindow, app, screen } from 'electron';
 import * as path from 'path';
 import { settingsService } from './main';

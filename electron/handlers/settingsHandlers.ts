@@ -1,6 +1,3 @@
-// AI Summary: IPC handlers for settings operations including project and application settings.
-// Provides secure interface between renderer and main process for settings management.
-
 import { ipcMain } from 'electron';
 import type { SettingsService } from '../services/SettingsService';
 import type { ProjectSettings, ApplicationSettings } from '../../src/types/global';

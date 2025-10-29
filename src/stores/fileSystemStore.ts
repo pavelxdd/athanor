@@ -1,5 +1,3 @@
-// AI Summary: Manages file system state including file selection, previewed file path, and selection metrics.
-// Tracks count of selected files and total lines across selections. Handles recursive selection of files and folders.
 import { create } from 'zustand';
 import { FileItem } from '../utils/fileTree';
 import { DOC_FORMAT } from '../utils/constants';

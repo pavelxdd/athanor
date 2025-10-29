@@ -1,6 +1,3 @@
-// AI Summary: Defines IPC handlers for context-related operations.
-// Exposes the RelevanceEngineService to the renderer process for calculating prompt context.
-
 import { ipcMain } from 'electron';
 import { RelevanceEngineService } from '../services/RelevanceEngineService';
 import { SettingsService } from '../services/SettingsService';

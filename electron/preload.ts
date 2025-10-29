@@ -1,7 +1,3 @@
-// AI Summary: Exposes protected methods for IPC communication and file system operations.
-// Now includes FileService, PathUtils interfaces, secure API key management, and a `userActivity`
-// event sender for intelligent background processing.
-
 import { contextBridge, ipcRenderer } from 'electron';
 import { createApiKeyManagerBridge } from 'genai-key-storage-lite/preload';
 

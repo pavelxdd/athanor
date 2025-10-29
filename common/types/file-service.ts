@@ -1,6 +1,3 @@
-// AI Summary: Core interface definition for file system operations with clear path conventions
-// and comprehensive functionality for file/directory manipulation, watching, and resource access.
-
 import * as fs from 'fs'; // Use fs types for Stats
 
 export interface IFileService {

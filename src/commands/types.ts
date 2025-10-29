@@ -1,6 +1,3 @@
-// AI Summary: Centralizes command-related type definitions and constants.
-// Provides type safety for command handling throughout the application.
-
 // Command type constants
 export const COMMAND_TYPES = {
   SELECT: 'select',

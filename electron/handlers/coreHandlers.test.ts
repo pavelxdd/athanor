@@ -1,6 +1,3 @@
-// AI Summary: Comprehensive unit tests for coreHandlers IPC setup covering all 15 handlers
-// with extensive mocking of electron modules, FileService, and mainWindow dependencies.
-
 // Variables used in mock factories must be defined before jest.mock calls and before actual imports
 // that might trigger those factories.
 const mockWebContents = {

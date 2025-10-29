@@ -1,6 +1,3 @@
-// AI Summary: Manages .athignore file creation and rule updates with intelligent .gitignore integration.
-// Now uses fileService and pathUtils APIs for file operations and path manipulation.
-// Creates .athignore files with optional standard rules and handles path normalization for ignore patterns.
 interface AthignoreOptions {
   useStandardIgnore: boolean;
   augmentGitignore?: boolean;

@@ -1,7 +1,3 @@
-// AI Summary: A React component that parses a string for markdown-style links ([text](url))
-// and renders them as clickable elements that open in the system's external browser.
-// It enhances user experience by making URLs in text content interactive and secure.
-
 import React from 'react';
 
 interface LinkifiedTextProps {

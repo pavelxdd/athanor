@@ -1,8 +1,3 @@
-// AI Summary: Dedicated component for secure API key management with provider selection,
-// key storage/deletion, validation, and display functionality. Uses secure storage via IPC bridge.
-// Updated for enhanced security - no longer has access to plaintext keys in renderer process.
-// Fetches model presets from genai-lite LLM service to determine available providers.
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { HelpCircle, Eye, EyeOff, Save, Trash2, Check } from 'lucide-react';
 import LinkifiedText from './LinkifiedText';

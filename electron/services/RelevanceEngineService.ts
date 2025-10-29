@@ -1,6 +1,3 @@
-// AI Summary: Orchestrates a two-phase context analysis using a scoring engine to identify relevant 'neighboring' files.
-// It uses heuristics like shared Git commits, direct dependencies, and keyword/path analysis to build a rich, token-budgeted context for AI prompts.
-
 import { FileService } from './FileService';
 import type { IGitService } from '../../common/types/git-service';
 import { DependencyScanner } from './DependencyScanner';

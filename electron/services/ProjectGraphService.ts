@@ -1,7 +1,3 @@
-// AI Summary: Analyzes the project structure to build a dependency graph, file mention map, shared commit history, and recent activity log.
-// Identifies "hub files" with high in-degrees and provides methods to query relationships,
-// supporting the RelevanceEngineService with deeper contextual insights.
-
 import { FileService } from './FileService';
 import { DependencyScanner } from './DependencyScanner';
 import { PathUtils } from './PathUtils';

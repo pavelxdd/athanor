@@ -1,6 +1,3 @@
-// AI Summary: Core utilities for file tree structure, traversal, and basic operations.
-// Handles sorting, path handling, empty folder detection, and file size analysis.
-// Provides functions for tree traversal and item lookup with proper error handling.
 export interface FileItem {
   id: string;
   name: string;

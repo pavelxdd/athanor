@@ -1,5 +1,3 @@
-// AI Summary: Handles rendering of individual file/folder items in the explorer tree.
-// Manages item selection, expansion toggling, and context menu integration.
 import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, File, Scissors, Book } from 'lucide-react';
 import { FileItem, getBaseName, isEmptyFolder } from '../../utils/fileTree';

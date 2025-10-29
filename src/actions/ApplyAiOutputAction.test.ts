@@ -1,8 +1,6 @@
 /**
  * @jest-environment jsdom
  */
-// AI Summary: Comprehensive unit tests for ApplyAiOutputAction covering both processAiResponseContent and applyAiOutput functions.
-// Tests include command parsing, execution scenarios for single and aggregated commands, error handling, and clipboard operations with proper mocking.
 import { processAiResponseContent, applyAiOutput } from './ApplyAiOutputAction';
 import * as commands from '../commands';
 import { useApplyChangesStore } from '../stores/applyChangesStore';

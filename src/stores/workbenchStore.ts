@@ -1,7 +1,3 @@
-// AI Summary: Manages workbench state including multi-tab task descriptions and outputs.
-// Provides methods for tab management while maintaining backward compatibility with
-// single-tab legacy code. Core features: tab creation/removal, content management,
-// and active tab state tracking.
 import { create } from 'zustand';
 import { TaskTab, WorkbenchState } from '../types/global';
 import { SETTINGS } from '../utils/constants';

@@ -1,5 +1,3 @@
-// AI Summary: Comprehensive unit tests for tooltip generation functions in descriptions.ts.
-// Tests cover enabled/disabled states, various disable reasons, and edge cases for both task and action tooltips.
 import { getTaskTooltip, getActionTooltip } from './descriptions';
 import { ActionState } from './types';
 import { TaskData } from '../types/taskTypes';
