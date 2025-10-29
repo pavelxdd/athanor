@@ -41,7 +41,7 @@ Your goal is to SELECT which files from the provided `file_tree` you need to rea
 
 First, write down your reasoning in a detailed summary, mentioning all the files you plan to select.
 
-Then, provide the final list of files within a single `<ath command="select">` block. Use the project-relative path for each file.
+Then, provide the final list of files within a single `<ath command="select">` block, enclosed in Markdown code fences.
 
 <example>
 ```xml

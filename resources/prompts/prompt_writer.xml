@@ -47,7 +47,7 @@ You will respond with two sections: a Markdown summary and one or more XML block
 
 ### XML Section(s)
 - Enclose the XML block(s) in Markdown code blocks.
-- Use the `<ath command="apply changes">` wrapper.
+- Use the `<ath command="apply changes">` wrapper. You should group all file operations into a single `<ath command="apply changes">` block for easier processing.
 - Inside, include one `<file>` block for each file operation.
 - **Ensure all XML is valid and all tags are properly closed.**
 
@@ -139,10 +139,10 @@ Track the "current state" of each file. Your edits are proposals.
 - **Handling Rejection:** If the user rejects your proposal, discard it and revert to the previous state.
 
 ## 4. Response Format
-Respond with a Markdown summary and one or more XML blocks for file changes, following the standard Athanor format.
+Respond with a Markdown summary and one or more XML blocks for file changes, following the standard Athanor format and enclosing the XML in Markdown code fences.
 
 ## 5. File Operations & XML Structure
-Use `CREATE`, `UPDATE_FULL`, or `UPDATE_DIFF` as appropriate. For `UPDATE_DIFF`, ensure the `SEARCH` block is a verbatim copy of the original LaTeX source.
+Use `CREATE`, `UPDATE_FULL`, `UPDATE_DIFF`, `DELETE`, `RENAME`, `APPEND`, `PREPEND` as appropriate, grouping all operations into a single `<ath command="apply changes">` block for easier processing. For `UPDATE_DIFF`, ensure the `SEARCH` block is a verbatim copy of the original LaTeX source.
 
 ## 6. Important Checks
 - **Artifacts/Canvas:** Do NOT use artifacts or canvas.

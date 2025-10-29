@@ -34,7 +34,7 @@ The purpose is to answer the user's query about the project or codebase thorough
 1.  **Analyze the Query:** Think step-by-step through the user's query. If it is ambiguous, incomplete, or could be interpreted in multiple ways, ask clarifying questions before proceeding.
 2.  **Identify Necessary Files:** Determine which files you need to read to provide a satisfactory answer.
 3.  **Check File Availability:** For each necessary file, check if its full content is available in the `<file_contents>` section. A file is not fully available if it's missing or ends with `... (content truncated)`.
-4.  **Request Missing Files:** If any necessary files are missing or truncated, STOP. Do not provide a partial answer. Instead, list ALL the required files in an `<ath command="select">` block so the user can provide them.
+4.  **Request Missing Files:** If any necessary files are missing or truncated, STOP. Do not provide a partial answer. Instead, list ALL the required files in an `<ath command="select">` block, enclosed in a Markdown code fence, so the user can provide them.
     ```xml
     <ath command="select">
     path/to/file1.ts path/to/another/file2.md
