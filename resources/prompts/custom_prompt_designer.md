@@ -116,10 +116,11 @@ The primary commands are:
       <ath command="apply changes">
         <file>
           <file_message>Brief change description</file_message>
-          <file_operation>CREATE|UPDATE_FULL|UPDATE_DIFF|DELETE</file_operation>
-          <file_path>path/to/file</file_path>
+          <file_operation>CREATE|UPDATE_FULL|UPDATE_DIFF|DELETE|RENAME|APPEND|PREPEND</file_operation>
+          <file_path>path/to/file — The full, project-relative path to the file (the old path for `RENAME`)</file_path>
+          <file_path_new>path/to/file_new — The new project-relative path for the file (required for `RENAME` only)</file_path_new>
           <file_code><![CDATA[
-          [Full file content for CREATE/UPDATE_FULL, diff content for UPDATE_DIFF, or empty for DELETE]
+          [Full file content for CREATE/UPDATE_FULL, diff content for UPDATE_DIFF, new content for APPEND/PREPEND, or empty for DELETE/RENAME]
           ]]></file_code>
         </file>
         </ath>
@@ -129,6 +130,9 @@ The primary commands are:
       - `UPDATE_FULL`: Replaces the entire content of an existing file with the content in `<file_code>`.
       - `UPDATE_DIFF`: Applies a specific diff to an existing file. The `<file_code>` should contain diff hunks in a special format (e.g., `<<<<<<< SEARCH ... ======= ... >>>>>>> REPLACE`).
       - `DELETE`: Deletes the specified file. `<file_code>` should be empty or contain `<![CDATA[]]>`.
+      - `RENAME`: For renaming or moving files. The `<file_code>` block must be empty, and `<file_path_new>` must be provided.
+      - `APPEND`: Appends the content from `<file_code>` to the end of the specified file.
+      - `PREPEND`: Prepends the content from `<file_code>` to the beginning of the specified file.
 
 2.  **`<ath command="select"> ... </ath>`**:
 

@@ -54,8 +54,9 @@ You will respond with two sections: a Markdown summary and one or more XML block
 ## 4. File Operations & XML Structure
 Each `<file>` block must contain:
 - `<file_message>`: A brief summary of the changes for this file.
-- `<file_operation>`: `CREATE`, `UPDATE_FULL`, `UPDATE_DIFF`, or `DELETE`.
-- `<file_path>`: The full, project-relative path to the file.
+- `<file_operation>`: `CREATE`, `UPDATE_FULL`, `UPDATE_DIFF`, `DELETE`, `RENAME`, `APPEND`, `PREPEND`.
+- `<file_path>`: The full, project-relative path to the file (the old path for `RENAME`).
+- `<file_path_new>`: (Required for `RENAME` only) The new project-relative path for the file.
 - `<file_code>`: The content, wrapped in `<![CDATA[...]]>`.
 
 ### Choosing an Operation:
@@ -63,6 +64,9 @@ Each `<file>` block must contain:
 - **UPDATE_FULL**: For extensive rewrites. Provide the complete, final content.
 - **UPDATE_DIFF**: For smaller edits. Use the enhanced diff format below.
 - **DELETE**: For removing files. The `<file_code>` block must be empty.
+- **RENAME**: For renaming or moving files. The `<file_code>` block must be empty, and `<file_path_new>` must be provided.
+- **APPEND**: Appends the content from `<file_code>` to the end of the specified file.
+- **PREPEND**: Prepends the content from `<file_code>` to the beginning of the specified file.
 
 ### Enhanced Diff Format (for UPDATE_DIFF):
 ```xml
