@@ -372,7 +372,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                   }}
                   className="flex items-center px-2 py-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                   title="Create agent task file for AI assistants"
-                  disabled={isTaskEmpty}
                 >
                   <Bot className="w-4 h-4 mr-1" />
                   Task
@@ -585,7 +584,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                             : prompt.tooltip || prompt.label
                         }
                         onClick={async () => {
-                          if (isBusy || isTaskEmpty) return;
+                          if (isBusy) return;
                           await generatePrompt(prompt, variant);
                         }}
                         onContextMenu={(e) => {
@@ -597,7 +596,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                             y: e.clientY,
                           });
                         }}
-                        disabled={isBusy || isTaskEmpty}
+                        disabled={isBusy}
                         data-edge={getFloatingLabelPosition(prompt.id)}
                         data-prompt-id={prompt.id}
                         aria-label={prompt.label}

@@ -34,16 +34,9 @@ export function parseDiffBlocks(content: string): DiffBlock[] {
       throw new Error('Search block cannot be empty');
     }
 
-    let replaceContent = match[2];
-    // Consistently remove a single trailing newline from the replace block
-    // to prevent double newlines during file patching.
-    if (replaceContent.endsWith('\n')) {
-      replaceContent = replaceContent.slice(0, -1);
-    }
-
     blocks.push({
       search: match[1],
-      replace: replaceContent,
+      replace: match[2],
     });
   }
 
@@ -61,7 +54,7 @@ export function normalizeLineEndings(content: string): string {
   let normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   // Then replace non-breaking spaces with regular spaces
   normalized = normalized.replace(/\u00A0/g, ' ');
-  return removeInitialEmptyLine(normalized);
+  return normalized;
 }
 
 // Process file update based on operation type

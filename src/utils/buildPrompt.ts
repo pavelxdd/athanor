@@ -181,8 +181,8 @@ export async function buildDynamicPrompt(
   );
 
   // Format task context if non-empty
-  const formattedTaskContext = taskContext?.trim()
-    ? `\n<task_context>\n${taskContext.trim()}\n</task_context>`
+  const formattedTaskContext = taskContext
+    ? `\n<task_context>\n${taskContext}\n</task_context>`
     : '';
 
   // Sanitize and format the tab name
