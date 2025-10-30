@@ -70,12 +70,11 @@ Here are the primary variables you might use in a task template:
 - **`{{selected_files}}`**: A newline-separated list of the relative paths of all files currently selected by the user in the Athanor file explorer. (Example usage: `task_ai_summary.xml`)
 - **`{{selected_files_with_info}}`**: A newline-separated list of selected files, including their relative paths and line counts (e.g., `path/to/file.js (120 lines)`). (Example usage: `task_refactor_files.xml`, `task_unit_tests.xml`)
 - **`{{project_name}}`**: The name of the currently open Athanor project.
-- **`{{threshold_line_length}}`**: A number representing the configured line length threshold. This might be useful if your task description includes guidelines that refer to file length limits, which are then passed to an AI via a prompt (e.g., the `prompt_develop.xml` uses this, and a task feeding into it like `task_unit_tests.xml` might set up context for it).
 - **`{{task_description}}`**: The content of the "Task Description" field in the Athanor UI _before_ this task template is applied. This is useful if your custom task is designed to modify, append to, or wrap the existing task description. For most tasks that start a new thought, this might not be used or would be empty.
 - **`{{task_context}}`**: The content of the "Context" field in the Athanor UI _before_ this task template is applied. Similar to `{{task_description}}`, this can be used by tasks that build upon existing contextual information.
 
 **Advanced Usage & Other Variables:**
-Technically, because task variant content is processed via a system (`buildDynamicPrompt`) also used by prompt templates, other variables available to prompts (like `{{project_info}}`, `{{file_contents}}`, `{{file_tree}}`, `{{codebase_legend}}`) _could_ be used in a task template. However, this is less common. Task templates usually focus on generating a concise set of instructions or a specific request (which becomes the `{{task_description}}` for a prompt). The broader prompt template (e.g., "Coder," "Query") is then typically responsible for incorporating the richer context like full file contents or the file tree alongside the task description.
+Technically, because task variant content is processed via a system (`buildDynamicPrompt`) also used by prompt templates, other variables available to prompts (like `{{project_info}}`, `{{file_contents}}`, `{{file_tree}}`) _could_ be used in a task template. However, this is less common. Task templates usually focus on generating a concise set of instructions or a specific request (which becomes the `{{task_description}}` for a prompt). The broader prompt template (e.g., "Coder," "Query") is then typically responsible for incorporating the richer context like full file contents or the file tree alongside the task description.
 
 **Example of a simple task template variant content:**
 
@@ -407,7 +406,7 @@ Analyze and refactor the target file(s) to improve code organization and maintai
 
    - Examine code structure, dependencies, and patterns
    - Identify opportunities for:
-     - Splitting large files (>300 lines)
+     - Splitting large files
      - Merging related/duplicated functionality
      - Reorganizing code across files
      - Improving architectural boundaries
@@ -439,8 +438,7 @@ Analyze and refactor the target file(s) to improve code organization and maintai
 
    C. Splitting Criteria:
 
-   - Files over 300 lines are candidates for splitting
-   - Each resulting file should be 50+ lines
+   - Large files are candidates for splitting
    - Split along clear logical boundaries
    - Maintain cohesive functionality
    - Consider common design patterns

@@ -42,7 +42,6 @@ You MUST ensure the generated XML strictly adheres to the structure exemplified 
 {{file_contents}}
 </file_contents>
 {{file_tree}}
-{{codebase_legend}}
 {{supplementary_section}}
 </project>
 
@@ -89,17 +88,15 @@ Here are the primary variables available for use in your prompt templates:
 - `{{project_name}}`: The name of the currently open Athanor project. Often derived from the root folder name or specified in project settings.
 - `{{project_info}}`: General information about the project. This content is typically sourced from a `README.md`, `project.md`, or a user-specified file, and is wrapped in `<project_info>...</project_info>` tags by Athanor if automatically sourced.
 - `{{file_contents}}`: The actual content of the files selected by the user in the Athanor file explorer. This can include full file content or "smart previews" for non-selected or very large files, depending on user settings. Each file's content is typically formatted with a header indicating its path (e.g., `# path/to/file.js`) and enclosed in code blocks (e.g., `javascript ... `) or custom XML tags depending on the `formatType` setting.
-- `{{file_tree}}`: A textual representation of the project's directory structure, showing the hierarchy of files and folders. Selected items are often marked with an asterisk (`*`). This is enclosed in `<file_tree>...</file_tree>` tags.
+- `{{file_tree}}`: A textual representation of the project's directory structure, showing the hierarchy of files and folders. This is enclosed in `<file_tree>...</file_tree>` tags.
 - `{{task_description}}`: The main task or query input by the user into the "Task Description" field in the Athanor UI for the current task tab.
 - `{{task_context}}`: Ephemeral, user-provided context from the "Context" field in the Athanor UI for the current task tab. This is often used for specific instructions, partial commit messages, or other transient data related to the task. Athanor typically wraps this in `<task_context>...</task_context>` tags if it's not empty.
-- `{{codebase_legend}}`: A legend explaining symbols used in the `file_tree` or `file_contents` (e.g., `* = likely relevant file or folder for the current task`). This usually appears if files are selected.
 - `{{selected_files}}`: A newline-separated list of the relative paths of all files currently selected by the user.
 - `{{selected_files_with_info}}`: A newline-separated list of selected files, including their relative paths and line counts (e.g., `path/to/file.js (120 lines)`).
-- `{{threshold_line_length}}`: A number representing the configured line length threshold, which can be used in prompts that instruct an AI about file length limits (e.g., as seen in `prompt_develop.xml`). This value is sourced from application settings.
 - `{{supplementary_section}}`: A formatted section containing supplementary materials from the `.ath_materials` directory (if any files from that directory are selected). This section appears with its own header and is separate from the main file contents.
 
 **Usage:**
-You would typically include these within the relevant blocks of your `prompt_*.xml` file. For example, the standard `<project>` block uses `{{project_name}}`, `{{project_info}}`, `{{file_contents}}`, `{{file_tree}}`, and `{{codebase_legend}}`. The `{{task_description}}` and `{{task_context}}` variables are typically placed within the `<current_task><task_description>...</task_description></current_task>` element.
+You would typically include these within the relevant blocks of your `prompt_*.xml` file. For example, the standard `<project>` block uses `{{project_name}}`, `{{project_info}}`, `{{file_contents}}`, and `{{file_tree}}`. The `{{task_description}}` and `{{task_context}}` variables are typically placed within the `<current_task><task_description>...</task_description></current_task>` element.
 
 ### Athanor-Specific XML Commands (`<ath command="...">` for AI Responses)
 
@@ -297,7 +294,6 @@ tooltip="This prompt explains the structure of Athanor prompt files.">
 </file_contents>
 
 {{file_tree}}
-{{codebase_legend}}
 {{supplementary_section}}
 </project>
 
@@ -365,7 +361,6 @@ tooltip="This prompt explains the structure of Athanor prompt files.">
 > - `{{project_info}}`: General information about the project.
 > - `{{file_contents}}`: The content of selected files.
 > - `{{file_tree}}`: A textual representation of the project's directory structure.
-> - `{{codebase_legend}}`: Legend for symbols in file tree/contents.
 >   For most projects, the default `<project>` block provided above should be fine as is.
 >
 > ### 4. `<system_prompt>` Block:
@@ -417,7 +412,6 @@ tooltip="By default, plan a feature over multiple steps (commits)">
 </file_contents>
 
 {{file_tree}}
-{{codebase_legend}}
 {{supplementary_section}}
 </project>
 
@@ -554,7 +548,6 @@ tooltip="Use this to plan simple features or to give to strong coding models tha
 </file_contents>
 
 {{file_tree}}
-{{codebase_legend}}
 {{supplementary_section}}
 </project>
 
@@ -700,11 +693,12 @@ you think you should select
 
 Then, write the selected files in a code block as:
 
-```
-
+```xml
+<athanor>
 <ath command="select">
 file1 file2 [...]
 </ath>
+</athanor>
 ```
 
 Use the relative path of each file
@@ -741,7 +735,6 @@ tooltip="Default prompt to be used with any LLM coding assistant">
 </file_contents>
 
 {{file_tree}}
-{{codebase_legend}}
 {{supplementary_section}}
 </project>
 
@@ -766,7 +759,7 @@ You will respond with 2 sections: A summary section and one or more XML section(
 
 - Respond with the XML block(s) and nothing else
 - Include all of the changed files
-- Specify each file operation with CREATE, UPDATE_FULL, UPDATE_DIFF, or DELETE
+- Specify each file operation with CREATE, UPDATE_FULL, UPDATE_DIFF, DELETE, RENAME, APPEND, or PREPEND
 - Each file should include a brief change summary
 - Include the full file path
 - Put the XML block inside markdown codeblocks
@@ -775,9 +768,6 @@ You will respond with 2 sections: A summary section and one or more XML section(
   - By default use standard space characters (U+0020)
   - Avoid introducing non-breaking spaces (U+00A0) and other non-standard whitespace, unless there is a reason (e.g., within a string literal)
 - You can write multiple `file` blocks in the same `ath` command
-- **Only if the `ath` block is getting excessively long (> 400 lines):**
-  - When you close the `file` tag, also close the `ath` tag and close the XML block
-  - Start a new XML block with a new `ath` tag
 - **Ensure to write valid XML by opening and closing all tags as appropriate**
 
 ### File operations
@@ -868,7 +858,7 @@ Do NOT remove existing comments, unless they are wrong or misleading.
 
 ## File Length
 
-Files should be up to {{threshold_line_length}} lines max, unless there is a reason otherwise.
+Files should generally have reasonable length, unless there is a reason otherwise.
 
 ## Artifacts and Canvas
 
@@ -880,12 +870,7 @@ Check that the file contents of ALL files which you are planning to update
 (both for UPDATE_FULL and UPDATE_DIFF) are available in the `file_contents`
 section provided above.
 
-If a file content:
-
-- is not provided above
-- is only provided partially with `... (content truncated)`
-
-then it is NOT fully available.
+If a file content is not provided above, then it is NOT fully available.
 
 If you are missing the contents of a file that you are planning to update,
 you may be missing crucial information to write valid code!
@@ -980,19 +965,14 @@ Do NOT remove existing comments, unless they are wrong or misleading.
 
 ## File Length
 
-Files should be up to {{threshold_line_length}} lines max, unless there is a reason otherwise.
+Files should generally have reasonable length, unless there is a reason otherwise.
 
 ## File Contents Availability
 
 Check that the file contents of ALL files which you are planning to update are
 available in the `file_contents` section included below.
 
-If a file content:
-
-- is not provided below
-- is only provided partially with `... (content truncated)`
-
-then it is NOT fully available.
+If a file content is not provided below, then it is NOT fully available.
 
 If you are missing the contents of a file that you are planning to update,
 you may be missing crucial information to write valid code!
@@ -1012,7 +992,6 @@ instructing them to select the files from the Athanor file manager.
 </file_contents>
 
 {{file_tree}}
-{{codebase_legend}}
 {{supplementary_section}}
 </project>
 
@@ -1059,7 +1038,6 @@ tooltip="Default prompt to query the project">
 </file_contents>
 
 {{file_tree}}
-{{codebase_legend}}
 {{supplementary_section}}
 </project>
 
@@ -1083,18 +1061,18 @@ If you encounter conflicting information between different provided sources (e.g
 
 For each file, check carefully that the file contents are FULLY available in the included `file_contents` section.
 
-Specifically, for each file mark if it is available in full, truncated, or absent.
+Specifically, for each file mark if it is available in full, or absent.
 
-A truncated file ends with `... (content truncated)`.
-
-If a file is truncated or absent, tell the user.
-List ALL the truncated or absent files that you require.
+If a file is absent, tell the user.
+List ALL the absent files that you require.
 Write the required files in a code block as:
 
 ```xml
+<athanor>
 <ath command="select">
 file1 file2 [...]
 </ath>
+</athanor>
 ```
 
 Use the relative path of each file.
@@ -1120,11 +1098,11 @@ This summary should equip an experienced third party to understand the discussio
 
 - Think thoroughly about the query above
 - Determine which files are needed and list them
-- For each file, determine if they are available in full, truncated, or absent
+- For each file, determine if they are available in full, or absent
 - Then provide a detailed, informative response
 - Do not write code unless requested by the user
 - Quote specific files and snippets in code blocks
-- If files necessary to answer the query are truncated or absent, specify exactly which (additional) files you would need
+- If files necessary to answer the query are absent, specify exactly which (additional) files you would need
 - When reaching a conclusion, ask the user if they would like a summary
   </current_task>
   </ath_prompt_variant>

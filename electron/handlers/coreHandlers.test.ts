@@ -1074,46 +1074,9 @@ describe('setupCoreHandlers', () => {
       expect(mockSettingsService.getApplicationSettings).toHaveBeenCalled();
     });
 
-    it('should return null when no lastOpenedProjectPath in settings', async () => {
-      mockSettingsService.getApplicationSettings.mockResolvedValue({
-        // lastOpenedProjectPath is intentionally omitted for this test
-      });
-
-      const result = await handler(mockEvent);
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null when lastOpenedProjectPath directory does not exist', async () => {
-      mockSettingsService.getApplicationSettings.mockResolvedValue({
-        lastOpenedProjectPath: '/nonexistent/path',
-      });
-      mockFileService.exists.mockResolvedValue(false);
-
-      const result = await handler(mockEvent);
-
-      expect(result).toBeNull();
-      expect(mockFileService.exists).toHaveBeenCalledWith('/nonexistent/path');
-    });
-
-    it('should return null when lastOpenedProjectPath is not a directory', async () => {
-      mockSettingsService.getApplicationSettings.mockResolvedValue({
-        lastOpenedProjectPath: '/path/to/file.txt',
-      });
-      mockFileService.exists.mockResolvedValue(true);
-      mockFileService.isDirectory.mockResolvedValue(false);
-
-      const result = await handler(mockEvent);
-
-      expect(result).toBeNull();
-      expect(mockFileService.isDirectory).toHaveBeenCalledWith('/path/to/file.txt');
-    });
-
     it('should return null when directory does not contain .athignore', async () => {
       const projectPath = '/valid/project';
-      mockSettingsService.getApplicationSettings.mockResolvedValue({
-        lastOpenedProjectPath: projectPath,
-      });
+      mockSettingsService.getApplicationSettings.mockResolvedValue({});
       mockFileService.exists.mockImplementation((path) => {
         if (path === projectPath) return Promise.resolve(true);
         if (path === '/valid/project/.athignore') return Promise.resolve(false);
@@ -1130,9 +1093,7 @@ describe('setupCoreHandlers', () => {
 
     it('should return valid project path when all checks pass', async () => {
       const projectPath = '/valid/project';
-      mockSettingsService.getApplicationSettings.mockResolvedValue({
-        lastOpenedProjectPath: projectPath,
-      });
+      mockSettingsService.getApplicationSettings.mockResolvedValue({});
       mockFileService.exists.mockImplementation((path) => {
         if (path === projectPath) return Promise.resolve(true);
         if (path === '/valid/project/.athignore') return Promise.resolve(true);

@@ -21,7 +21,7 @@ Analyze and refactor the target file(s) to improve code organization and maintai
 1. Analysis Phase:
    - Examine code structure, dependencies, and patterns
    - Identify opportunities for:
-     * Splitting large files (>{{threshold_line_length}} lines)
+     * Splitting large files
      * Merging related/duplicated functionality
      * Reorganizing code across files
      * Improving architectural boundaries
@@ -50,8 +50,7 @@ Analyze and refactor the target file(s) to improve code organization and maintai
       - Preserve proper interfaces
 
    C. Splitting Criteria:
-      - Files over {{threshold_line_length}} lines are candidates for splitting
-      - Each resulting file should be 50+ lines
+      - Large files are candidates for splitting
       - Split along clear logical boundaries
       - Maintain cohesive functionality
       - Consider common design patterns

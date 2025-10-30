@@ -22,15 +22,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   const [enableSmartFeatures, setEnableSmartFeatures] = useState<boolean>(
     SETTINGS.defaults.application.enableSmartFeatures
   );
-  const [minSmartPreviewLines, setMinSmartPreviewLines] = useState<string>(
-    String(SETTINGS.defaults.application.minSmartPreviewLines)
-  );
-  const [maxSmartPreviewLines, setMaxSmartPreviewLines] = useState<string>(
-    String(SETTINGS.defaults.application.maxSmartPreviewLines)
-  );
-  const [thresholdLineLengthInput, setThresholdLineLengthInput] = useState<string>(
-    String(SETTINGS.defaults.application.thresholdLineLength)
-  );
   const [maxSmartContextTokens, setMaxSmartContextTokens] = useState<string>(
     String(SETTINGS.defaults.application.maxSmartContextTokens)
   );
@@ -51,27 +42,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
           applicationDefaults.enableSmartFeatures ??
           defaults.enableSmartFeatures
       );
-      setMinSmartPreviewLines(
-        String(
-          applicationSettings.minSmartPreviewLines ??
-            applicationDefaults.minSmartPreviewLines ??
-            defaults.minSmartPreviewLines
-        )
-      );
-      setMaxSmartPreviewLines(
-        String(
-          applicationSettings.maxSmartPreviewLines ??
-            applicationDefaults.maxSmartPreviewLines ??
-            defaults.maxSmartPreviewLines
-        )
-      );
-      setThresholdLineLengthInput(
-        String(
-          applicationSettings.thresholdLineLength ??
-            applicationDefaults.thresholdLineLength ??
-            defaults.thresholdLineLength
-        )
-      );
       setMaxSmartContextTokens(
         String(
           applicationSettings.maxSmartContextTokens ??
@@ -89,24 +59,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
       setEnableSmartFeatures(
         applicationDefaults.enableSmartFeatures ??
           defaults.enableSmartFeatures
-      );
-      setMinSmartPreviewLines(
-        String(
-          applicationDefaults.minSmartPreviewLines ??
-            defaults.minSmartPreviewLines
-        )
-      );
-      setMaxSmartPreviewLines(
-        String(
-          applicationDefaults.maxSmartPreviewLines ??
-            defaults.maxSmartPreviewLines
-        )
-      );
-      setThresholdLineLengthInput(
-        String(
-          applicationDefaults.thresholdLineLength ??
-            defaults.thresholdLineLength
-        )
       );
       setMaxSmartContextTokens(
         String(
@@ -163,41 +115,18 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
 
   // Application save button handler
   const handleSaveApplicationSettings = () => {
-    const minValue = parseInt(minSmartPreviewLines, 10);
-    const maxValue = parseInt(maxSmartPreviewLines, 10);
-    const thresholdValue = parseInt(thresholdLineLengthInput, 10);
     const tokenLimitValue = parseInt(maxSmartContextTokens, 10);
 
     // Validate and apply defaults/limits
     const defaults = SETTINGS.defaults.application;
-    const validatedMin =
-      isNaN(minValue) || minValue < 1
-        ? defaults.minSmartPreviewLines
-        : Math.min(minValue, 200);
-    const validatedMax =
-      isNaN(maxValue) || maxValue < 1
-        ? defaults.maxSmartPreviewLines
-        : Math.min(maxValue, 200);
-    const validatedThreshold =
-      isNaN(thresholdValue) || thresholdValue < 50
-        ? (applicationDefaults.thresholdLineLength ??
-          defaults.thresholdLineLength)
-        : Math.min(thresholdValue, 2000);
     const validatedTokenLimit =
       isNaN(tokenLimitValue) || tokenLimitValue < 0
         ? (applicationDefaults.maxSmartContextTokens ??
           defaults.maxSmartContextTokens)
         : Math.min(tokenLimitValue, 100000);
 
-    // Ensure max >= min
-    const finalMin = validatedMin;
-    const finalMax = Math.max(validatedMax, validatedMin);
-
     saveApplicationSettingsCallback({
       enableSmartFeatures,
-      minSmartPreviewLines: finalMin,
-      maxSmartPreviewLines: finalMax,
-      thresholdLineLength: validatedThreshold,
       maxSmartContextTokens: validatedTokenLimit,
       uiTheme,
     });
@@ -210,24 +139,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
       (applicationSettings?.enableSmartFeatures ??
         applicationDefaults.enableSmartFeatures ??
         defaults.enableSmartFeatures) ||
-    minSmartPreviewLines !==
-      String(
-        applicationSettings?.minSmartPreviewLines ??
-          applicationDefaults.minSmartPreviewLines ??
-          defaults.minSmartPreviewLines
-      ) ||
-    maxSmartPreviewLines !==
-      String(
-        applicationSettings?.maxSmartPreviewLines ??
-          applicationDefaults.maxSmartPreviewLines ??
-          defaults.maxSmartPreviewLines
-      ) ||
-    thresholdLineLengthInput !==
-      String(
-        applicationSettings?.thresholdLineLength ??
-          applicationDefaults.thresholdLineLength ??
-          defaults.thresholdLineLength
-      ) ||
     uiTheme !==
       (applicationSettings?.uiTheme ??
         applicationDefaults.uiTheme ??
@@ -238,103 +149,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
           applicationDefaults.maxSmartContextTokens ??
           defaults.maxSmartContextTokens
       );
-
-  const handleMinSmartPreviewLinesChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = e.target.value;
-    // Allow only numeric input
-    if (/^\d*$/.test(value) && value.length <= 3) {
-      setMinSmartPreviewLines(value);
-    }
-  };
-
-  const handleMinSmartPreviewLinesBlur = (
-    e: React.FocusEvent<HTMLInputElement>
-  ) => {
-    const value = e.target.value.trim();
-    const numericValue = parseInt(value, 10);
-
-    // Validate and clamp the value
-    if (isNaN(numericValue) || numericValue < 1) {
-      setMinSmartPreviewLines(
-        String(SETTINGS.defaults.application.minSmartPreviewLines)
-      ); // Reset to default
-    } else if (numericValue > 200) {
-      setMinSmartPreviewLines('200'); // Max value
-    } else {
-      setMinSmartPreviewLines(String(numericValue));
-      // Ensure max is at least equal to min
-      const currentMax = parseInt(maxSmartPreviewLines, 10);
-      if (!isNaN(currentMax) && currentMax < numericValue) {
-        setMaxSmartPreviewLines(String(numericValue));
-      }
-    }
-  };
-
-  const handleMaxSmartPreviewLinesChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = e.target.value;
-    // Allow only numeric input
-    if (/^\d*$/.test(value) && value.length <= 3) {
-      setMaxSmartPreviewLines(value);
-    }
-  };
-
-  const handleMaxSmartPreviewLinesBlur = (
-    e: React.FocusEvent<HTMLInputElement>
-  ) => {
-    const value = e.target.value.trim();
-    const numericValue = parseInt(value, 10);
-
-    // Validate and clamp the value
-    if (isNaN(numericValue) || numericValue < 1) {
-      setMaxSmartPreviewLines(
-        String(SETTINGS.defaults.application.maxSmartPreviewLines)
-      ); // Reset to default
-    } else if (numericValue > 200) {
-      setMaxSmartPreviewLines('200'); // Max value
-    } else {
-      // Ensure max is at least equal to min
-      const currentMin = parseInt(minSmartPreviewLines, 10);
-      const finalMax = !isNaN(currentMin)
-        ? Math.max(numericValue, currentMin)
-        : numericValue;
-      setMaxSmartPreviewLines(String(finalMax));
-    }
-  };
-
-  const handleThresholdLineLengthChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = e.target.value;
-    // Allow only numeric input
-    if (/^\d*$/.test(value) && value.length <= 4) {
-      setThresholdLineLengthInput(value);
-    }
-  };
-
-  const handleThresholdLineLengthBlur = (
-    e: React.FocusEvent<HTMLInputElement>
-  ) => {
-    const value = e.target.value.trim();
-    const numericValue = parseInt(value, 10);
-
-    // Validate and clamp the value
-    if (isNaN(numericValue) || numericValue < 50) {
-      setThresholdLineLengthInput(
-        String(
-          applicationDefaults.thresholdLineLength ??
-            SETTINGS.defaults.application.thresholdLineLength
-        )
-      ); // Reset to default
-    } else if (numericValue > 2000) {
-      setThresholdLineLengthInput('2000'); // Max value
-    } else {
-      setThresholdLineLengthInput(String(numericValue));
-    }
-  };
 
   const handleMaxSmartContextTokensChange = (
     e: React.ChangeEvent<HTMLInputElement>
@@ -453,98 +267,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
                     }
                     className="h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded disabled:opacity-50"
                   />
-                </div>
-              </div>
-
-              {/* Smart Preview Lines Range */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Smart Preview Lines Range
-                  </label>
-                  <div
-                    className="relative group"
-                    title="Range of lines to show in smart preview mode. Min: 1-200, Max: 1-200 (must be >= min)."
-                  >
-                    <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center space-x-2">
-                    <label
-                      htmlFor="minSmartPreviewLines"
-                      className="text-sm text-gray-600 dark:text-gray-300"
-                    >
-                      Min:
-                    </label>
-                    <input
-                      id="minSmartPreviewLines"
-                      type="text"
-                      value={minSmartPreviewLines}
-                      onChange={handleMinSmartPreviewLinesChange}
-                      onBlur={handleMinSmartPreviewLinesBlur}
-                      placeholder="10"
-                      className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
-                      disabled={
-                        isLoadingApplicationSettings || isSavingApplication
-                      }
-                    />
-                  </div>
-                  <span className="text-gray-400 dark:text-gray-500">–</span>
-                  <div className="flex items-center space-x-2">
-                    <label
-                      htmlFor="maxSmartPreviewLines"
-                      className="text-sm text-gray-600 dark:text-gray-300"
-                    >
-                      Max:
-                    </label>
-                    <input
-                      id="maxSmartPreviewLines"
-                      type="text"
-                      value={maxSmartPreviewLines}
-                      onChange={handleMaxSmartPreviewLinesChange}
-                      onBlur={handleMaxSmartPreviewLinesBlur}
-                      placeholder="20"
-                      className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
-                      disabled={
-                        isLoadingApplicationSettings || isSavingApplication
-                      }
-                    />
-                  </div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">lines</span>
-                </div>
-              </div>
-
-              {/* Threshold Line Length */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <label
-                    htmlFor="thresholdLineLength"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    File Size Threshold
-                  </label>
-                  <div
-                    className="relative group"
-                    title="File size (number of lines) after which a file is considered large for warnings or special handling (50-2000). Default: 200."
-                  >
-                    <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="thresholdLineLength"
-                    type="text"
-                    value={thresholdLineLengthInput}
-                    onChange={handleThresholdLineLengthChange}
-                    onBlur={handleThresholdLineLengthBlur}
-                    placeholder="200"
-                    className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
-                    disabled={
-                      isLoadingApplicationSettings || isSavingApplication
-                    }
-                  />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">lines</span>
                 </div>
               </div>
 

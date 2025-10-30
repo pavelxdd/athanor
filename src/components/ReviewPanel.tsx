@@ -21,7 +21,6 @@ import { useFileSystemStore } from '../stores/fileSystemStore';
 import { useWorkbenchStore } from '../stores/workbenchStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useLogStore } from '../stores/logStore';
-import { getSmartPreview } from '../utils/codebaseDocumentation';
 import { SETTINGS } from '../utils/constants';
 
 const DIFF_MERGE_THRESHOLD = 2; // Diffs separated by 2 or fewer context lines are merged
@@ -222,7 +221,6 @@ const FileOperationItem = React.forwardRef<
     },
     ref
   ) => {
-    const [showWarning, setShowWarning] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
     const [previewContent, setPreviewContent] = useState<string | null>(null);
     const { tabs, activeTabIndex } = useWorkbenchStore();
@@ -284,73 +282,6 @@ const FileOperationItem = React.forwardRef<
       }
     }, [op, index, addLog, setOperationError]);
 
-    useEffect(() => {
-      const checkWarning = async () => {
-        try {
-          // Only show warnings in AI mode - Git mode doesn't need file selection warnings
-          if (mode !== 'ai') {
-            setShowWarning(false);
-            return;
-          }
-
-          // If the file is being created, no warning needed
-          if (
-            !op.file_path ||
-            op.file_path.trim() === '' ||
-            op.file_operation === 'CREATE'
-          ) {
-            setShowWarning(false);
-            return;
-          }
-
-          // Check if the file is selected in the active tab
-          const activeTab = tabs[activeTabIndex];
-          const selectedFiles = activeTab?.selectedFiles || [];
-          const isSelected = selectedFiles.some((itemId) =>
-            itemId.endsWith(op.file_path)
-          );
-          if (isSelected) {
-            setShowWarning(false);
-            return;
-          }
-
-          // Check file content - if preview is truncated, it means it's too long
-          const content = await window.fileSystem.readFile(op.file_path, {
-            encoding: 'utf8',
-          });
-          if (typeof content !== 'string') {
-            setShowWarning(false);
-            return;
-          }
-
-          // Get smart preview configuration from settings with fallback to defaults
-          const config = {
-            minLines:
-              applicationSettings?.minSmartPreviewLines ??
-              SETTINGS.defaults.application.minSmartPreviewLines,
-            maxLines:
-              applicationSettings?.maxSmartPreviewLines ??
-              SETTINGS.defaults.application.maxSmartPreviewLines,
-          };
-
-          const preview = getSmartPreview(content, config);
-          setShowWarning(preview.endsWith('... (content truncated)'));
-        } catch (error) {
-          console.error('Error checking file status:', error);
-          setShowWarning(false);
-        }
-      };
-
-      void checkWarning();
-    }, [
-      op.file_path,
-      op.file_operation,
-      tabs,
-      activeTabIndex,
-      applicationSettings,
-      mode,
-    ]);
-
     return (
       <div
         ref={ref}
@@ -366,14 +297,6 @@ const FileOperationItem = React.forwardRef<
               <p className="font-semibold break-all text-gray-900 dark:text-gray-100">
                 {op.file_path}
               </p>
-              {showWarning && (
-                <div
-                  className="text-amber-500 dark:text-amber-400 flex-shrink-0"
-                  title="This file is not currently in focus (checkbox marked). The AI might not have had access to its full content."
-                >
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
-              )}
             </div>
             {op.file_message && (
               <p className="text-sm text-gray-500 dark:text-gray-400 break-words">

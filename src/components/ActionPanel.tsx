@@ -143,8 +143,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   };
 
   const {
-    smartPreviewEnabled,
-    toggleSmartPreview,
     includeFileTree,
     toggleFileTree,
     formatType,
@@ -196,20 +194,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
       const activeTab = tabs[activeTabIndex];
       const selectedFiles = activeTab?.selectedFiles || [];
 
-      // Get smart preview configuration and threshold line length from application settings
-      const appDefaults = SETTINGS.defaults.application;
-      const smartPreviewConfig = {
-        minLines:
-          applicationSettings?.minSmartPreviewLines ??
-          appDefaults.minSmartPreviewLines,
-        maxLines:
-          applicationSettings?.maxSmartPreviewLines ??
-          appDefaults.maxSmartPreviewLines,
-      };
-      const currentThresholdLineLength =
-        applicationSettings?.thresholdLineLength ??
-        appDefaults.thresholdLineLength;
-
       const result = await buildDynamicPrompt(
         prompt,
         variant,
@@ -220,9 +204,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
         tabs[activeTabIndex].content, // Current tab's content
         tabs[activeTabIndex].context, // Current tab's context
         activeTab.name, // Pass the active tab's name
-        formatType, // Pass the current format type
-        smartPreviewConfig, // Pass the smart preview configuration from settings
-        currentThresholdLineLength // Pass the current threshold line length
+        formatType // Pass the current format type
       );
       setTabOutput(activeTabIndex, result);
       addLog(`Generated ${prompt.label} prompt`);
@@ -490,21 +472,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={toggleSmartPreview}
-                      className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                      title={
-                        smartPreviewEnabled
-                          ? 'Smart Preview: ON (click to disable)'
-                          : 'Smart Preview: OFF (click to enable)'
-                      }
-                    >
-                      {smartPreviewEnabled ? (
-                        <Eye size={20} className="text-blue-600" />
-                      ) : (
-                        <EyeOff size={20} className="text-gray-600" />
-                      )}
-                    </button>
-                    <button
                       onClick={toggleFileTree}
                       className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                       title={
@@ -648,9 +615,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                             selectedItems: selectedItemsSet,
                             addLog,
                             setIsLoading,
-                            currentThresholdLineLength:
-                              applicationSettings?.thresholdLineLength ??
-                              SETTINGS.defaults.application.thresholdLineLength,
                           });
                         }}
                         disabled={isDisabled}

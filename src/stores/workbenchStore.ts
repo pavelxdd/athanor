@@ -228,22 +228,6 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
     resetGeneratingPrompt: () => {
       set({ isGeneratingPrompt: false });
     },
-
-    // Get smart preview config for prompt generation
-    getSmartPreviewConfig: () => {
-      // Import settingsStore dynamically to avoid circular dependencies
-      const { useSettingsStore } = require('./settingsStore');
-      const { applicationSettings } = useSettingsStore.getState();
-
-      return {
-        minLines:
-          applicationSettings?.minSmartPreviewLines ??
-          SETTINGS.defaults.application.minSmartPreviewLines,
-        maxLines:
-          applicationSettings?.maxSmartPreviewLines ??
-          SETTINGS.defaults.application.maxSmartPreviewLines,
-      };
-    },
   };
 
   return store;

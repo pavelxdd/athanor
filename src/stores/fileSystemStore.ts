@@ -16,10 +16,6 @@ interface FileSystemState {
   previewedFilePath: string | null;
   setPreviewedFilePath: (path: string | null) => void;
 
-  // Smart preview setting
-  smartPreviewEnabled: boolean;
-  toggleSmartPreview: () => void;
-  
   // File tree inclusion setting
   includeFileTree: boolean;
   toggleFileTree: () => void;
@@ -63,20 +59,12 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
       effectiveConfig: null,
 
       // New defaults for prompt generation settings
-      smartPreviewEnabled: false,
       includeFileTree: false,
       includeProjectInfo: false,
       formatType: DOC_FORMAT.MARKDOWN,
       isGraphAnalysisInProgress: false,
     });
   },
-
-  // Smart preview setting (true = include non-selected files with truncated preview)
-  smartPreviewEnabled: false,
-  toggleSmartPreview: () =>
-    set((state) => ({
-      smartPreviewEnabled: !state.smartPreviewEnabled,
-    })),
 
   // File tree inclusion setting (true = include file tree in generated prompt)
   includeFileTree: false,

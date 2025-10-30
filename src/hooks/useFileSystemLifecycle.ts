@@ -196,7 +196,6 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
 
         const newSettings: ApplicationSettings = {
           ...currentSettings,
-          lastOpenedProjectPath: newPath,
           recentProjectPaths: newRecentPaths,
         };
 

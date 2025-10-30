@@ -16,13 +16,10 @@ export interface PromptVariables {
   file_contents?: string;
   file_tree?: string;
   task_description?: string;
-  codebase_legend?: string;
   selected_files?: string;
   selected_files_with_info?: string;
   task_context?: string;
   task_tab_name?: string;
-  threshold_line_length?: number;
-
   supplementary_section?: string;
 }
 
@@ -99,11 +96,6 @@ function getSelectedFilesList(
   return filesList.join('\n');
 }
 
-// Check if any files are selected
-function hasSelectedFiles(selectedFiles: string[]): boolean {
-  return selectedFiles.length > 0;
-}
-
 // Build a dynamic prompt using prompt data and variant
 export async function buildDynamicPrompt(
   prompt: PromptData,
@@ -115,9 +107,7 @@ export async function buildDynamicPrompt(
   taskDescription: string = '',
   taskContext: string = '',
   activeTabName: string,
-  passedFormatTypeOverride?: string,
-  smartPreviewConfigInput?: { minLines: number; maxLines: number },
-  currentThresholdLineLength?: number
+  passedFormatTypeOverride?: string
 ): Promise<string> {
   // Get the store settings and effective configuration
   const {
@@ -125,29 +115,11 @@ export async function buildDynamicPrompt(
     formatType: storeFormatType,
     includeProjectInfo,
     effectiveConfig,
-    smartPreviewEnabled,
   } = useFileSystemStore.getState();
-
-  // Handle smartPreviewConfig with centralized defaults and warning
-  let smartPreviewConfig = smartPreviewConfigInput;
-  if (!smartPreviewConfig) {
-    console.warn(
-      'AthanorApp: buildDynamicPrompt did not receive smartPreviewConfig. Using default values from constants.ts.'
-    );
-    smartPreviewConfig = {
-      minLines: SETTINGS.defaults.application.minSmartPreviewLines,
-      maxLines: SETTINGS.defaults.application.maxSmartPreviewLines,
-    };
-  }
 
   // Determine the actual format type to use for documentation
   const actualFormatType =
     passedFormatTypeOverride || storeFormatType || DOC_FORMAT.DEFAULT;
-
-  // Determine the active threshold line length to use
-  const activeThresholdLineLength =
-    currentThresholdLineLength ??
-    SETTINGS.defaults.application.thresholdLineLength;
 
   // Use effective config from store, with fallback for safety
   let config: AthanorConfig;
@@ -159,8 +131,6 @@ export async function buildDynamicPrompt(
     const { readAthanorConfig } = await import('./configUtils');
     config = await readAthanorConfig(rootPath);
   }
-
-
 
   // Prepare project info with source file path if available
   let projectInfoForPrompt = '';
@@ -194,12 +164,8 @@ export async function buildDynamicPrompt(
     neighboringItemsSet,
     supplementaryItemsSet,
     rootPath,
-    config,
-    actualFormatType, // Use the derived actualFormatType
-    config.project_info_path, // Pass project_info_path to avoid duplication
-    smartPreviewConfig,
-    activeThresholdLineLength, // Pass the active threshold
-    smartPreviewEnabled
+    actualFormatType,
+    config.project_info_path
   );
 
   // Format task context if non-empty
@@ -239,11 +205,6 @@ export async function buildDynamicPrompt(
       selectedFiles,
       rootPath
     ),
-    codebase_legend: hasSelectedFiles(selectedFiles)
-      ? '## Legend\n\n* = likely relevant file or folder for the current task'
-      : '',
-    threshold_line_length: activeThresholdLineLength,
-
     supplementary_section: supplementarySection,
     ...codebaseContent, // Contains file_contents and modified file_tree
   };

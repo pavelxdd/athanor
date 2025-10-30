@@ -50,10 +50,6 @@ const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
   const isDarkMode = useDarkMode();
   const checkboxRef = React.useRef<HTMLInputElement>(null);
 
-  const appDefaults = SETTINGS.defaults.application;
-  const currentThresholdLineLength =
-    applicationSettings?.thresholdLineLength ?? appDefaults.thresholdLineLength;
-
   // Determine the context tier for visual styling
   const isContextSelected = contextSelected.has(item.id);
   const isHeuristicSeed = heuristicSeedFiles.some(seed => seed.path === item.id);
@@ -78,10 +74,6 @@ const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
   );
   const isEmpty = isEmptyFolder(item);
   const isCurrentlyViewed = item.path === previewedFilePath;
-  const isLongFile =
-    item.type === 'file' &&
-    item.lineCount &&
-    item.lineCount > currentThresholdLineLength; // Use dynamic threshold
 
   // Handle checkbox indeterminate state
   React.useEffect(() => {
@@ -260,16 +252,6 @@ const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
             {displayName}
             {item.type === 'folder' ? '/' : ''}
           </span>
-
-          {/* Scissors icon for long files */}
-          {isLongFile && (
-            <div
-              className="ml-2 text-gray-500 dark:text-gray-400"
-              title={`File has ${item.lineCount} lines (threshold: ${currentThresholdLineLength})`} // Use dynamic threshold
-            >
-              <Scissors size={14} />
-            </div>
-          )}
         </div>
       </div>
 

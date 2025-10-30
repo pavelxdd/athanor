@@ -11,7 +11,6 @@ export interface BuildTaskActionParams {
   selectedItems: Set<string>;
   addLog: (message: string) => void;
   setIsLoading: (loading: boolean) => void;
-  currentThresholdLineLength: number;
 }
 
 export async function buildTaskAction(params: BuildTaskActionParams): Promise<void> {
@@ -20,8 +19,7 @@ export async function buildTaskAction(params: BuildTaskActionParams): Promise<vo
     rootItems,
     selectedItems,
     addLog,
-    setIsLoading,
-    currentThresholdLineLength,
+    setIsLoading
   } = params;
 
   if (!rootItems.length) {
@@ -71,9 +69,7 @@ export async function buildTaskAction(params: BuildTaskActionParams): Promise<vo
       activeTab.content,
       activeTab.context,
       activeTab.name,
-      undefined, // passedFormatTypeOverride
-      undefined, // smartPreviewConfigInput
-      currentThresholdLineLength
+      undefined // passedFormatTypeOverride
     );
 
     // Update task description in workbench

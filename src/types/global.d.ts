@@ -23,14 +23,9 @@ export interface ProjectSettings {
 export interface ApplicationSettings {
   // Example application settings for demonstration
   enableSmartFeatures?: boolean;
-  minSmartPreviewLines?: number;
-  maxSmartPreviewLines?: number;
-  thresholdLineLength?: number;
   maxSmartContextTokens?: number;
-  lastOpenedProjectPath?: string | null;
   recentProjectPaths?: string[];
   uiTheme?: string;
-  fileViewerWrapEnabled?: boolean;
 
   // Window state for implicit persistence
   windowState?: {
@@ -432,9 +427,7 @@ export interface AthanorConfig {
   project_info?: string;
   project_info_path?: string; // Path to the file from which project_info was loaded
   system_prompt?: string;
-  documentation?: {
-    includeNonSelected?: boolean;
-  };
+  documentation?: {};
 }
 
 // File system store interface

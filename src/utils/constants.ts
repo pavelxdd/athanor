@@ -41,14 +41,9 @@ export const SETTINGS = {
     },
     application: {
       enableSmartFeatures: false,
-      minSmartPreviewLines: 10,
-      maxSmartPreviewLines: 20,
-      thresholdLineLength: 200,
       maxSmartContextTokens: 10000,
-      lastOpenedProjectPath: undefined,
       recentProjectPaths: [],
       uiTheme: 'Auto',
-      fileViewerWrapEnabled: false,
     },
   },
 };

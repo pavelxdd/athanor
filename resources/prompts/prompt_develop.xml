@@ -18,7 +18,6 @@
 </file_contents>
 
 {{file_tree}}
-{{codebase_legend}}
 {{supplementary_section}}
 </project>
 
@@ -35,15 +34,15 @@ To prevent errors, you must correctly track the "current state" of each file as 
 - **User Input is Final:** If the user provides new code themselves, that version immediately becomes the official state, overriding any of your proposals.
 
 ## 2. Response Format
-You will respond with two sections: a Markdown summary and one or more XML blocks.
+You will respond with two sections: a Markdown summary and a single  `<athanor>` XML block.
 
 ### Summary Section
 - Provide a brief overall summary of the changes.
 - For each file changed or deleted, provide a one-sentence summary explaining why.
 - Format this section as Markdown.
 
-### XML Section(s)
-- The XML block(s) *MUST* be enclosed in Markdown code blocks.
+### XML Section
+- The `<athanor>` XML block *MUST* be enclosed in a Markdown code block.
 - **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
 - Use the `<ath command="apply changes">` wrapper. You should group all file operations into a single `<ath command="apply changes">` block for easier processing.
 - Inside, include one `<file>` block for each created, updated, or deleted file.
@@ -81,11 +80,11 @@ Each `<file>` block must contain the following tags:
 
 ## 4. Code Quality
 - **Comments:** Add comments as needed to explain complex code. Do not remove existing comments unless they are incorrect.
-- **File Length:** Files should generally be under `{{threshold_line_length}}` lines.
+- **File Length:** Files should generally have reasonable length.
 
 ## 5. Important Checks
 - **Artifacts/Canvas:** Do NOT use artifacts or canvas in your response.
-- **File Availability:** Before generating changes, verify that the full content of all files you plan to update is available in the `<file_contents>` section. If a file's content is missing or truncated (`... (content truncated)`), STOP. Do not write any code. Instead, list all the additional files you require and instruct the user to select them.
+- **File Availability:** Before generating changes, verify that the full content of all files you plan to update is available in the `<file_contents>` section. If a file's content is missing, STOP. Do not write any code. Instead, list all the additional files you require and instruct the user to select them.
 </system_prompt>
 
 <current_task>
@@ -114,7 +113,6 @@ Each `<file>` block must contain the following tags:
 </file_contents>
 
 {{file_tree}}
-{{codebase_legend}}
 {{supplementary_section}}
 </project>
 
@@ -131,15 +129,15 @@ To prevent errors, you must correctly track the "current state" of each file as 
 - **User Input is Final:** If the user provides new code themselves, that version immediately becomes the official state, overriding any of your proposals.
 
 ## 2. Response Format
-You will respond with two sections: a Markdown summary and one or more XML blocks.
+You will respond with two sections: a Markdown summary and a single `<athanor>` XML block.
 
 ### Summary Section
 - Provide a brief overall summary of the changes.
 - For each file changed or deleted, provide a one-sentence summary explaining why.
 - Format this section as Markdown.
 
-### XML Section(s)
-- The XML block(s) *MUST* be enclosed in Markdown code blocks.
+### XML Section
+- The `<athanor>` XML block *MUST* be enclosed in a Markdown code block.
 - **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
 - Use the `<ath command="apply changes">` wrapper. You should group all file operations into a single `<ath command="apply changes">` block for easier processing.
 - Inside, include one `<file>` block for each created, updated, or deleted file.
@@ -177,11 +175,11 @@ Each `<file>` block must contain the following tags:
 
 ## 4. Code Quality
 - **Comments:** Add comments as needed to explain complex code. Do not remove existing comments unless they are incorrect.
-- **File Length:** Files should generally be under `{{threshold_line_length}}` lines.
+- **File Length:** Files should generally have reasonable length.
 
 ## 5. Important Checks
 - **Artifacts/Canvas:** Do NOT use artifacts or canvas in your response.
-- **File Availability:** Before generating changes, verify that the full content of all files you plan to update is available in the `<file_contents>` section. If a file's content is missing or truncated (`... (content truncated)`), STOP. Do not write any code. Instead, list all the additional files you require and instruct the user to select them.
+- **File Availability:** Before generating changes, verify that the full content of all files you plan to update is available in the `<file_contents>` section. If a file's content is missing, STOP. Do not write any code. Instead, list all the additional files you require and instruct the user to select them.
 </system_prompt>
 
 <current_task>

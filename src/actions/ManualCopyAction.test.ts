@@ -61,7 +61,6 @@ describe('ManualCopyAction', () => {
     // Default mock implementations
     (useFileSystemStore.getState as jest.Mock).mockReturnValue({
       fileTree: [],
-      smartPreviewEnabled: true,
       formatType: DOC_FORMAT.XML,
     });
 
@@ -290,7 +289,6 @@ describe('ManualCopyAction', () => {
         new Set(), // neighboringFiles - manual copy has none
         new Set(), // supplementaryFiles - manual copy has none
         '/project/root',
-        null, // config
         DOC_FORMAT.XML // formatType from store
       );
       expect(mockClipboardWriteText).toHaveBeenCalledWith('mocked file contents\nwith multiple lines');
@@ -298,10 +296,9 @@ describe('ManualCopyAction', () => {
       expect(mockAddLog).toHaveBeenCalledWith('Copied 2 files to clipboard (~150 tokens)');
     });
 
-    it('should always exclude non-selected files regardless of smartPreviewEnabled setting', async () => {
+    it('should always exclude non-selected files', async () => {
       (useFileSystemStore.getState as jest.Mock).mockReturnValue({
         fileTree: [{ id: '1', name: 'test', type: 'file' }],
-        smartPreviewEnabled: true, // Even when smart preview is enabled
         formatType: DOC_FORMAT.MARKDOWN,
       });
 
@@ -332,7 +329,6 @@ describe('ManualCopyAction', () => {
         new Set(), // neighboringFiles - manual copy has none
         new Set(), // supplementaryFiles - manual copy has none
         '/project',
-        null, // config
         DOC_FORMAT.MARKDOWN // formatType = MARKDOWN
       );
     });

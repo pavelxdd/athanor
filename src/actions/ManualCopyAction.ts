@@ -3,7 +3,6 @@ import { formatSingleFile } from '../utils/codebaseDocumentation';
 import { useFileSystemStore } from '../stores/fileSystemStore';
 import { useWorkbenchStore } from '../stores/workbenchStore';
 import { generateCodebaseDocumentation } from '../utils/codebaseDocumentation';
-import { DOC_FORMAT } from '../utils/constants';
 
 export interface CopyParams {
   content: string;
@@ -57,7 +56,6 @@ export async function copySelectedFilesContent(
       new Set<string>(), // No neighboring files in a direct copy action
       new Set<string>(), // No supplementary files in a direct copy action
       rootPath,
-      null, // config
       formatType // Use the format preference from the store
     );
 

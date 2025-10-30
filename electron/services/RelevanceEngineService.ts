@@ -18,38 +18,6 @@ function countTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-function getSmartPreview(
-  content: string,
-  config: { minLines: number; maxLines: number }
-): string {
-  const lines = content.split('\n');
-
-  if (lines.length <= config.maxLines) {
-    return content;
-  }
-
-  let endLine = config.minLines;
-  let emptyLinesCount = lines
-    .slice(0, config.minLines)
-    .filter((line) => line.trim() === '').length;
-
-  if (emptyLinesCount < 2 && lines.length > config.minLines) {
-    for (
-      let i = config.minLines;
-      i < Math.min(lines.length, config.maxLines);
-      i++
-    ) {
-      if (lines[i].trim() === '') {
-        endLine = i + 1;
-        break;
-      }
-      endLine = i + 1;
-    }
-  }
-
-  return lines.slice(0, endLine).join('\n') + '\n... (content truncated)';
-}
-
 interface ContextResult {
   userSelected: string[];
   heuristicSeedFiles: Array<{ path: string; score: number }>;
@@ -382,21 +350,13 @@ export class RelevanceEngineService {
 
     const promptNeighbors: string[] = [];
     let currentTokens = 0;
-    const smartPreviewConfig = {
-      minLines: SETTINGS.defaults.application.minSmartPreviewLines,
-      maxLines: SETTINGS.defaults.application.maxSmartPreviewLines,
-    };
 
     for (const [filePath] of sortedNeighbors) {
       try {
         const content = (await this.fileService.read(filePath, {
           encoding: 'utf-8',
         })) as string;
-        const preview = getSmartPreview(
-          content,
-          smartPreviewConfig
-        );
-        const tokenCount = countTokens(preview);
+        const tokenCount = countTokens(content);
 
         if (currentTokens + tokenCount <= options.maxNeighborTokens) {
           promptNeighbors.push(filePath);

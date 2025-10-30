@@ -53,12 +53,10 @@ function generateFileTree(
     const isLastItem = index === items.length - 1;
     const prefix = level === 0 ? '' : `${parentPrefix}${isLast ? '' : '│   '}`;
     const connector = level === 0 ? '' : `${isLastItem ? '└── ' : '├── '}`;
-    const isSelected =
-      !isEmptyFolder(item) && areAllDescendantsSelected(item, selectedItems);
     // Use "." for root level folder instead of actual folder name
     const displayName = level === 0 ? '.' : item.name;
 
-    result += `${prefix}${connector}${displayName}${item.type === 'folder' ? '/' : ''}${isSelected ? ' *' : ''}\n`;
+    result += `${prefix}${connector}${displayName}${item.type === 'folder' ? '/' : ''}\n`;
 
     if (item.type === 'folder' && item.children?.length) {
       result += generateFileTree(
@@ -72,39 +70,6 @@ function generateFileTree(
   });
 
   return result;
-}
-
-// Smart content preview for non-selected files
-export function getSmartPreview(content: string, config: { minLines: number; maxLines: number }): string {
-  const lines = content.split('\n');
-
-  // If the file is not longer than maxLines, return it in full
-  if (lines.length <= config.maxLines) {
-    return content;
-  }
-
-  // Always show at least minLines
-  let endLine = config.minLines;
-  let emptyLinesCount = lines
-    .slice(0, config.minLines)
-    .filter((line) => line.trim() === '').length;
-
-  // If we haven't found at least two empty lines, keep looking up to maxLines
-  if (emptyLinesCount < 2 && lines.length > config.minLines) {
-    for (
-      let i = config.minLines;
-      i < Math.min(lines.length, config.maxLines);
-      i++
-    ) {
-      if (lines[i].trim() === '') {
-        endLine = i + 1; // Include the empty line
-        break;
-      }
-      endLine = i + 1;
-    }
-  }
-
-  return lines.slice(0, endLine).join('\n') + '\n... (content truncated)';
 }
 
 // Sanitize a filename for use in XML tags
@@ -130,8 +95,7 @@ export function formatSingleFile(
   content: string,
   rootPath: string = '',
   isSelected: boolean = false,
-  formatType: string = DOC_FORMAT.MARKDOWN,
-  currentThresholdLineLength?: number // Added for future use, not currently used in this function's logic
+  formatType: string = DOC_FORMAT.MARKDOWN
 ): string {
   const relativePath = rootPath
     ? filePath.replace(rootPath, '').replace(/^[/\\]/, '')
@@ -139,11 +103,11 @@ export function formatSingleFile(
   
   if (formatType === DOC_FORMAT.XML) {
     const tagName = sanitizeForXmlTag(relativePath);
-    return `# ${relativePath}${isSelected ? ' *' : ''}\n\n<file_${tagName}>\n${content}\n</file_${tagName}>\n`;
+    return `# ${relativePath}\n\n<file_${tagName}>\n${content}\n</file_${tagName}>\n`;
   } else {
     // Default to markdown formatting
     const language = getFileLanguage(filePath);
-    return `# ${relativePath}${isSelected ? ' *' : ''}\n\n\`\`\`${language}\n${content}\n\`\`\`\n`;
+    return `# ${relativePath}\n\n\`\`\`${language}\n${content}\n\`\`\`\n`;
   }
 }
 
@@ -155,10 +119,6 @@ async function generateFileContentString(
   supplementaryItemsSet: Set<string>,
   rootPath: string,
   format: string,
-  smartPreviewConfig: { minLines: number; maxLines: number },
-  thresholdLineLength: number,
-  includeNonSelected: boolean,
-  config: AthanorConfig | null,
   projectInfoFilePath?: string
 ): Promise<{ regularContent: string; supplementaryContent: string }> {
   const regularFileContents: string[] = [];
@@ -170,11 +130,6 @@ async function generateFileContentString(
       const isSelected = selectedItemsSet.has(item.id);
       const isNeighbor = neighboringItemsSet.has(item.id);
       const isSupplementary = supplementaryItemsSet.has(item.id);
-
-      // If it's a neighboring file and smart previews are turned off, skip it entirely.
-      if (isNeighbor && !isSelected && !includeNonSelected) {
-        return;
-      }
 
       // Only include content for selected, neighboring, or supplementary files
       if (!isSelected && !isNeighbor && !isSupplementary) {
@@ -213,18 +168,15 @@ async function generateFileContentString(
         const contentString = content.toString();
 
         // Use full content for selected files, smart preview for neighboring files
-        const processedContent = isSelected || isSupplementary
-          ? contentString
-          : getSmartPreview(contentString, smartPreviewConfig);
+        const processedContent = contentString;
 
         if (processedContent) {
           const formattedContent = formatSingleFile(
-            item.path, 
-            processedContent, 
-            rootPath, 
-            isSelected || isSupplementary, 
-            format, 
-            thresholdLineLength
+            item.path,
+            processedContent,
+            rootPath,
+            false,
+            format
           );
           
           if (isSupplementary) {
@@ -262,12 +214,8 @@ export async function generateCodebaseDocumentation(
   neighboringItems: Set<string>,
   supplementaryItemsSet: Set<string>,
   rootPath: string,
-  config: AthanorConfig | null,
   formatType: string = DOC_FORMAT.MARKDOWN,
-  projectInfoFilePath?: string,
-  smartPreviewConfig: { minLines: number; maxLines: number } = { minLines: 10, maxLines: 20 },
-  currentThresholdLineLength?: number, // Added, to be passed down if needed
-  enableSmartPreview: boolean = true
+  projectInfoFilePath?: string
 ): Promise<{ file_contents: string; supplementary_contents: string; file_tree: string }> {
   const rawFileTreeContent = generateFileTree(items, selectedItems);
   const fileTreeContent = `<file_tree>\n${rawFileTreeContent}</file_tree>\n`;
@@ -280,10 +228,6 @@ export async function generateCodebaseDocumentation(
     supplementaryItemsSet,
     rootPath,
     formatType,
-    smartPreviewConfig,
-    currentThresholdLineLength || 200, // Use default if not provided
-    enableSmartPreview,
-    config,
     projectInfoFilePath
   );
 

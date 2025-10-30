@@ -67,7 +67,6 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
   const { previewedFilePath } = useFileSystemStore();
   const { addLog } = useLogStore();
   const { applicationSettings, saveApplicationSettings } = useSettingsStore();
-  const isWrapEnabled = applicationSettings?.fileViewerWrapEnabled ?? false;
   const [fileContent, setFileContent] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [lineCount, setLineCount] = useState<number>(0);
@@ -168,15 +167,12 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
               <div className="flex gap-2">
                 <button
                   className={`px-2 py-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 rounded flex items-center gap-1 ${
-                    isWrapEnabled
-                      ? 'bg-gray-200 dark:bg-gray-600'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                    'hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                   onClick={async () => {
                     if (applicationSettings) {
                       await saveApplicationSettings({
                         ...applicationSettings,
-                        fileViewerWrapEnabled: !isWrapEnabled,
                       });
                     }
                   }}
@@ -315,7 +311,7 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
       {isText && !error && fileContent && (
         <div
           className={`w-full h-full rounded font-mono text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 scrollbar-thin file-viewer-syntax-highlighter-wrapper relative ${
-            isWrapEnabled ? 'overflow-auto' : 'overflow-hidden'
+            'overflow-hidden'
           }`}
         >
           <SyntaxHighlighter
@@ -323,7 +319,7 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
             style={isDarkMode ? atomDark : coy}
             showLineNumbers={true}
             wrapLines={true}
-            wrapLongLines={isWrapEnabled}
+            wrapLongLines={false}
             lineNumberStyle={{
               opacity: 0.5,
               color: isDarkMode ? '#6b7280' : '#9ca3af',
@@ -347,7 +343,7 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
               flexGrow: 1,
               fontSize: '0.875rem',
               lineHeight: '1.25rem',
-              overflowX: isWrapEnabled ? 'hidden' : 'auto',
+              overflowX: 'auto',
               overflowY: 'auto',
               boxSizing: 'border-box',
             }}
@@ -363,8 +359,8 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
               style: {
                 display: 'block',
                 width: '100%',
-                paddingLeft: isWrapEnabled ? '3.4rem' : '0',
-                textIndent: isWrapEnabled ? '-3.4rem' : '0',
+                paddingLeft: '0',
+                textIndent: '0',
               },
             })}
           >

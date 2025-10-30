@@ -171,7 +171,6 @@ describe('buildTaskAction', () => {
       selectedItems: defaultSelectedItems,
       addLog: mockAddLog,
       setIsLoading: mockSetIsLoading,
-      currentThresholdLineLength: 200,
     };
 
     // Reset all mocks
@@ -270,9 +269,7 @@ describe('buildTaskAction', () => {
         'existing task description',
         'existing context',
         'Task 1', // activeTabName
-        undefined, // passedFormatTypeOverride
-        undefined, // smartPreviewConfigInput
-        200 // currentThresholdLineLength
+        undefined // passedFormatTypeOverride
       );
 
       // Verify task description is updated
@@ -297,27 +294,6 @@ describe('buildTaskAction', () => {
       await buildTaskAction(params);
 
       expect(mockAddLog).toHaveBeenCalledWith('Custom Refactor Task task prompt loaded and processed');
-    });
-
-    it('should pass currentThresholdLineLength parameter correctly', async () => {
-      const params = { ...defaultParams, currentThresholdLineLength: 150 };
-
-      await buildTaskAction(params);
-
-      expect(mockBuildDynamicPrompt).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.any(Array),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        'Task 1',
-        undefined,
-        undefined,
-        150 // should use the passed value
-      );
     });
   });
 
@@ -432,9 +408,7 @@ describe('buildTaskAction', () => {
         'existing task description', // from mocked store state
         'existing context', // from mocked store state
         'Task 1',
-        undefined,
-        undefined,
-        expect.anything()
+        undefined
       );
     });
   });
@@ -482,9 +456,7 @@ describe('buildTaskAction', () => {
         expect.anything(),
         expect.anything(),
         'Task 1',
-        undefined,
-        undefined,
-        expect.anything()
+        undefined
       );
     });
 
@@ -533,9 +505,7 @@ describe('buildTaskAction', () => {
         expect.anything(),
         expect.anything(),
         'Task 1',
-        undefined,
-        undefined,
-        expect.anything()
+        undefined
       );
     });
 
@@ -557,9 +527,7 @@ describe('buildTaskAction', () => {
         expect.anything(),
         expect.anything(),
         'Task 1',
-        undefined,
-        undefined,
-        expect.anything()
+        undefined
       );
     });
   });
