@@ -11,11 +11,6 @@ declare const GIT_VERSION: string;
 
 import { FileService } from './services/FileService';
 import { SettingsService } from './services/SettingsService';
-import {
-  ApiKeyServiceMain,
-  registerSecureApiKeyIpc,
-} from 'genai-key-storage-lite';
-import { LLMService, type ApiKeyProvider, type ModelPreset } from 'genai-lite';
 import { RelevanceEngineService } from './services/RelevanceEngineService';
 import { GitService } from './services/GitService';
 import { UserActivityService } from './services/UserActivityService';
@@ -25,7 +20,6 @@ import {
 } from './services/ProjectGraphService';
 import { PROJECT_ANALYSIS } from '../src/utils/constants';
 import type { ApplicationSettings } from '../src/types/global';
-import athanorPresets from '../src/config/athanorModelPresets.json';
 
 // --- WSL Graphics Fix Start ---
 // This addresses a specific rendering issue on WSL where Electron may default
@@ -70,8 +64,6 @@ export const relevanceEngine = new RelevanceEngineService(
   projectGraphService,
   userActivityService
 );
-export let apiKeyService: ApiKeyServiceMain;
-export let llmService: LLMService;
 
 let analysisPromise: Promise<void> | null = null;
 function runProjectAnalysisWorker(): Promise<void> {
@@ -351,29 +343,6 @@ app.whenReady().then(async () => {
     app.dock.setMenu(dockMenu);
   }
 
-  // Initialize secure API key service
-  apiKeyService = new ApiKeyServiceMain(app.getPath('userData'));
-
-  // Initialize LLM service with a custom key provider
-  const electronKeyProvider: ApiKeyProvider = async (providerId) => {
-    try {
-      // Use withDecryptedKey to securely access the key only when needed.
-      return await apiKeyService.withDecryptedKey(providerId as any, async (key) => key);
-    } catch {
-      // If key is not found or decryption fails, check environment variables
-      const envVarName = `ATHANOR_${providerId.toUpperCase()}_API_KEY`;
-      const envKey = process.env[envVarName];
-      return envKey || null;
-    }
-  };
-  llmService = new LLMService(electronKeyProvider, {
-    presets: athanorPresets as ModelPreset[],
-    presetMode: 'replace'
-  });
-
-  // Register IPC handlers from the external package
-  registerSecureApiKeyIpc(apiKeyService);
-
   // Handle CLI argument for opening a project
   const args = process.argv.slice(app.isPackaged ? 1 : 2);
   const potentialPath = args.find((arg) => !arg.startsWith('-'));
@@ -436,8 +405,6 @@ app.whenReady().then(async () => {
   setupIpcHandlers(
     fileService,
     settingsService,
-    apiKeyService,
-    llmService,
     relevanceEngine,
     projectGraphService,
     userActivityService,

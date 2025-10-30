@@ -28,7 +28,6 @@ describe('workbenchStore', () => {
       ],
       activeTabIndex: 0,
       isGeneratingPrompt: false,
-      developerActionTrigger: 0,
     });
     jest.clearAllMocks();
   });
@@ -249,16 +248,6 @@ describe('workbenchStore', () => {
 
       useWorkbenchStore.getState().resetGeneratingPrompt();
       expect(useWorkbenchStore.getState().isGeneratingPrompt).toBe(false);
-    });
-
-    it('should trigger developer action', () => {
-      const initialTrigger = useWorkbenchStore.getState().developerActionTrigger;
-      expect(useWorkbenchStore.getState().isGeneratingPrompt).toBe(false);
-
-      useWorkbenchStore.getState().triggerDeveloperAction();
-
-      expect(useWorkbenchStore.getState().developerActionTrigger).toBe(initialTrigger + 1);
-      expect(useWorkbenchStore.getState().isGeneratingPrompt).toBe(true);
     });
   });
 });

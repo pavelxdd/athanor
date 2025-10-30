@@ -44,7 +44,6 @@ import { useFileDrop } from '../hooks/useFileDrop';
 import { useSettingsStore } from '../stores/settingsStore';
 import { DRAG_DROP, DOC_FORMAT, SETTINGS } from '../utils/constants';
 import type { ApplicationSettings } from '../types/global';
-import SendViaApiControls from './action-panel/SendViaApiControls';
 import CustomPromptsHelpModal from './action-panel/CustomPromptsHelpModal';
 import SelectedFilesDisplay from './action-panel/SelectedFilesDisplay';
 import { executeAgentTaskCommand } from '../commands/agentTaskCommand';
@@ -76,7 +75,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     setTabContent,
     setTabOutput,
     setTabContext,
-    developerActionTrigger,
     removeFileFromSelection,
     clearFileSelection,
     reorderFileSelection,
@@ -143,9 +141,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 
     return positions.join(' ');
   };
-
-  // Handle Developer action trigger only when panel is active and a new trigger occurs
-  const lastTriggerRef = useRef(developerActionTrigger);
 
   const {
     smartPreviewEnabled,
@@ -812,19 +807,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               },
               currentValue: tabs[activeTabIndex].output,
             })}
-          />
-
-          {/* Send via API Controls - Only show if experimental features are enabled */}
-          <SendViaApiControls
-            isActive={isActive}
-            outputContent={tabs[activeTabIndex].output}
-            applicationSettings={applicationSettings}
-            saveApplicationSettings={saveApplicationSettings}
-            addLog={addLog}
-            setActivePanelTab={setActivePanelTab}
-            setParentIsLoading={setIsLoading}
-            isSendingRequest={isBusy}
-            setStoreIsGeneratingPrompt={setIsGeneratingPrompt}
           />
 
           {/* Custom Prompts Help Modal */}

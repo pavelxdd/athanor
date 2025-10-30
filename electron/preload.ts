@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { createApiKeyManagerBridge } from 'genai-key-storage-lite/preload';
 
 // Channel name for confirmation dialog (must match coreHandlers.ts)
 const SHOW_CONFIRM_DIALOG_CHANNEL = 'dialog:show-confirm-dialog';
@@ -68,22 +67,11 @@ contextBridge.exposeInMainWorld('settingsService', {
     ipcRenderer.invoke('settings:save-application', settings),
 });
 
-// Import LLM IPC channels
-import { LLM_IPC_CHANNELS } from '../common/types/llm';
-
 // Expose secure API key management and LLM service
 contextBridge.exposeInMainWorld('electronBridge', {
   // WARNING: For renderer-side logic, always prefer using actions from the
   // relevant Zustand store over calling these IPC functions directly. This ensures the
   // application's in-memory state remains synchronized with the file on disk.
-  secureApiKeyManager: createApiKeyManagerBridge(),
-  llmService: {
-    getProviders: () => ipcRenderer.invoke(LLM_IPC_CHANNELS.GET_PROVIDERS),
-    getModels: (providerId: string) => ipcRenderer.invoke(LLM_IPC_CHANNELS.GET_MODELS, providerId),
-    sendMessage: (request: any) => ipcRenderer.invoke(LLM_IPC_CHANNELS.SEND_MESSAGE, request),
-    isKeyAvailable: (providerId: string) => ipcRenderer.invoke(LLM_IPC_CHANNELS.IS_KEY_AVAILABLE, providerId),
-    getPresets: () => ipcRenderer.invoke(LLM_IPC_CHANNELS.GET_PRESETS),
-  },
   userActivity: () => ipcRenderer.send('user-activity'),
   context: {
     recalculate: (request: {

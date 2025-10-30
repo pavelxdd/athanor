@@ -27,7 +27,6 @@ export interface ApplicationSettings {
   maxSmartPreviewLines?: number;
   thresholdLineLength?: number;
   maxSmartContextTokens?: number;
-  lastSelectedApiPresetId?: string | null;
   lastOpenedProjectPath?: string | null;
   recentProjectPaths?: string[];
   uiTheme?: string;
@@ -93,8 +92,6 @@ export interface WorkbenchState {
 
   // Legacy support and additional state
   resetTaskDescription: (text: string) => void;
-  developerActionTrigger: number;
-  triggerDeveloperAction: () => void;
   isGeneratingPrompt: boolean;
   setIsGeneratingPrompt: (isGenerating: boolean) => void;
   resetGeneratingPrompt: () => void;
@@ -124,144 +121,6 @@ declare global {
 
     // Electron bridge for secure operations
     electronBridge: {
-      secureApiKeyManager: {
-        /**
-         * Stores an API key securely
-         */
-        storeKey: (
-          providerId: string,
-          apiKey: string
-        ) => Promise<{ success: boolean }>;
-
-        // getKey: REMOVED for security - plaintext keys should never be accessible to renderer
-
-        /**
-         * Deletes an API key
-         */
-        deleteKey: (providerId: string) => Promise<{ success: boolean }>;
-
-        /**
-         * Checks if an API key is stored
-         */
-        isKeyStored: (providerId: string) => Promise<boolean>;
-
-        /**
-         * Gets all provider IDs with stored keys
-         */
-        getStoredProviderIds: () => Promise<string[]>;
-
-        /**
-         * Gets display information for an API key (status and last four chars)
-         */
-        getApiKeyDisplayInfo: (
-          providerId: string
-        ) => Promise<{ isStored: boolean; lastFourChars?: string }>;
-      };
-      llmService: {
-        /**
-         * Gets list of supported LLM providers
-         */
-        getProviders: () => Promise<Array<{ id: string; name: string }>>;
-
-        /**
-         * Gets list of supported models for a specific provider
-         */
-        getModels: (providerId: string) => Promise<
-          Array<{
-            id: string;
-            name: string;
-            providerId: string;
-            contextWindow?: number;
-            inputPrice?: number;
-            outputPrice?: number;
-            supportsSystemMessage?: boolean;
-            description?: string;
-            maxTokens?: number;
-            supportsImages?: boolean;
-            supportsPromptCache: boolean;
-            thinkingConfig?: { maxBudget?: number; outputPrice?: number };
-            cacheWritesPrice?: number;
-            cacheReadsPrice?: number;
-          }>
-        >;
-
-        /**
-         * Sends a chat message to an LLM provider
-         */
-        sendMessage: (request: {
-          providerId: string;
-          modelId: string;
-          messages: Array<{
-            role: 'user' | 'assistant' | 'system';
-            content: string;
-          }>;
-          systemMessage?: string;
-          settings?: {
-            temperature?: number;
-            maxTokens?: number;
-            topP?: number;
-            stopSequences?: string[];
-            frequencyPenalty?: number;
-            presencePenalty?: number;
-            user?: string;
-            geminiSafetySettings?: Array<{
-              category:
-                | 'HARM_CATEGORY_UNSPECIFIED'
-                | 'HARM_CATEGORY_HATE_SPEECH'
-                | 'HARM_CATEGORY_SEXUALLY_EXPLICIT'
-                | 'HARM_CATEGORY_DANGEROUS_CONTENT'
-                | 'HARM_CATEGORY_HARASSMENT'
-                | 'HARM_CATEGORY_CIVIC_INTEGRITY';
-              threshold:
-                | 'HARM_BLOCK_THRESHOLD_UNSPECIFIED'
-                | 'BLOCK_LOW_AND_ABOVE'
-                | 'BLOCK_MEDIUM_AND_ABOVE'
-                | 'BLOCK_ONLY_HIGH'
-                | 'BLOCK_NONE';
-            }>;
-          };
-        }) => Promise<
-          | {
-              id: string;
-              provider: string;
-              model: string;
-              created: number;
-              choices: Array<{
-                message: { role: string; content: string };
-                finish_reason: string | null;
-                index?: number;
-              }>;
-              usage?: {
-                prompt_tokens?: number;
-                completion_tokens?: number;
-                total_tokens?: number;
-              };
-              object: 'chat.completion';
-            }
-          | {
-              provider: string;
-              model?: string;
-              error: {
-                message: string;
-                code?: string | number;
-                type?: string;
-                param?: string;
-                providerError?: any;
-              };
-              object: 'error';
-            }
-        >;
-
-        /**
-         * Checks if an API key is available from any source (secure storage or ENV).
-         */
-        isKeyAvailable: (providerId: string) => Promise<boolean>;
-
-        /**
-         * Gets the configured model presets
-         */
-        getPresets: () => Promise<import('genai-lite').ModelPreset[]>;
-      };
       userActivity: () => void;
       context: {
         recalculate: (request: {

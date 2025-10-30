@@ -45,7 +45,6 @@ export const SETTINGS = {
       maxSmartPreviewLines: 20,
       thresholdLineLength: 200,
       maxSmartContextTokens: 10000,
-      lastSelectedApiPresetId: null,
       lastOpenedProjectPath: undefined,
       recentProjectPaths: [],
       uiTheme: 'Auto',

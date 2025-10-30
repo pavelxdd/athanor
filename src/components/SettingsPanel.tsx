@@ -4,7 +4,6 @@ import { useFileSystemStore } from '../stores/fileSystemStore';
 import { SETTINGS } from '../utils/constants';
 import ProjectSettingsPane from './ProjectSettingsPane';
 import ApplicationSettingsPane from './ApplicationSettingsPane';
-import ApiKeyManagementPane from './ApiKeyManagementPane';
 
 const SettingsPanel: React.FC = () => {
   const {
@@ -39,9 +38,8 @@ const SettingsPanel: React.FC = () => {
     <div className="flex flex-col h-full p-6">
       <div className="flex-1 overflow-y-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-          {/* Left Column: Project Settings + API Key Management */}
+          {/* Left Column: Project Settings */}
           <div className="flex flex-col space-y-8">
-            {/* Project Settings Section */}
             <ProjectSettingsPane
               projectSettings={projectSettings}
               isLoadingProjectSettings={isLoadingProjectSettings}
@@ -51,9 +49,6 @@ const SettingsPanel: React.FC = () => {
               hasProject={hasProject}
               selectProjectInfoFile={window.fileService.selectProjectInfoFile}
             />
-
-            {/* API Key Management Section */}
-            <ApiKeyManagementPane />
           </div>
 
           {/* Right Column: Application Settings */}

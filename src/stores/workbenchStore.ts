@@ -217,11 +217,9 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
       state.setTabContent(state.activeTabIndex, text);
       state.setTabOutput(state.activeTabIndex, '');
       state.setTabContext(state.activeTabIndex, '');
-      set({ developerActionTrigger: 0 });
     },
 
     // Additional state
-    developerActionTrigger: 0,
     isGeneratingPrompt: false,
 
     setIsGeneratingPrompt: (isGenerating: boolean) =>
@@ -229,24 +227,6 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
 
     resetGeneratingPrompt: () => {
       set({ isGeneratingPrompt: false });
-    },
-
-    triggerDeveloperAction: () => {
-      const state = get();
-      if (!state.isGeneratingPrompt) {
-        set({
-          developerActionTrigger: state.developerActionTrigger + 1,
-          isGeneratingPrompt: true,
-        });
-
-        setTimeout(() => {
-          const currentState = get();
-          if (currentState.isGeneratingPrompt) {
-            console.warn('Prompt generation timeout - resetting state');
-            set({ isGeneratingPrompt: false });
-          }
-        }, PROMPT_GENERATION_TIMEOUT);
-      }
     },
 
     // Get smart preview config for prompt generation

@@ -28,20 +28,10 @@ module.exports = {
         ],
         use: [{ loader: 'ts-loader' }],
       },
-      {
-        test: /\.json$/,
-        include: [
-          path.resolve(__dirname, 'src/config'),
-        ],
-        type: 'json',
-      },
     ],
   },
   resolve: {
     extensions: ['.ts', '.js', '.json'],
-    alias: {
-      'genai-lite/utils': path.resolve(__dirname, 'node_modules/genai-lite/dist/utils/index.js'),
-    },
   },
   output: {
     path: path.resolve(__dirname, '.webpack'),
@@ -49,8 +39,6 @@ module.exports = {
   },
   externals: {
     'node-addon-api': 'commonjs2 node-addon-api',
-    'bufferutil': 'commonjs2 bufferutil',
-    'utf-8-validate': 'commonjs2 utf-8-validate',
   },
   plugins: [
     new CopyWebpackPlugin({
