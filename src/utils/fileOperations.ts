@@ -1,5 +1,4 @@
 import { DiffBlock } from '../types/global';
-import { diff_match_patch } from 'diff-match-patch';
 
 // Remove a single empty line at the start of content if present.
 // Preserves lines containing whitespace characters.
@@ -69,8 +68,7 @@ export function processFileUpdate(
   operation: 'UPDATE_FULL' | 'UPDATE_DIFF',
   filePath: string,
   newCodeOrBlocks: string | DiffBlock[],
-  currentContent: string,
-  diffMode: 'strict' | 'fuzzy' = 'fuzzy'
+  currentContent: string
 ): string {
   if (operation === 'UPDATE_FULL') {
     return normalizeLineEndings(newCodeOrBlocks as string);
@@ -80,84 +78,25 @@ export function processFileUpdate(
   const diffBlocks = newCodeOrBlocks as DiffBlock[];
   const normalizedCurrentContent = normalizeLineEndings(currentContent);
 
-  // Initialize DMP instance for potential fuzzy patching
-  const dmp = new diff_match_patch();
-
   // Process each block sequentially, starting with original content
   let processedContent = normalizedCurrentContent;
-
-  // Track blocks that failed exact match but succeeded with fuzzy patch
-  const fuzzyMatchedBlocks: number[] = [];
 
   // Process each diff block
   for (let i = 0; i < diffBlocks.length; i++) {
     const block = diffBlocks[i];
 
-    // Stage 1: Try exact match replacement first
+    // Try exact match replacement
     if (processedContent.includes(block.search)) {
       // Found exact match, perform simple replacement
-      // Use a replacer function () => block.replace to ensure the replacement
-      // string is treated literally and special characters like '$' are not interpreted.
-      processedContent = processedContent.replace(
-        block.search,
-        () => block.replace
-      );
-      continue;
-    }
-
-    // If we're in strict mode and exact match fails, throw an error
-    if (diffMode === 'strict') {
+      processedContent = processedContent.replace(block.search, block.replace);
+    } else {
+      // If exact match fails, throw an error
       throw new Error(
         `Strict matching failed for block ${i + 1} in ${filePath}. ` +
           `Exact string match not found. Search content beginning: ` +
           `"${block.search.substring(0, 50)}${block.search.length > 50 ? '...' : ''}"`
       );
     }
-
-    // Stage 2: Exact match failed, try fuzzy patching (only in fuzzy mode)
-    try {
-      // Create a patch from the search and replace content
-      const patches = dmp.patch_make(block.search, block.replace);
-
-      // Apply the patch to the current processed content
-      const [patchedContent, resultsArray] = dmp.patch_apply(
-        patches,
-        processedContent
-      );
-
-      // Check if all patches were applied successfully
-      if (resultsArray.every((result) => result === true)) {
-        // Fuzzy patch was successful
-        processedContent = patchedContent;
-        fuzzyMatchedBlocks.push(i + 1); // Store 1-based index for more human-friendly reporting
-      } else {
-        // Some patches failed to apply
-        const failedPatches = resultsArray
-          .map((result, idx) => ({ idx, result }))
-          .filter((item) => !item.result)
-          .map((item) => item.idx + 1)
-          .join(', ');
-
-        throw new Error(
-          `Both exact and fuzzy matching failed for block ${i + 1}. ` +
-            `Fuzzy patches ${failedPatches} could not be applied cleanly. ` +
-            `Search content beginning: "${block.search.substring(0, 50)}${block.search.length > 50 ? '...' : ''}"`
-        );
-      }
-    } catch (patchError) {
-      // Either patch creation or application failed
-      throw new Error(
-        `Failed to apply diff block ${i + 1} for ${filePath}: ` +
-          `Exact match failed, and fuzzy patching error: ${patchError instanceof Error ? patchError.message : String(patchError)}`
-      );
-    }
-  }
-
-  // If we used fuzzy matching for any blocks, log the information
-  if (fuzzyMatchedBlocks.length > 0) {
-    console.info(
-      `Applied fuzzy matching for blocks ${fuzzyMatchedBlocks.join(', ')} in ${filePath}`
-    );
   }
 
   // Return the final processed content with any final cleanup

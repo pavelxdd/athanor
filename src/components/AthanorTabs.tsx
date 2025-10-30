@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CircleSlashed, CircleDashed, GitCompare } from 'lucide-react';
+import { GitCompare } from 'lucide-react';
 import CommandButton from './CommandButton';
 import { useApplyChangesStore } from '../stores/applyChangesStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -15,7 +15,7 @@ const AthanorTabs: React.FC<AthanorTabsProps> = ({
   activeTab,
   onTabChange,
 }) => {
-  const { setOperations, clearOperations, diffMode, setDiffMode } =
+  const { setOperations, clearOperations } =
     useApplyChangesStore();
   const { applicationSettings } = useSettingsStore();
 
@@ -70,27 +70,6 @@ const AthanorTabs: React.FC<AthanorTabsProps> = ({
         </button>
       </div>
       <div className="flex items-center">
-        <button
-          className={`p-2 rounded mr-2 ${
-            diffMode === 'strict'
-              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-          }`}
-          onClick={() =>
-            setDiffMode(diffMode === 'strict' ? 'fuzzy' : 'strict')
-          }
-          title={`Diff Mode: ${
-            diffMode === 'strict'
-              ? 'Strict (Exact Match Only)'
-              : 'Fuzzy (Fallback to Fuzzy Matching - EXPERIMENTAL)'
-          }`}
-        >
-          {diffMode === 'strict' ? (
-            <CircleSlashed className="w-5 h-5" />
-          ) : (
-            <CircleDashed className="w-5 h-5" />
-          )}
-        </button>
         <CommandButton
           setOperations={setOperations}
           clearOperations={clearOperations}

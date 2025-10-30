@@ -251,8 +251,7 @@ const FileOperationItem = React.forwardRef<
             'UPDATE_DIFF',
             op.file_path,
             op.diff_blocks,
-            op.old_code,
-            'fuzzy'
+            op.old_code
           );
         } else {
           newPreviewContent = op.new_code;

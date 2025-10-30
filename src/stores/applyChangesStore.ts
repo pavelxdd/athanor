@@ -20,8 +20,6 @@ interface ApplyChangesState {
   setChangeAppliedCallback: (
     callback: ((newlyCreatedPath?: string) => Promise<void>) | null
   ) => void;
-  diffMode: 'strict' | 'fuzzy';
-  setDiffMode: (mode: 'strict' | 'fuzzy') => void;
   setOperationError: (index: number, error: string | null) => void;
 }
 
@@ -32,7 +30,6 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
 
   return {
     activeOperations: [],
-    diffMode: 'strict', // Default to strict mode for more accurate changes
     mode: 'ai', // Default to AI mode
 
     setOperations: (ops: FileOperation[], mode: 'ai' | 'git' = 'ai') => {
@@ -47,10 +44,6 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
       callback: ((newlyCreatedPath?: string) => Promise<void>) | null
     ) => {
       onChangeApplied = callback;
-    },
-
-    setDiffMode: (mode: 'strict' | 'fuzzy') => {
-      set({ diffMode: mode });
     },
 
     setOperationError: (index: number, error: string | null) => {
@@ -106,8 +99,7 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
                 'UPDATE_DIFF',
                 relativePath,
                 op.diff_blocks || [],
-                op.old_code,
-                get().diffMode
+                op.old_code
               );
               await window.fileService.write(relativePath, finalContent);
               addLog(`Applied changes to file: ${relativePath}`);

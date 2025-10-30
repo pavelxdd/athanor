@@ -267,40 +267,38 @@ content to remove
   });
 
   describe('processFileUpdate', () => {
-    it('should return normalized content for UPDATE_FULL operation', async () => {
-      const result = await processFileUpdate(
+    it('should return normalized content for UPDATE_FULL operation', () => {
+      const result = processFileUpdate(
         'UPDATE_FULL',
         'test.txt',
         'new content\r\n',
-        'old content',
-        'fuzzy'
+        'old content'
       );
 
       expect(result).toBe('new content\n');
     });
 
-    it('should apply diff blocks for UPDATE_DIFF operation', async () => {
-      const diffContent = `<<<<<<< SEARCH
+    it('should apply diff blocks for UPDATE_DIFF operation', () => {
+      const diffBlocks = parseDiffBlocks(`<<<<<<< SEARCH
 old line
 =======
 new line
->>>>>>> REPLACE`;
+>>>>>>> REPLACE`);
 
       const currentContent = 'old line\nother content';
 
-      const result = await processFileUpdate(
+      const result = processFileUpdate(
         'UPDATE_DIFF',
         'test.txt',
-        diffContent,
-        currentContent,
-        'fuzzy'
+        diffBlocks,
+        currentContent
       );
 
       expect(result).toBe('new line\nother content');
     });
 
-    it('should handle UPDATE_DIFF with decorative comments', async () => {
-      const diffContent = `<<<<<<< SEARCH
+    it('should handle UPDATE_DIFF with decorative comments', () => {
+      const diffBlocks = parseDiffBlocks(`<<<<<<< SEARCH
 //=====================================
 // Old Section
 //=====================================
@@ -314,7 +312,7 @@ function oldFunc() {
 function newFunc() {
   return 'new';
 }
->>>>>>> REPLACE`;
+>>>>>>> REPLACE`);
 
       const currentContent = `//=====================================
 // Old Section
@@ -324,12 +322,11 @@ function oldFunc() {
 }
 other content`;
 
-      const result = await processFileUpdate(
+      const result = processFileUpdate(
         'UPDATE_DIFF',
         'test.js',
-        diffContent,
-        currentContent,
-        'fuzzy'
+        diffBlocks,
+        currentContent
       );
 
       expect(result).toBe(`//=====================================
@@ -341,24 +338,23 @@ function newFunc() {
 other content`);
     });
 
-    it('should throw error in strict mode when exact match fails', async () => {
-      const diffContent = `<<<<<<< SEARCH
+    it('should throw error when exact match fails', () => {
+      const diffBlocks = parseDiffBlocks(`<<<<<<< SEARCH
 exact content
 =======
 new content
->>>>>>> REPLACE`;
+>>>>>>> REPLACE`);
 
       const currentContent = 'different content';
 
-      await expect(
+      expect(() =>
         processFileUpdate(
           'UPDATE_DIFF',
           'test.txt',
-          diffContent,
-          currentContent,
-          'strict'
+          diffBlocks,
+          currentContent
         )
-      ).rejects.toThrow('Strict matching failed');
+      ).toThrow('Strict matching failed');
     });
   });
 });

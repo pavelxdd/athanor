@@ -83,7 +83,6 @@ async function parseApplyChangesContent(
         processedNewCode = normalizeLineEndings(code);
       } else if (operation === 'UPDATE_DIFF') {
         // For UPDATE_DIFF, we parse the blocks but don't apply them yet.
-        // The application will happen in the store, respecting the diffMode.
         const { parseDiffBlocks } = await import(
           '../../utils/fileOperations'
         );
