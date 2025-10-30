@@ -33,4 +33,5 @@ codebase.md
 /temp-folder
 .npmrc
 
-/.ath_materials
+.athighore
+.ath_materials

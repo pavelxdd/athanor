@@ -340,6 +340,7 @@ docs/_site/
 ###############################################################################
 # ATHANOR PROJECT FILES
 ###############################################################################
+!/.ath_materials
 !/.ath_materials/**/*
 /.ath_materials/project_graph.json
 /.ath_materials/project_settings.json
@@ -361,3 +362,6 @@ temp.txt
 /prompts/
 /resources/*
 !/resources/prompts
+
+.DS_Store
+Thumbs.db

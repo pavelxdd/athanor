@@ -493,7 +493,7 @@ const ReviewPanel: React.FC = () => {
   const hasProject = fileTree.length > 0;
 
   const hasPendingOperations = activeOperations.some(
-    (op) => !op.accepted && !op.rejected
+    (op) => !op.accepted && !op.rejected && !op.error
   );
 
   // Handle clear operations with confirmation for AI mode
