@@ -161,8 +161,26 @@ class XmlParser {
       );
       this.position = codeTagStart + '<file_code>'.length;
 
-      // Parse CDATA block
-      const code = this.parseCdataBlock();
+      let code: string;
+      // For DELETE or RENAME, the code block might be empty without CDATA
+      if (operation === 'DELETE' || operation === 'RENAME') {
+        this.skipWhitespace();
+        if (this.content.substring(this.position).startsWith('</file_code>')) {
+          code = '';
+          this.position = this.content.indexOf('</file_code>', this.position) + '</file_code>'.length;
+          // Also consume the final </file>
+          this.skipWhitespace();
+          if (this.content.substring(this.position).startsWith('</file>')) {
+            this.position += '</file>'.length;
+          }
+        } else {
+          // If not empty, parse as CDATA (for cases like <![CDATA[]]>)
+          code = this.parseCdataBlock();
+        }
+      } else {
+        // For all other operations, we expect a CDATA block
+        code = this.parseCdataBlock();
+      }
 
       // Validate operation type
       const validOperations = [

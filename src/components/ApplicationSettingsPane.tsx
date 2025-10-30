@@ -22,9 +22,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   const [enableSmartFeatures, setEnableSmartFeatures] = useState<boolean>(
     SETTINGS.defaults.application.enableSmartFeatures
   );
-  const [enableExperimentalFeatures, setEnableExperimentalFeatures] = useState<boolean>(
-    SETTINGS.defaults.application.enableExperimentalFeatures
-  );
   const [minSmartPreviewLines, setMinSmartPreviewLines] = useState<string>(
     String(SETTINGS.defaults.application.minSmartPreviewLines)
   );
@@ -53,11 +50,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
         applicationSettings.enableSmartFeatures ??
           applicationDefaults.enableSmartFeatures ??
           defaults.enableSmartFeatures
-      );
-      setEnableExperimentalFeatures(
-        applicationSettings.enableExperimentalFeatures ??
-          applicationDefaults.enableExperimentalFeatures ??
-          defaults.enableExperimentalFeatures
       );
       setMinSmartPreviewLines(
         String(
@@ -97,10 +89,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
       setEnableSmartFeatures(
         applicationDefaults.enableSmartFeatures ??
           defaults.enableSmartFeatures
-      );
-      setEnableExperimentalFeatures(
-        applicationDefaults.enableExperimentalFeatures ??
-          defaults.enableExperimentalFeatures
       );
       setMinSmartPreviewLines(
         String(
@@ -169,13 +157,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
     setEnableSmartFeatures(newValue);
   };
 
-  const handleExperimentalFeaturesChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const newValue = e.target.checked;
-    setEnableExperimentalFeatures(newValue);
-  };
-
   const handleUiThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setUiTheme(e.target.value);
   };
@@ -214,7 +195,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
 
     saveApplicationSettingsCallback({
       enableSmartFeatures,
-      enableExperimentalFeatures,
       minSmartPreviewLines: finalMin,
       maxSmartPreviewLines: finalMax,
       thresholdLineLength: validatedThreshold,
@@ -230,10 +210,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
       (applicationSettings?.enableSmartFeatures ??
         applicationDefaults.enableSmartFeatures ??
         defaults.enableSmartFeatures) ||
-    enableExperimentalFeatures !==
-      (applicationSettings?.enableExperimentalFeatures ??
-        applicationDefaults.enableExperimentalFeatures ??
-        defaults.enableExperimentalFeatures) ||
     minSmartPreviewLines !==
       String(
         applicationSettings?.minSmartPreviewLines ??
@@ -472,36 +448,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
                     type="checkbox"
                     checked={enableSmartFeatures}
                     onChange={handleSmartFeaturesChange}
-                    disabled={
-                      isLoadingApplicationSettings || isSavingApplication
-                    }
-                    className="h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              {/* Experimental Features Toggle */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <label
-                    htmlFor="enableExperimentalFeatures"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Enable Experimental Features
-                  </label>
-                  <div
-                    className="relative group"
-                    title="Enables access to experimental features that are still in development."
-                  >
-                    <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
-                  </div>
-                </div>
-                <div className="flex-shrink-0 ml-4">
-                  <input
-                    id="enableExperimentalFeatures"
-                    type="checkbox"
-                    checked={enableExperimentalFeatures}
-                    onChange={handleExperimentalFeaturesChange}
                     disabled={
                       isLoadingApplicationSettings || isSavingApplication
                     }

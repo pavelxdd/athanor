@@ -21,9 +21,6 @@ const AthanorTabs: React.FC<AthanorTabsProps> = ({
     useApplyChangesStore();
   const { applicationSettings } = useSettingsStore();
 
-  // Determine if experimental features should be shown
-  const showExperimentalFeatures = applicationSettings?.enableExperimentalFeatures ?? false;
-
   return (
     <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-2 flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -75,29 +72,27 @@ const AthanorTabs: React.FC<AthanorTabsProps> = ({
         </button>
       </div>
       <div className="flex items-center">
-        {showExperimentalFeatures && (
-          <button
-            className={`p-2 rounded mr-2 ${
-              diffMode === 'strict'
-                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-            onClick={() =>
-              setDiffMode(diffMode === 'strict' ? 'fuzzy' : 'strict')
-            }
-            title={`Diff Mode: ${
-              diffMode === 'strict'
-                ? 'Strict (Exact Match Only)'
-                : 'Fuzzy (Fallback to Fuzzy Matching - EXPERIMENTAL)'
-            }`}
-          >
-            {diffMode === 'strict' ? (
-              <CircleSlashed className="w-5 h-5" />
-            ) : (
-              <CircleDashed className="w-5 h-5" />
-            )}
-          </button>
-        )}
+        <button
+          className={`p-2 rounded mr-2 ${
+            diffMode === 'strict'
+              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+          }`}
+          onClick={() =>
+            setDiffMode(diffMode === 'strict' ? 'fuzzy' : 'strict')
+          }
+          title={`Diff Mode: ${
+            diffMode === 'strict'
+              ? 'Strict (Exact Match Only)'
+              : 'Fuzzy (Fallback to Fuzzy Matching - EXPERIMENTAL)'
+          }`}
+        >
+          {diffMode === 'strict' ? (
+            <CircleSlashed className="w-5 h-5" />
+          ) : (
+            <CircleDashed className="w-5 h-5" />
+          )}
+        </button>
         <CommandButton
           addLog={addLog}
           setOperations={setOperations}

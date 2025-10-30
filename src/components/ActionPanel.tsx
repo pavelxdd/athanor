@@ -166,10 +166,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   const { isGraphAnalysisInProgress } = useFileSystemStore();
   const isBusy = isLoading || isGeneratingPrompt || isGraphAnalysisInProgress;
 
-  // Determine if experimental features should be shown
-  const showExperimentalFeatures =
-    applicationSettings?.enableExperimentalFeatures ?? false;
-
   // Use a memoized selector to prevent unnecessary re-renders.
   // This ensures the context-fetching effect only runs when relevant data changes.
   const { content, selectedFiles } = useWorkbenchStore(
@@ -819,19 +815,17 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
           />
 
           {/* Send via API Controls - Only show if experimental features are enabled */}
-          {showExperimentalFeatures && (
-            <SendViaApiControls
-              isActive={isActive}
-              outputContent={tabs[activeTabIndex].output}
-              applicationSettings={applicationSettings}
-              saveApplicationSettings={saveApplicationSettings}
-              addLog={addLog}
-              setActivePanelTab={setActivePanelTab}
-              setParentIsLoading={setIsLoading}
-              isSendingRequest={isBusy}
-              setStoreIsGeneratingPrompt={setIsGeneratingPrompt}
-            />
-          )}
+          <SendViaApiControls
+            isActive={isActive}
+            outputContent={tabs[activeTabIndex].output}
+            applicationSettings={applicationSettings}
+            saveApplicationSettings={saveApplicationSettings}
+            addLog={addLog}
+            setActivePanelTab={setActivePanelTab}
+            setParentIsLoading={setIsLoading}
+            isSendingRequest={isBusy}
+            setStoreIsGeneratingPrompt={setIsGeneratingPrompt}
+          />
 
           {/* Custom Prompts Help Modal */}
           <CustomPromptsHelpModal

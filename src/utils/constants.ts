@@ -41,7 +41,6 @@ export const SETTINGS = {
     },
     application: {
       enableSmartFeatures: false,
-      enableExperimentalFeatures: false,
       minSmartPreviewLines: 10,
       maxSmartPreviewLines: 20,
       thresholdLineLength: 200,

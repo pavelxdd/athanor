@@ -1076,7 +1076,7 @@ describe('setupCoreHandlers', () => {
 
     it('should return null when no lastOpenedProjectPath in settings', async () => {
       mockSettingsService.getApplicationSettings.mockResolvedValue({
-        enableExperimentalFeatures: false,
+        // lastOpenedProjectPath is intentionally omitted for this test
       });
 
       const result = await handler(mockEvent);
