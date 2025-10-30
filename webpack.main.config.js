@@ -1,6 +1,16 @@
 // webpack.main.config.js
 const path = require('path');
+const webpack = require('webpack');
+const { execSync } = require('child_process');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+
+// Get git version
+let gitVersion = `v${require('./package.json').version}`;
+try {
+  gitVersion = execSync('git describe --tags').toString().trim();
+} catch (e) {
+  console.warn('Could not get git describe output. Falling back to package.json version.');
+}
 
 module.exports = {
   entry: {
@@ -45,6 +55,9 @@ module.exports = {
       patterns: [
         { from: 'public/index.html', to: 'main_window/index.html' },
       ],
+    }),
+    new webpack.DefinePlugin({
+      'GIT_VERSION': JSON.stringify(gitVersion),
     }),
   ],
   target: 'electron-main',

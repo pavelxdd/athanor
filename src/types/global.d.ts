@@ -101,6 +101,8 @@ export interface WorkbenchState {
   resetGeneratingPrompt: () => void;
 }
 
+declare const GIT_VERSION: string;
+
 declare global {
   interface Window {
     app: {

@@ -3,22 +3,28 @@ import { execSync } from 'child_process';
 import { mainWindow } from '../windowManager';
 import { FileService } from '../services/FileService';
 import { SettingsService } from '../services/SettingsService';
+import { GitService } from '../services/GitService';
 import { CUSTOM_TEMPLATES } from '../../src/utils/constants';
+
+declare const GIT_VERSION: string;
 
 // Store service instances
 let _fileService: FileService;
 let _settingsService: SettingsService;
+let _gitService: GitService;
 
 // Define channel name for confirmation dialog
 const SHOW_CONFIRM_DIALOG_CHANNEL = 'dialog:show-confirm-dialog';
 
 export function setupCoreHandlers(
   fileService: FileService,
-  settingsService: SettingsService
+  settingsService: SettingsService,
+  gitService: GitService
 ) {
   // Store the service instances for later use
   _fileService = fileService;
   _settingsService = settingsService;
+  _gitService = gitService;
 
   // Add handler for confirmation dialog
   ipcMain.handle(
@@ -69,7 +75,8 @@ export function setupCoreHandlers(
   // Add handler for getting app version
   ipcMain.handle('app:version', () => {
     try {
-      return app.getVersion();
+      // Use the version string injected at build time, or fallback to app version
+      return typeof GIT_VERSION !== 'undefined' ? GIT_VERSION : `v${app.getVersion()}`;
     } catch (error) {
       handleError(error, 'getting app version');
     }

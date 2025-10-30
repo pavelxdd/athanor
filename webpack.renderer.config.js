@@ -1,5 +1,15 @@
 const path = require('path');
+const webpack = require('webpack');
+const { execSync } = require('child_process');
 const isEnvDevelopment = process.env.NODE_ENV === 'development';
+
+// Get git version
+let gitVersion = `v${require('./package.json').version}`;
+try {
+  gitVersion = execSync('git describe --tags').toString().trim();
+} catch (e) {
+  console.warn('Could not get git describe output. Falling back to package.json version.');
+}
 
 module.exports = {
   mode: isEnvDevelopment ? 'development' : 'production',
@@ -17,6 +27,11 @@ module.exports = {
       },
     ],
   },
+  plugins: [
+    new webpack.DefinePlugin({
+      'GIT_VERSION': JSON.stringify(gitVersion),
+    }),
+  ],
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
     fallback: {

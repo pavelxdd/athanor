@@ -6,6 +6,9 @@ import * as fs from 'fs';
 import { spawn } from 'child_process';
 import { createWindow, mainWindow, getIconPath } from './windowManager';
 import { setupIpcHandlers } from './ipcHandlers';
+
+declare const GIT_VERSION: string;
+
 import { FileService } from './services/FileService';
 import { SettingsService } from './services/SettingsService';
 import {
@@ -465,7 +468,7 @@ app.whenReady().then(async () => {
   app.setAboutPanelOptions({
     applicationName:
       packageJson.name.charAt(0).toUpperCase() + packageJson.name.slice(1),
-    applicationVersion: `Version ${packageJson.version}`,
+    applicationVersion: `Version ${GIT_VERSION}`,
     authors: [packageJson.author],
     copyright: `Copyright © ${new Date().getFullYear()} ${packageJson.author}`,
     credits: `${packageJson.description}`,

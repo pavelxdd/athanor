@@ -139,7 +139,7 @@ describe('setupCoreHandlers', () => {
     mockEvent = {};
 
     // Setup handlers
-    setupCoreHandlers(mockFileService, mockSettingsService);
+    setupCoreHandlers(mockFileService, mockSettingsService, {} as any); // Pass empty object for gitService in test
   });
 
   describe('handler registration', () => {
@@ -321,20 +321,17 @@ describe('setupCoreHandlers', () => {
       handler = ipcHandlers.get('app:version')!;
     });
 
-    it('should return app version', async () => {
+    it('should return app version from electron as a fallback', () => {
       mockApp.getVersion.mockReturnValue('1.0.0');
-
-      const result = await handler(mockEvent);
-
-      expect(result).toBe('1.0.0');
+      const result = handler(mockEvent);
+      expect(result).toBe('v1.0.0');
       expect(mockApp.getVersion).toHaveBeenCalled();
     });
 
-    it('should handle app.getVersion errors', () => { // No longer async
+    it('should handle errors when getting version', () => {
       mockApp.getVersion.mockImplementation(() => {
         throw new Error('Version error');
       });
-
       expect(() => handler(mockEvent)).toThrow('Version error');
     });
   });

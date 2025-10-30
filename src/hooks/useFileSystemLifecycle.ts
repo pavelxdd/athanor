@@ -14,6 +14,8 @@ import type { ApplicationSettings } from '../types/global';
 
 import { FileSystemLifecycle } from '../types/global';
 
+declare const GIT_VERSION: string;
+
 // Shared helper for loading both main and materials trees
 const loadAndSetTrees = async (basePath: string) => {
   const mainTree = await buildFileTree(basePath);
@@ -361,17 +363,14 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
   }, [projectSettings, currentDirectory, addLog, refreshFileSystem]);
 
   useEffect(() => {
-    const fetchVersion = async () => {
-      try {
-        const version = await window.app.getVersion();
-        setAppVersion(`v${version}`);
-      } catch (error) {
-        console.error('Error fetching app version:', error);
-        setAppVersion('');
-        addLog('Failed to fetch app version');
-      }
-    };
-    fetchVersion();
+    try {
+      // Use the version string injected at build time
+      setAppVersion(GIT_VERSION);
+    } catch (error) {
+      console.error('Error setting app version:', error);
+      setAppVersion('');
+      addLog('Failed to set app version from build-time variable');
+    }
   }, [addLog]);
 
   // Set up listeners for menu commands from main process

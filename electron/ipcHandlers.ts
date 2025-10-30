@@ -26,7 +26,7 @@ export function setupIpcHandlers(
   userActivityService: UserActivityService,
   gitService: GitService
 ) {
-  setupCoreHandlers(fileService, settingsService);
+  setupCoreHandlers(fileService, settingsService, gitService);
   setupFileOperationHandlers(fileService);
   setupFileWatchHandlers(fileService);
   setupSettingsHandlers(settingsService);
