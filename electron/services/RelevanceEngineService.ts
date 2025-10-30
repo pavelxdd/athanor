@@ -4,11 +4,51 @@ import { DependencyScanner } from './DependencyScanner';
 import { PathUtils } from './PathUtils';
 import { CONTEXT_BUILDER, SETTINGS } from '../../src/utils/constants';
 // @ts-ignore - webpack module resolution issue
-import { countTokens, getSmartPreview } from 'genai-lite/prompting';
 import { ProjectGraphService } from './ProjectGraphService';
 import { analyzeTaskDescription } from './TaskAnalysisUtils';
 import { UserActivityService } from './UserActivityService';
 import { DependencyResolver } from './DependencyResolver';
+
+// A simple heuristic for token counting.
+// 1 token is roughly 4 characters of text.
+function countTokens(text: string): number {
+  if (!text) {
+    return 0;
+  }
+  return Math.ceil(text.length / 4);
+}
+
+function getSmartPreview(
+  content: string,
+  config: { minLines: number; maxLines: number }
+): string {
+  const lines = content.split('\n');
+
+  if (lines.length <= config.maxLines) {
+    return content;
+  }
+
+  let endLine = config.minLines;
+  let emptyLinesCount = lines
+    .slice(0, config.minLines)
+    .filter((line) => line.trim() === '').length;
+
+  if (emptyLinesCount < 2 && lines.length > config.minLines) {
+    for (
+      let i = config.minLines;
+      i < Math.min(lines.length, config.maxLines);
+      i++
+    ) {
+      if (lines[i].trim() === '') {
+        endLine = i + 1;
+        break;
+      }
+      endLine = i + 1;
+    }
+  }
+
+  return lines.slice(0, endLine).join('\n') + '\n... (content truncated)';
+}
 
 interface ContextResult {
   userSelected: string[];

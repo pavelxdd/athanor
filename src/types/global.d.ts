@@ -423,26 +423,6 @@ export interface FileSystemLifecycle {
   handleProjectDialogClose: () => void;
 }
 
-declare module 'js-tiktoken' {
-  export class Tiktoken {
-    encode(text: string): number[];
-    decode(tokens: number[]): string;
-    free(): void;
-  }
-
-  export type TiktokenModel = 'gpt-4' | 'gpt-3.5-turbo' | string;
-  export type TiktokenEncoding = 'cl100k_base' | 'p50k_base' | string;
-
-  export function getEncoding(
-    encoding: TiktokenEncoding,
-    extendSpecialTokens?: Record<string, number>
-  ): Tiktoken;
-  export function encodingForModel(
-    model: TiktokenModel,
-    extendSpecialTokens?: Record<string, number>
-  ): Tiktoken;
-}
-
 // Command types
 export type CommandType = 'apply changes' | 'select' | 'task';
 

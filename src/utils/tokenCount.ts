@@ -1,38 +1,10 @@
-import { Tiktoken, encodingForModel } from 'js-tiktoken';
-
-let tokenizer: Tiktoken | null = null;
-
-// Initialize tokenizer with GPT-4 encoding (cl100k_base)
-function getTokenizer(): Tiktoken {
-  if (!tokenizer) {
-    try {
-      tokenizer = encodingForModel('gpt-4');
-    } catch (error) {
-      console.error('Failed to initialize tokenizer:', error);
-      throw error; // Re-throw to be handled by the calling function
-    }
-  }
-  return tokenizer;
-}
-
+// A simple heuristic for token counting.
+// 1 token is roughly 4 characters of text.
 export function countTokens(text: string): number {
   if (!text) {
-    console.warn('Empty text passed to countTokens');
     return 0;
   }
-
-  try {
-    const enc = getTokenizer();
-    if (!enc) {
-      console.error('Failed to get tokenizer');
-      return 0;
-    }
-    const tokens = enc.encode(text);
-    return tokens.length;
-  } catch (error) {
-    console.error('Error counting tokens:', error);
-    return 0;
-  }
+  return Math.ceil(text.length / 4);
 }
 
 // Format token count with up to 3 significant digits as a regular number

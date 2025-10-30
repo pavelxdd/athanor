@@ -6,7 +6,6 @@ import {
   extractTaskDescription,
 } from './promptTemplates';
 // @ts-ignore - webpack module resolution issue
-import { renderTemplate } from 'genai-lite/prompting';
 import { PromptData, PromptVariant } from '../types/promptTypes';
 import { useFileSystemStore } from '../stores/fileSystemStore';
 import { AthanorConfig } from '../types/global';
@@ -25,6 +24,29 @@ export interface PromptVariables {
   threshold_line_length?: number;
 
   supplementary_section?: string;
+}
+
+// Simple template renderer to replace {{variable}} with values from an object.
+function renderTemplate(
+  template: string,
+  variables: Record<string, any>
+): string {
+  // Use a regex to find all instances of {{variableName}}
+  return template.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (match, key) => {
+    // Check if the key exists in the variables object.
+    // Using Object.prototype.hasOwnProperty.call for safety.
+    if (Object.prototype.hasOwnProperty.call(variables, key)) {
+      const value = variables[key];
+      // If the value is null or undefined, return an empty string to clear the placeholder.
+      if (value === null || value === undefined) {
+        return '';
+      }
+      // Otherwise, convert the value to a string and return it.
+      return String(value);
+    }
+    // If the key is not found in variables, return the original match (e.g., "{{variableName}}").
+    return match;
+  });
 }
 
 // Get list of selected files with relative paths and line counts, preserving order

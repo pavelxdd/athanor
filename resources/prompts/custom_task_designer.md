@@ -269,40 +269,6 @@ understand what's in the file and highlight anything that might surprise them.
 - Only add or change the AI summaries, nothing else
 - You will most likely only need UPDATE_DIFF
 
-## Examples
-
-<example>
-Simple store with intuitive interface:
-```
-// AI Summary: Manages application logs with functionality to add and retrieve log messages
-```
-</example>
-
-<example>
-Complex component with important behaviors:
-```
-// AI Summary: File explorer component with recursive selection handling, file system browsing,
-// and context menu support for ignore operations with improved menu dismissal.
-// Handles both file and folder selection with parent/child relationship maintenance.
-```
-</example>
-   
-<example>
-Utility with non-obvious features:
-```
-// AI Summary: Provides token counting functionality using js-tiktoken with efficient encoder caching.
-// Handles edge cases like empty input and maintains singleton tokenizer instance.
-```  
-</example>
-
-<example>
-Complex manager with important interfaces:
-```
-// AI Summary: Manages file system operations, ignore rules, and file watchers with cross-platform path handling.
-// Key functions handle ignore rule loading, path normalization, and watcher lifecycle.
-// Requires initialization before use and proper cleanup of watchers.
-```
-</example>
 </ath_task_variant>
 </ath_task>
 </file_task_ai_summary_xml>
