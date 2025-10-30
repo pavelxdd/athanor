@@ -243,11 +243,20 @@ export class FileService extends EventEmitter implements IFileService {
         await fs.mkdir(this.toOS(absDir), { recursive: true });
       }
       
-      // Normalize line endings for string data
-      const normalizedData = typeof data === 'string' ? data.replace(/\r\n/g, '\n') : data;
+      // Normalize line endings for string data and ensure a final newline
+      let finalData: string | Buffer;
+      if (typeof data === 'string') {
+        let content = data.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        if (content.length > 0 && !content.endsWith('\n')) {
+          content += '\n';
+        }
+        finalData = content;
+      } else {
+        finalData = data;
+      }
       
       // Write file
-      await fs.writeFile(this.toOS(absPath), normalizedData);
+      await fs.writeFile(this.toOS(absPath), finalData);
     } catch (error) {
       console.error(`Error writing file ${pathStr}:`, error);
       throw error;
