@@ -1,5 +1,9 @@
 # Athanor - AI Workbench
 
+This is a simplified version of [Athanor](https://github.com/lacerbi/athanor) for my personal use.
+
+---
+
 ## App Description
 
 Athanor is an **Electron-based desktop application** that integrates AI coding assistants into a developer’s workflow. Its primary goal is to streamline two main flows:
