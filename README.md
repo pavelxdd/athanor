@@ -78,7 +78,7 @@ Athanor is an **Electron-based desktop application** that integrates AI coding a
     - A bottom **log panel** shows messages and clickable events for debugging or re-inspection (`logStore.ts`).
 
 11. **Preset Tasks**
-    - Pre-defined tasks (e.g., 'AI Summary', 'Refactor Code') available in the Action Panel, loaded from `task_*.xml` files.
+    - Pre-defined tasks available in the Action Panel, loaded from `task_*.xml` files.
 
 12. **Drag and Drop**
     - File paths can be dragged from the file explorer and dropped into the Task Description or Context text areas (`useFileDrop.ts`).

@@ -856,32 +856,6 @@ For DELETE operations, leave the file content empty
 <file_code><![CDATA[]]></file_code>
 ```
 
-## AI Summary
-
-Brief file-level comments that capture essential purpose and behavior
-
-Place them at the start of new/updated files and include:
-
-1. Core purpose
-2. Key functions/interfaces (if not obvious from filename)
-3. Important dependencies and system interactions
-4. Non-obvious behaviors or gotchas
-
-### Rules
-
-- Keep to 1-5 lines
-- Use file-appropriate comment syntax
-- Do not leave empty lines before of after the summary
-- Skip for files without comment support
-- Update when file content changes meaningfully
-
-### Example
-
-```typescript
-// AI Summary: Handles JWT authentication, session management, and role-based access.
-// Requires secret key initialization. Core functions: generateToken(), validateSession().
-```
-
 ## Comments
 
 Add comments as needed to explain parts of the code and make it readable.
@@ -992,32 +966,6 @@ For DELETE operations, leave the file content empty
 
 ```
 <file_code><![CDATA[]]></file_code>
-```
-
-## AI Summary
-
-Brief file-level comments that capture essential purpose and behavior
-
-Place them at the start of new/updated files and include:
-
-1. Core purpose
-2. Key functions/interfaces (if not obvious from filename)
-3. Important dependencies and system interactions
-4. Non-obvious behaviors or gotchas
-
-### Rules
-
-- Keep to 1-5 lines
-- Use file-appropriate comment syntax
-- Do not leave empty lines before of after the summary
-- Skip for files without comment support
-- Update when file content changes meaningfully
-
-### Example
-
-```typescript
-// AI Summary: Handles JWT authentication, session management, and role-based access.
-// Requires secret key initialization. Core functions: generateToken(), validateSession().
 ```
 
 ## Comments

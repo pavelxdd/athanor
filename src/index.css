@@ -1,5 +1,3 @@
-/* AI Summary: Main CSS file that includes Tailwind base styles and custom animations. */
-/* Configures floating labels, tooltips, and transitions for consistent UI behavior. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

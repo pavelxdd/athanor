@@ -43,7 +43,7 @@ You will respond with two sections: a Markdown summary and one or more XML block
 - Format this section as Markdown.
 
 ### XML Section(s)
-- The XML block(s) must be enclosed in Markdown code blocks.
+- The XML block(s) *MUST* be enclosed in Markdown code blocks.
 - Use the `<ath command="apply changes">` wrapper. You should group all file operations into a single `<ath command="apply changes">` block for easier processing.
 - Inside, include one `<file>` block for each created, updated, or deleted file.
 - **Ensure all XML is valid and all tags are properly closed.**
@@ -79,7 +79,6 @@ Each `<file>` block must contain the following tags:
 - Include enough context lines in the `SEARCH` block to make the location unique within the file.
 
 ## 4. Code Quality
-- **AI Summary:** Add a brief (1-5 line) summary comment at the start of new or significantly updated files. It should describe the file's purpose, key functions, dependencies, and any non-obvious behaviors. Use file-appropriate comment syntax (e.g., `//` or `#`).
 - **Comments:** Add comments as needed to explain complex code. Do not remove existing comments unless they are incorrect.
 - **File Length:** Files should generally be under `{{threshold_line_length}}` lines.
 
@@ -139,7 +138,7 @@ You will respond with two sections: a Markdown summary and one or more XML block
 - Format this section as Markdown.
 
 ### XML Section(s)
-- The XML block(s) must be enclosed in Markdown code blocks.
+- The XML block(s) *MUST* be enclosed in Markdown code blocks.
 - Use the `<ath command="apply changes">` wrapper. You should group all file operations into a single `<ath command="apply changes">` block for easier processing.
 - Inside, include one `<file>` block for each created, updated, or deleted file.
 - **Ensure all XML is valid and all tags are properly closed.**
@@ -147,16 +146,34 @@ You will respond with two sections: a Markdown summary and one or more XML block
 ## 3. File Operations & XML Structure
 Each `<file>` block must contain the following tags:
 - `<file_message>`: A brief summary of the changes for this specific file.
-- `<file_operation>`: `CREATE`, `UPDATE_FULL`, or `DELETE`.
-- `<file_path>`: The full, project-relative path to the file.
+- `<file_operation>`: `CREATE`, `UPDATE_FULL`, `UPDATE_DIFF`, `DELETE`, `RENAME`, `APPEND`, `PREPEND`.
+- `<file_path>`: The full, project-relative path to the file (the old path for `RENAME`).
+- `<file_path_new>`: (Required for `RENAME` only) The new project-relative path for the file.
 - `<file_code>`: The code content, wrapped in `<![CDATA[...]]>`.
 
-### Operation Guidelines:
-- For `CREATE` and `UPDATE_FULL`, provide the complete, final content of the file. Do not omit any part.
-- For `DELETE`, the `<file_code>` block must be empty (`<![CDATA[]]>`).
+### Choosing an Operation:
+- **CREATE**: For new files.
+- **UPDATE_FULL**: For extensive rewrites (affecting >30-50% of a file). Provide the complete, final content of the file. Do not omit any part.
+- **UPDATE_DIFF**: For small to medium updates. Use the enhanced diff format below.
+- **DELETE**: For removing files. The `<file_code>` block must be empty (`<![CDATA[]]>`).
+- **RENAME**: For renaming or moving files. The `<file_code>` block must be empty, and `<file_path_new>` must be provided.
+- **APPEND**: Appends the content from `<file_code>` to the end of the specified file.
+- **PREPEND**: Prepends the content from `<file_code>` to the beginning of the specified file.
+
+### Enhanced Diff Format (for UPDATE_DIFF):
+```xml
+<file_code><![CDATA[
+<<<<<<< SEARCH
+[Exact, character-for-character copy of the original code section to be replaced]
+=======
+[The new code to insert]
+>>>>>>> REPLACE
+]]></file_code>
+```
+- The `SEARCH` block must be a **verbatim copy** from the original code. Do not reformat, re-indent, or change it in any way.
+- Include enough context lines in the `SEARCH` block to make the location unique within the file.
 
 ## 4. Code Quality
-- **AI Summary:** Add a brief (1-5 line) summary comment at the start of new or significantly updated files. It should describe the file's purpose, key functions, dependencies, and any non-obvious behaviors. Use file-appropriate comment syntax (e.g., `//` or `#`).
 - **Comments:** Add comments as needed to explain complex code. Do not remove existing comments unless they are incorrect.
 - **File Length:** Files should generally be under `{{threshold_line_length}}` lines.
 

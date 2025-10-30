@@ -82,7 +82,7 @@
 > -   **Examples**: Provide examples within the task description if it helps clarify complex instructions (see `task_ai_summary.xml` for good examples of this).
 > -   **Focused Scope**: Each task should ideally address a well-defined operation.
 > 
-> Look at other task examples in [Athanor's prompts folder](https://github.com/lacerbi/athanor/tree/main/resources/prompts) to see how they are structured for different purposes like generating AI summaries, refactoring code, or creating unit tests.
+> Look at other task examples in [Athanor's prompts folder](https://github.com/lacerbi/athanor/tree/main/resources/prompts) to see how they are structured for different purposes like generating refactoring code, or creating unit tests.
 > Remember that the output of a task template is *input for a prompt template*.
 > 
 > ADDITIONAL EXPLANATION (REMOVE THIS SECTION) -->
