@@ -22,6 +22,7 @@ interface ApplyChangesState {
   ) => void;
   diffMode: 'strict' | 'fuzzy';
   setDiffMode: (mode: 'strict' | 'fuzzy') => void;
+  setOperationError: (index: number, error: string | null) => void;
 }
 
 export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
@@ -52,13 +53,23 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
       set({ diffMode: mode });
     },
 
+    setOperationError: (index: number, error: string | null) => {
+      set((state) => {
+        const newOps = [...state.activeOperations];
+        if (newOps[index]) {
+          newOps[index] = { ...newOps[index], error: error || undefined };
+        }
+        return { activeOperations: newOps };
+      });
+    },
+
     applyChange: async (index: number, options?: { skipRefresh?: boolean }) => {
       const { activeOperations } = get();
       if (index < 0 || index >= activeOperations.length) return;
 
       const op = activeOperations[index];
-      // If it's already accepted or rejected, do nothing
-      if (op.accepted || op.rejected) {
+      // If it's already accepted, rejected, or has an error, do nothing
+      if (op.accepted || op.rejected || op.error) {
         return;
       }
 
@@ -80,41 +91,26 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
         switch (op.file_operation) {
           case 'CREATE':
           case 'UPDATE_FULL':
-          case 'UPDATE_DIFF':
-            try {
-              await window.fileService.write(relativePath, op.new_code);
-              const operationVerb =
-                op.file_operation === 'CREATE'
-                  ? 'Created'
-                  : op.file_operation === 'UPDATE_FULL'
-                    ? 'Updated'
-                    : 'Applied changes to';
-              addLog(`${operationVerb} file: ${relativePath}`);
+            await window.fileService.write(relativePath, op.new_code);
+            addLog(
+              `${op.file_operation === 'CREATE' ? 'Created' : 'Updated'} file: ${relativePath}`
+            );
+            break;
 
-              // Additional validation for UPDATE_DIFF
-              if (op.file_operation === 'UPDATE_DIFF') {
-                try {
-                  const newContent = await window.fileService.read(
-                    relativePath,
-                    { encoding: 'utf8' }
-                  );
-                  if (newContent !== op.new_code) {
-                    throw new Error(
-                      'File content verification failed after diff update'
-                    );
-                  }
-                } catch (error) {
-                  console.error('Verification error:', error);
-                  addLog(
-                    `Warning: Could not verify file content after update: ${error}`
-                  );
-                }
-              }
-            } catch (error) {
-              // If operation fails, mark as not accepted and propagate error
-              newOps[index] = { ...op, accepted: false };
-              set({ activeOperations: newOps });
-              throw error;
+          case 'UPDATE_DIFF':
+            {
+              const { processFileUpdate } = await import(
+                '../utils/fileOperations'
+              );
+              const finalContent = processFileUpdate(
+                'UPDATE_DIFF',
+                relativePath,
+                op.diff_blocks || [],
+                op.old_code,
+                get().diffMode
+              );
+              await window.fileService.write(relativePath, finalContent);
+              addLog(`Applied changes to file: ${relativePath}`);
             }
             break;
 
@@ -207,7 +203,7 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
       if (index < 0 || index >= activeOperations.length) return;
 
       const op = activeOperations[index];
-      if (op.accepted || op.rejected) {
+      if (op.accepted || op.rejected || op.error) {
         return;
       }
       const { addLog } = useLogStore.getState();
@@ -262,7 +258,7 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
       let changesMade = false;
       for (let i = 0; i < activeOperations.length; i++) {
         const op = activeOperations[i];
-        if (!op.accepted && !op.rejected) {
+        if (!op.accepted && !op.rejected && !op.error) {
           await rejectChange(i, { skipRefresh: true });
           // A change to the filesystem only happens in git mode
           if (mode === 'git') {
@@ -285,7 +281,7 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
       // Use a classic for loop to get index and process sequentially with await
       for (let i = 0; i < activeOperations.length; i++) {
         const op = activeOperations[i];
-        if (!op.accepted && !op.rejected) {
+        if (!op.accepted && !op.rejected && !op.error) {
           try {
             // Await each change to process them one by one, skipping refresh
             await applyChange(i, { skipRefresh: true });

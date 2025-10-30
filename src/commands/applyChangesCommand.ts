@@ -1,55 +1,43 @@
 import { FileOperation } from '../types/global';
-import { parseXmlContent } from './parser/applyChangesParser';
-import { countTokens, formatTokenCount } from '../utils/tokenCount';
 
 export interface ApplyChangesParams {
-  content: string;
-  fullContent?: string;
-  addLog: (message: string | { message: string; onClick: () => Promise<void> }) => void;
+  operations: FileOperation[];
+  addLog: (
+    message: string | { message: string; onClick: () => Promise<void> }
+  ) => void;
   setOperations: (ops: FileOperation[]) => void;
   clearOperations: () => void;
   setActiveTab?: (tab: 'workbench' | 'viewer' | 'review') => void;
-  diffMode?: 'strict' | 'fuzzy';
 }
 
 export async function executeApplyChangesCommand({
-  content,
-  fullContent,
+  operations,
   addLog,
   setOperations,
   clearOperations,
   setActiveTab,
-  diffMode = 'strict',
 }: ApplyChangesParams): Promise<boolean> {
-  addLog(
-    `Processing apply changes command (${formatTokenCount(
-      countTokens(fullContent || content)
-    )})`
-  );
+  addLog(`Processing ${operations.length} file operations...`);
 
   try {
-    const operations = await parseXmlContent(
-      fullContent || content, 
-      // Pass addLog directly since it now supports both string and object with onClick
-      addLog,
-      diffMode
-    );
-    if (operations.length) {
+    if (operations.length > 0) {
       clearOperations();
       setOperations(operations);
       if (setActiveTab) {
         setActiveTab('review');
       }
-      addLog(`Found ${operations.length} file operations`);
+      addLog(`Staged ${operations.length} file operations for review.`);
       return true;
     } else {
-      addLog('No valid file operations found in command');
+      addLog('No valid file operations found to apply.');
       return false;
     }
   } catch (error) {
-    console.error('Error processing XML content:', error);
+    console.error('Error executing apply changes command:', error);
     addLog(
-      error instanceof Error ? error.message : 'Failed to process XML content'
+      error instanceof Error
+        ? error.message
+        : 'Failed to execute apply changes command'
     );
     return false;
   }

@@ -647,6 +647,7 @@ export interface FileOperation {
   old_code: string;
   accepted: boolean;
   rejected: boolean;
-  diff_blocks?: DiffBlock[]; // Only used for UPDATE_DIFF operations
+  diff_blocks?: DiffBlock[];
   warning?: string;
+  error?: string;
 }

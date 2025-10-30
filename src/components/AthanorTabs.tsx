@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { CircleSlashed, CircleDashed, GitCompare } from 'lucide-react';
 import CommandButton from './CommandButton';
 import { useApplyChangesStore } from '../stores/applyChangesStore';
-import { useLogStore } from '../stores/logStore';
 import { useSettingsStore } from '../stores/settingsStore';
 
 export type TabType = 'workbench' | 'viewer' | 'review' | 'settings';
@@ -16,7 +15,6 @@ const AthanorTabs: React.FC<AthanorTabsProps> = ({
   activeTab,
   onTabChange,
 }) => {
-  const { addLog } = useLogStore();
   const { setOperations, clearOperations, diffMode, setDiffMode } =
     useApplyChangesStore();
   const { applicationSettings } = useSettingsStore();
@@ -94,7 +92,6 @@ const AthanorTabs: React.FC<AthanorTabsProps> = ({
           )}
         </button>
         <CommandButton
-          addLog={addLog}
           setOperations={setOperations}
           clearOperations={clearOperations}
           setActiveTab={onTabChange}

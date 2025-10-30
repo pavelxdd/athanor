@@ -116,7 +116,9 @@
     "stream-browserify": "^3.0.0",
     "timers-browserify": "^2.0.12",
     "xml2js": "^0.6.2",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "bufferutil": "^4.0.8",
+    "utf-8-validate": "^6.0.4"
   },
   "overrides": {
     "prismjs": "1.30.0",

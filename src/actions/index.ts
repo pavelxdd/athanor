@@ -1,5 +1,4 @@
 // Action handlers
-export { applyAiOutput } from './ApplyAiOutputAction';
 export { buildTaskAction } from './buildTaskAction';
 export type { BuildTaskActionParams } from './buildTaskAction';
 export { copyToClipboard } from './ManualCopyAction';

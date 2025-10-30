@@ -359,22 +359,35 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           style={{ height: logPanelHeight }}
           className="border-t border-gray-200 dark:border-gray-700 p-2 bg-gray-50 dark:bg-gray-800 overflow-y-auto font-mono text-sm"
         >
-          {logs.map((log) => (
-            <div key={log.id} className="text-gray-700 dark:text-gray-300">
-              {log.onClick ? (
-                <button
-                  onClick={log.onClick}
-                  className="text-left text-purple-600 dark:text-purple-400 hover:underline active:bg-purple-100 dark:active:bg-purple-900 transition-colors"
-                >
-                  [{log.timestamp}] {log.message}
-                </button>
-              ) : (
-                <span>
-                  [{log.timestamp}] {log.message}
-                </span>
-              )}
-            </div>
-          ))}
+          {logs.map((log) => {
+            const isError = log.level === 'error';
+            const baseTextColor = isError
+              ? 'text-red-600 dark:text-red-400'
+              : 'text-gray-700 dark:text-gray-300';
+
+            return (
+              <div key={log.id} className={baseTextColor}>
+                {log.onClick ? (
+                  <button
+                    onClick={log.onClick}
+                    className={`text-left hover:underline transition-colors ${
+                      isError
+                        ? '' // Inherit red color from parent
+                        : 'text-purple-600 dark:text-purple-400'
+                    }`}
+                  >
+                    <span>[{log.timestamp}] </span>
+                    <span>{log.message}</span>
+                  </button>
+                ) : (
+                  <span>
+                    <span>[{log.timestamp}] </span>
+                    <span>{log.message}</span>
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

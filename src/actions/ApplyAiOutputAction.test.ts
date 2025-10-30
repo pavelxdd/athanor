@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { processAiResponseContent, applyAiOutput } from './ApplyAiOutputAction';
+import { processAiResponseContent } from './ApplyAiOutputAction';
 import * as commands from '../commands';
 import { useApplyChangesStore } from '../stores/applyChangesStore';
 import { FileOperation } from '../types/global';
@@ -12,10 +12,12 @@ jest.mock('../commands', () => ({
   executeSelectCommand: jest.fn(),
   executeTaskCommand: jest.fn(),
   executeApplyChangesCommand: jest.fn(),
+  executeAgentTaskCommand: jest.fn(),
   COMMAND_TYPES: {
     SELECT: 'select',
     TASK: 'task',
     APPLY_CHANGES: 'apply changes',
+    AGENT_TASK: 'agent task',
   },
 }));
 
@@ -51,6 +53,16 @@ describe('ApplyAiOutputAction', () => {
     setActiveTab?: jest.Mock;
   };
 
+  const mockOperation: FileOperation = {
+    file_path: 'test.ts',
+    file_operation: 'UPDATE_FULL',
+    new_code: 'new code',
+    old_code: 'old code',
+    file_message: 'test message',
+    accepted: false,
+    rejected: false,
+  };
+
   beforeEach(() => {
     mockAddLog = jest.fn();
     mockSetOperations = jest.fn();
@@ -69,10 +81,8 @@ describe('ApplyAiOutputAction', () => {
     // Set default mock return values
     (commands.executeSelectCommand as jest.Mock).mockResolvedValue(true);
     (commands.executeTaskCommand as jest.Mock).mockResolvedValue(true);
+    (commands.executeAgentTaskCommand as jest.Mock).mockResolvedValue(true);
     (commands.executeApplyChangesCommand as jest.Mock).mockResolvedValue(true);
-    (useApplyChangesStore.getState as jest.Mock).mockReturnValue({
-      diffMode: 'strict',
-    });
   });
 
   afterAll(() => {
@@ -171,31 +181,24 @@ describe('ApplyAiOutputAction', () => {
       expect(mockAddLog).toHaveBeenCalledWith('Failed to execute task command');
     });
 
-    it('should execute a single APPLY_CHANGES command successfully with diffMode', async () => {
+    it('should execute a single APPLY_CHANGES command successfully', async () => {
       const mockCommand = {
         type: commands.COMMAND_TYPES.APPLY_CHANGES,
-        content: 'file content',
-        fullContent: '<ath command="apply changes">file content</ath>',
+        content: [mockOperation],
       };
-      (commands.parseCommand as jest.Mock).mockReturnValue([mockCommand]);
+      (commands.parseCommand as jest.Mock).mockResolvedValue([mockCommand]);
       (commands.executeApplyChangesCommand as jest.Mock).mockResolvedValue(
         true
       );
-      (useApplyChangesStore.getState as jest.Mock).mockReturnValue({
-        diffMode: 'fuzzy',
-      });
 
       await processAiResponseContent('ai content', mockParams);
 
-      expect(useApplyChangesStore.getState).toHaveBeenCalled();
       expect(commands.executeApplyChangesCommand).toHaveBeenCalledWith({
-        content: 'file content',
-        fullContent: '<ath command="apply changes">file content</ath>',
+        operations: [mockOperation],
         addLog: mockAddLog,
         setOperations: mockSetOperations,
         clearOperations: mockClearOperations,
         setActiveTab: mockSetActiveTab,
-        diffMode: 'fuzzy',
       });
       expect(mockAddLog).not.toHaveBeenCalledWith(
         expect.stringContaining('Failed to execute')
@@ -203,48 +206,50 @@ describe('ApplyAiOutputAction', () => {
     });
 
     it('should aggregate multiple APPLY_CHANGES commands into a single execution', async () => {
+      const mockOp1 = { ...mockOperation, file_path: 'file1.ts' };
+      const mockOp2 = { ...mockOperation, file_path: 'file2.ts' };
       const mockCommands = [
         {
           type: commands.COMMAND_TYPES.APPLY_CHANGES,
-          content: 'content 1',
+          content: [mockOp1],
         },
         {
           type: commands.COMMAND_TYPES.APPLY_CHANGES,
-          content: 'content 2',
+          content: [mockOp2],
         },
       ];
-      (commands.parseCommand as jest.Mock).mockReturnValue(mockCommands);
+      (commands.parseCommand as jest.Mock).mockResolvedValue(mockCommands);
 
       await processAiResponseContent('ai content', mockParams);
 
       expect(commands.executeApplyChangesCommand).toHaveBeenCalledTimes(1);
       expect(commands.executeApplyChangesCommand).toHaveBeenCalledWith({
-        content: 'content 1\ncontent 2',
-        fullContent: '<ath command="apply changes">content 1\ncontent 2</ath>',
+        operations: [mockOp1, mockOp2],
         addLog: mockAddLog,
         setOperations: mockSetOperations,
         clearOperations: mockClearOperations,
         setActiveTab: mockSetActiveTab,
-        diffMode: 'strict',
       });
       expect(commands.executeSelectCommand).not.toHaveBeenCalled();
       expect(commands.executeTaskCommand).not.toHaveBeenCalled();
     });
 
     it('should process a mix of APPLY_CHANGES and other commands correctly', async () => {
+      const mockOp1 = { ...mockOperation, file_path: 'file1.ts' };
+      const mockOp2 = { ...mockOperation, file_path: 'file2.ts' };
       const mockCommands = [
         { type: commands.COMMAND_TYPES.SELECT, content: 'select content' },
         {
           type: commands.COMMAND_TYPES.APPLY_CHANGES,
-          content: 'apply content 1',
+          content: [mockOp1],
         },
         { type: commands.COMMAND_TYPES.TASK, content: 'task content' },
         {
           type: commands.COMMAND_TYPES.APPLY_CHANGES,
-          content: 'apply content 2',
+          content: [mockOp2],
         },
       ];
-      (commands.parseCommand as jest.Mock).mockReturnValue(mockCommands);
+      (commands.parseCommand as jest.Mock).mockResolvedValue(mockCommands);
 
       await processAiResponseContent('ai content', mockParams);
 
@@ -252,7 +257,7 @@ describe('ApplyAiOutputAction', () => {
       expect(commands.executeApplyChangesCommand).toHaveBeenCalledTimes(1);
       expect(commands.executeApplyChangesCommand).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: 'apply content 1\napply content 2',
+          operations: [mockOp1, mockOp2],
         })
       );
 
@@ -273,9 +278,9 @@ describe('ApplyAiOutputAction', () => {
     it('should handle APPLY_CHANGES command failure', async () => {
       const mockCommand = {
         type: commands.COMMAND_TYPES.APPLY_CHANGES,
-        content: 'content',
+        content: [mockOperation],
       };
-      (commands.parseCommand as jest.Mock).mockReturnValue([mockCommand]);
+      (commands.parseCommand as jest.Mock).mockResolvedValue([mockCommand]);
       (commands.executeApplyChangesCommand as jest.Mock).mockResolvedValue(
         false
       );
@@ -307,9 +312,7 @@ describe('ApplyAiOutputAction', () => {
 
     it('should handle error during command parsing', async () => {
       const parseError = new Error('Parse error');
-      (commands.parseCommand as jest.Mock).mockImplementation(() => {
-        throw parseError;
-      });
+      (commands.parseCommand as jest.Mock).mockRejectedValue(parseError);
 
       await processAiResponseContent('ai content', mockParams);
 
@@ -352,21 +355,18 @@ describe('ApplyAiOutputAction', () => {
       };
       const mockCommand = {
         type: commands.COMMAND_TYPES.APPLY_CHANGES,
-        content: 'content',
-        fullContent: '<ath command="apply changes">content</ath>',
+        content: [mockOperation],
       };
-      (commands.parseCommand as jest.Mock).mockReturnValue([mockCommand]);
+      (commands.parseCommand as jest.Mock).mockResolvedValue([mockCommand]);
 
       await processAiResponseContent('ai content', paramsWithoutSetActiveTab);
 
       expect(commands.executeApplyChangesCommand).toHaveBeenCalledWith({
-        content: 'content',
-        fullContent: '<ath command="apply changes">content</ath>',
+        operations: [mockOperation],
         addLog: mockAddLog,
         setOperations: mockSetOperations,
         clearOperations: mockClearOperations,
         setActiveTab: undefined,
-        diffMode: 'strict',
       });
     });
 
@@ -388,117 +388,6 @@ describe('ApplyAiOutputAction', () => {
       );
       expect(mockAddLog).toHaveBeenCalledWith(
         'Failed to process AI content: String error'
-      );
-    });
-  });
-
-  describe('applyAiOutput', () => {
-    it('should read clipboard content and process it', async () => {
-      const clipboardContent = '<ath command="select">file1.ts</ath>';
-      (navigator.clipboard.readText as jest.Mock).mockResolvedValue(
-        clipboardContent
-      );
-      const mockCommand = {
-        type: commands.COMMAND_TYPES.SELECT,
-        content: 'file1.ts',
-      };
-      (commands.parseCommand as jest.Mock).mockReturnValue([mockCommand]);
-
-      await applyAiOutput(mockParams);
-
-      expect(navigator.clipboard.readText).toHaveBeenCalled();
-      expect(commands.parseCommand).toHaveBeenCalledWith(clipboardContent);
-      expect(commands.executeSelectCommand).toHaveBeenCalledWith({
-        content: 'file1.ts',
-        addLog: mockAddLog,
-      });
-    });
-
-    it('should handle clipboard read failure', async () => {
-      const clipboardError = new Error('Clipboard access denied');
-      (navigator.clipboard.readText as jest.Mock).mockRejectedValue(
-        clipboardError
-      );
-
-      await applyAiOutput(mockParams);
-
-      expect(navigator.clipboard.readText).toHaveBeenCalled();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Failed to read clipboard:',
-        clipboardError
-      );
-      expect(mockAddLog).toHaveBeenCalledWith(
-        'Failed to read clipboard content'
-      );
-      expect(commands.parseCommand).not.toHaveBeenCalled();
-    });
-
-    it('should pass through all params to processAiResponseContent', async () => {
-      const clipboardContent = 'clipboard content';
-      (navigator.clipboard.readText as jest.Mock).mockResolvedValue(
-        clipboardContent
-      );
-      (commands.parseCommand as jest.Mock).mockReturnValue(null); // No commands to keep test simple
-
-      await applyAiOutput(mockParams);
-
-      expect(navigator.clipboard.readText).toHaveBeenCalled();
-      expect(commands.parseCommand).toHaveBeenCalledWith(clipboardContent);
-      expect(mockAddLog).toHaveBeenCalledWith(
-        'No valid commands found in AI response'
-      );
-    });
-
-    it('should handle complex AI content from clipboard with multiple command types', async () => {
-      const complexContent = `
-        <ath command="select">file1.ts file2.ts</ath>
-        <ath command="task">Refactor these files</ath>
-        <ath command="apply changes">content 1</ath>
-        <ath command="apply changes">content 2</ath>
-      `;
-      (navigator.clipboard.readText as jest.Mock).mockResolvedValue(
-        complexContent
-      );
-      const mockCommands = [
-        { type: commands.COMMAND_TYPES.SELECT, content: 'file1.ts file2.ts' },
-        { type: commands.COMMAND_TYPES.TASK, content: 'Refactor these files' },
-        {
-          type: commands.COMMAND_TYPES.APPLY_CHANGES,
-          content: 'content 1',
-        },
-        {
-          type: commands.COMMAND_TYPES.APPLY_CHANGES,
-          content: 'content 2',
-        },
-      ];
-      (commands.parseCommand as jest.Mock).mockReturnValue(mockCommands);
-
-      await applyAiOutput(mockParams);
-
-      expect(navigator.clipboard.readText).toHaveBeenCalled();
-      expect(commands.parseCommand).toHaveBeenCalledWith(complexContent);
-
-      // Check that other commands were called
-      expect(commands.executeSelectCommand).toHaveBeenCalledTimes(1);
-      expect(commands.executeSelectCommand).toHaveBeenCalledWith({
-        content: 'file1.ts file2.ts',
-        addLog: mockAddLog,
-      });
-
-      expect(commands.executeTaskCommand).toHaveBeenCalledTimes(1);
-      expect(commands.executeTaskCommand).toHaveBeenCalledWith({
-        content: 'Refactor these files',
-        addLog: mockAddLog,
-      });
-
-      // Check that apply changes was aggregated and called once
-      expect(commands.executeApplyChangesCommand).toHaveBeenCalledTimes(1);
-      expect(commands.executeApplyChangesCommand).toHaveBeenCalledWith(
-        expect.objectContaining({
-          content: 'content 1\ncontent 2',
-          fullContent:
-            '<ath command="apply changes">content 1\ncontent 2</ath>',
-        })
       );
     });
   });

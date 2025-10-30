@@ -48,6 +48,7 @@ You will respond with two sections: a Markdown summary and one or more XML block
 
 ### XML Section(s)
 - The XML block(s) *MUST* be enclosed in Markdown code blocks.
+- **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
 - Use the `<ath command="apply changes">` wrapper. You should group all file operations into a single `<ath command="apply changes">` block for easier processing.
 - Inside, include one `<file>` block for each created, updated, or deleted file.
 - **Ensure all XML is valid and all tags are properly closed.**

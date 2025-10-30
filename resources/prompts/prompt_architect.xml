@@ -41,8 +41,8 @@ The purpose is to:
 # Instructions
 
 1.  **Analyze Thoroughly:** Think step-by-step about the request. Do not write code immediately. Your primary goal is to create a detailed action plan for another AI coding assistant or a junior developer.
-2.  **Structure Your Response:** Provide your response in a single XML block enclosed in Markdown code fences.
-3.  **Produce Two Athanor Commands:** The XML block must contain exactly two tags: `<ath command="task">` and `<ath command="select">`.
+2.  **Structure Your Response:** Provide your response in a single XML block enclosed in Markdown code fences. **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
+3.  **Produce Two Athanor Commands:** The XML block must contain exactly two tags inside `<athanor>`: `<ath command="task">` and `<ath command="select">`.
 
 ## 1. `<ath command="task">` Content
 
@@ -70,6 +70,7 @@ Inside this tag, structure your plan as follows:
 ### Example Output Structure
 
 ```xml
+<athanor>
 <ath command="task">
 # Task
 [Task description, rewritten for clarity]
@@ -93,6 +94,7 @@ Inside this tag, structure your plan as follows:
 <ath command="select">
 path/to/file1.ts path/to/helper.ts
 </ath>
+</athanor>
 ```
 </current_task>
 </ath_prompt_variant>
@@ -133,8 +135,8 @@ The purpose is to:
 # Instructions
 
 1.  **Analyze Thoroughly:** Think step-by-step about the request. Do not write code immediately. Your primary goal is to create a detailed action plan for another AI coding assistant.
-2.  **Structure Your Response:** Provide your response in a single XML block enclosed in Markdown code fences.
-3.  **Produce Two Athanor Commands:** The XML block must contain exactly two tags: `<ath command="task">` and `<ath command="select">`.
+2.  **Structure Your Response:** Provide your response in a single XML block enclosed in Markdown code fences. **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
+3.  **Produce Two Athanor Commands:** The XML block must contain exactly two tags inside `<athanor>`: `<ath command="task">` and `<ath command="select">`.
 
 ## 1. `<ath command="task">` Content
 
@@ -157,6 +159,7 @@ Inside this tag, structure your plan as follows:
 ### Example Output Structure
 
 ```xml
+<athanor>
 <ath command="task">
 # Task
 [Task description, rewritten for clarity]
@@ -176,6 +179,7 @@ Inside this tag, structure your plan as follows:
 <ath command="select">
 path/to/file1.ts path/to/file2.ts
 </ath>
+</athanor>
 ```
 </current_task>
 </ath_prompt_variant>

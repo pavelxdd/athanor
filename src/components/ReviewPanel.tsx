@@ -223,8 +223,67 @@ const FileOperationItem = React.forwardRef<
     ref
   ) => {
     const [showWarning, setShowWarning] = useState(false);
+    const [previewError, setPreviewError] = useState<string | null>(null);
+    const [previewContent, setPreviewContent] = useState<string | null>(null);
     const { tabs, activeTabIndex } = useWorkbenchStore();
     const { applicationSettings } = useSettingsStore();
+    const { addLog } = useLogStore();
+    const { setOperationError } = useApplyChangesStore();
+
+    useEffect(() => {
+      // This effect generates the preview content or catches an error.
+      // It's designed to avoid re-render loops by conditionally updating global state.
+      let newPreviewContent: string | null = null;
+      let newPreviewError: string | null = null;
+
+      try {
+        if (op.file_operation === 'APPEND') {
+          newPreviewContent = op.old_code + op.new_code;
+        } else if (op.file_operation === 'PREPEND') {
+          newPreviewContent = op.new_code + op.old_code;
+        } else if (
+          op.file_operation === 'UPDATE_DIFF' &&
+          op.diff_blocks &&
+          op.diff_blocks.length > 0
+        ) {
+          const { processFileUpdate } = require('../utils/fileOperations');
+          newPreviewContent = processFileUpdate(
+            'UPDATE_DIFF',
+            op.file_path,
+            op.diff_blocks,
+            op.old_code,
+            'fuzzy'
+          );
+        } else {
+          newPreviewContent = op.new_code;
+        }
+      } catch (e) {
+        newPreviewError =
+          e instanceof Error
+            ? `Error generating diff preview: ${e.message}`
+            : `An unknown error occurred while generating diff preview.`;
+      }
+
+      // Update local state for the UI
+      setPreviewContent(newPreviewContent);
+      setPreviewError(newPreviewError);
+
+      // Conditionally update global state to avoid loops
+      if (newPreviewError) {
+        if (op.error !== newPreviewError) {
+          setOperationError(index, newPreviewError);
+        }
+        addLog({
+          message: `For file ${op.file_path}: ${newPreviewError}`,
+          level: 'error',
+        });
+      } else {
+        // If there was a global error before but now it's resolved, clear it.
+        if (op.error) {
+          setOperationError(index, null);
+        }
+      }
+    }, [op, index, addLog, setOperationError]);
 
     useEffect(() => {
       const checkWarning = async () => {
@@ -349,58 +408,60 @@ const FileOperationItem = React.forwardRef<
         )}
 
         <div className="min-w-0 w-full">
-          <DiffView
-            oldText={op.old_code}
-            newText={
-              op.file_operation === 'APPEND'
-                ? op.old_code + op.new_code
-                : op.file_operation === 'PREPEND'
-                  ? op.new_code + op.old_code
-                  : op.new_code
-            }
-            filePath={op.file_path}
-            onDiffBlocksCalculated={onDiffBlocksCalculated}
-            diffViewRef={diffViewRef}
-          />
-        </div>
-
-        <div className="mt-4 flex justify-between items-center flex-shrink-0">
-          <div className="flex gap-2">
-            {mode === 'ai' && (
-              <button
-                className="px-3 py-1 bg-green-500 dark:bg-green-600 text-white rounded hover:bg-green-600 dark:hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
-                disabled={op.accepted || op.rejected}
-                onClick={() => onAccept(index)}
-              >
-                Accept
-              </button>
-            )}
-            <button
-              className="px-3 py-1 bg-red-500 dark:bg-red-600 text-white rounded hover:bg-red-600 dark:hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
-              disabled={op.accepted || op.rejected}
-              onClick={() => onReject(index)}
-              title={
-                mode === 'git'
-                  ? 'Revert change to the last commit'
-                  : 'Reject change'
-              }
-            >
-              {mode === 'git' ? 'Revert Change' : 'Reject'}
-            </button>
-          </div>
-
-          {(op.accepted || op.rejected) && (
-            <span
-              className={`text-sm font-medium ${
-                op.accepted
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`}
-            >
-              {op.accepted ? 'Changes Accepted' : 'Changes Rejected'}
-            </span>
+          {previewError ? (
+            <div className="p-4 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-200 rounded border border-red-200 dark:border-red-700 font-mono text-xs">
+              {previewError}
+            </div>
+          ) : (
+            <DiffView
+              oldText={op.old_code}
+              newText={previewContent ?? ''}
+              filePath={op.file_path}
+              onDiffBlocksCalculated={onDiffBlocksCalculated}
+              diffViewRef={diffViewRef}
+            />
           )}
         </div>
+
+        {!previewError && (
+          <div className="mt-4 flex justify-between items-center flex-shrink-0">
+            <div className="flex gap-2">
+              {mode === 'ai' && (
+                <button
+                  className="px-3 py-1 bg-green-500 dark:bg-green-600 text-white rounded hover:bg-green-600 dark:hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
+                  disabled={op.accepted || op.rejected || !!previewError}
+                  onClick={() => onAccept(index)}
+                >
+                  Accept
+                </button>
+              )}
+              <button
+                className="px-3 py-1 bg-red-500 dark:bg-red-600 text-white rounded hover:bg-red-600 dark:hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
+                disabled={op.accepted || op.rejected || !!previewError}
+                onClick={() => onReject(index)}
+                title={
+                  mode === 'git'
+                    ? 'Revert change to the last commit'
+                    : 'Reject change'
+                }
+              >
+                {mode === 'git' ? 'Revert Change' : 'Reject'}
+              </button>
+            </div>
+
+            {(op.accepted || op.rejected) && (
+              <span
+                className={`text-sm font-medium ${
+                  op.accepted
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}
+              >
+                {op.accepted ? 'Changes Accepted' : 'Changes Rejected'}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     );
   }

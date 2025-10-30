@@ -41,17 +41,19 @@ Your goal is to SELECT which files from the provided `file_tree` you need to rea
 
 First, write down your reasoning in a detailed summary, mentioning all the files you plan to select.
 
-Then, provide the final list of files within a single `<ath command="select">` block, enclosed in Markdown code fences.
+Then, provide the final list of files within a single `<ath command="select">` block. The entire response must be wrapped in an `<athanor>` root tag and enclosed in Markdown code fences.
 
 <example>
 ```xml
+<athanor>
 <ath command="select">
 path/to/file1.ts path/to/another/file2.md
 </ath>
+</athanor>
 ```
 </example>
 
-Ensure your XML is valid by properly opening and closing the `<ath>` tag.
+Ensure your XML is valid by properly opening and closing all tags, including the root `<athanor>` tag.
 </current_task>
 </ath_prompt_variant>
 

@@ -56,7 +56,7 @@
 > This section following `task_description` provides detailed instructions for the AI on how to process the task and format its response. It's the core logic of the prompt template.
 > - Thinking Process: Often encourages the AI to "think step-by-step" or "first write down thoughts."
 > - Output Structure: Specifies the exact format of the AI's response. For Athanor, this is typically one or more XML blocks.
-> - Key XML Tags: Details the required Athanor-specific XML tags and their attributes (e.g., `<ath command="task">`, `<ath command="select">`, `<ath command="apply changes">`).
+> - Key XML Tags: Details the required Athanor-specific XML tags and their attributes (e.g., `<ath command="task">`, `<ath command="select">`, `<ath command="apply changes">`). All commands must be wrapped in a single root `<athanor>` tag.
 > - Content Guidelines: Instructions on what information to include within those XML tags (e.g., rewritten task description, analysis, implementation plan, file lists, code changes).
 > - Formatting Rules: Specifics about whitespace, character encoding, or CDATA usage if applicable.
 >
@@ -100,7 +100,7 @@
 > ### 5. `<current_task>` Block:
 > This block contains the user's specific request and detailed instructions for the AI.
 > -   `<task_description>`: Athanor injects the user's task here using `{{task_description}}` and optional `{{task_context}}`.
-> -   The subsequent content within `<current_task>` provides detailed instructions on how the AI should process the task, structure its thinking, and format its response, often specifying Athanor-specific XML output.
+> -   The subsequent content within `<current_task>` provides detailed instructions on how the AI should process the task, structure its thinking, and format its response, often specifying Athanor-specific XML output. All commands must be wrapped in a single root `<athanor>` tag.
 >
 > ADDITIONAL EXPLANATION (REMOVE THIS SECTION) -->
 

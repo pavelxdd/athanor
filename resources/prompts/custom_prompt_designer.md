@@ -103,7 +103,7 @@ You would typically include these within the relevant blocks of your `prompt_*.x
 
 ### Athanor-Specific XML Commands (`<ath command="...">` for AI Responses)
 
-If your prompt is designed to elicit a response that Athanor can directly act upon (e.g., applying code changes, selecting files in the UI), you need to instruct the AI to format parts of its output using specific XML-like tags. Athanor parses these commands from the AI's response when the user pastes it back.
+If your prompt is designed to elicit a response that Athanor can directly act upon (e.g., applying code changes, selecting files in the UI), you need to instruct the AI to format parts of its output using specific XML-like tags. **All Athanor commands must be wrapped in a single `<athanor>` root tag.** Athanor parses these commands from the AI's response when the user pastes it back.
 
 The primary commands are:
 
@@ -123,7 +123,7 @@ The primary commands are:
           [Full file content for CREATE/UPDATE_FULL, diff content for UPDATE_DIFF, new content for APPEND/PREPEND, or empty for DELETE/RENAME]
           ]]></file_code>
         </file>
-        </ath>
+      </ath>
       ```
     - **Operations within `<file_operation>`**:
       - `CREATE`: Creates a new file with the content in `<file_code>`.
@@ -160,7 +160,7 @@ The primary commands are:
 **Important Considerations for AI Instructions:**
 When writing the `<system_prompt>` or the task-specific instructions within `<current_task>` for your custom prompt, if you want the AI to use these commands:
 
-- Be very explicit about the XML structure it needs to produce.
+- Be very explicit about the XML structure it needs to produce, including the `<athanor>` root tag.
 - Provide clear examples within your prompt template (perhaps commented out or in an `<example>` tag that the AI should use as a template for its own output).
 - Emphasize the need for valid XML and correct command usage.
 
@@ -479,6 +479,7 @@ The XML block should include:
 
 <example>
 ```xml
+<athanor>
 <ath command="task">
 # Task
 [Task description, rewritten for clarity]
@@ -516,6 +517,7 @@ The XML block should include:
 <ath command="select">
 file1 file2 [...]
 </ath>
+</athanor>
 ```
 
 </example>
@@ -614,6 +616,7 @@ Ensure to write valid XML by opening and closing all tags as appropriate
 
 <example>
 ```xml
+<athanor>
 <ath command="task">
 # Task
 [Task description, rewritten for clarity]
@@ -636,6 +639,7 @@ Ensure to write valid XML by opening and closing all tags as appropriate
 <ath command="select">
 file1 file2 [...]
 </ath>
+</athanor>
 ```
 </example>
 </current_task>

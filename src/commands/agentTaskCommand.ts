@@ -35,6 +35,11 @@ export async function executeAgentTaskCommand({
 
     // Also update the workbench task description
     const workbenchStore = useWorkbenchStore.getState();
+    // Create a new tab for the agent task instead of overwriting the current one
+    workbenchStore.createTab();
+    // The new tab is now active, so resetTaskDescription will apply to it,
+    // setting the content and clearing output/context.
+    // This preserves the user's original tab/context.
     workbenchStore.resetTaskDescription(taskContent);
 
     const instruction = `- Read the instructions in ${displayPath}\n- Think about the task and then execute it`;

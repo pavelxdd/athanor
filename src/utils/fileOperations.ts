@@ -65,23 +65,20 @@ export function normalizeLineEndings(content: string): string {
 }
 
 // Process file update based on operation type
-export async function processFileUpdate(
+export function processFileUpdate(
   operation: 'UPDATE_FULL' | 'UPDATE_DIFF',
   filePath: string,
-  newCode: string,
+  newCodeOrBlocks: string | DiffBlock[],
   currentContent: string,
   diffMode: 'strict' | 'fuzzy' = 'fuzzy'
-): Promise<string> {
-  // Normalize line endings in both contents
-  const normalizedNewCode = normalizeLineEndings(newCode);
-  const normalizedCurrentContent = normalizeLineEndings(currentContent);
-
+): string {
   if (operation === 'UPDATE_FULL') {
-    return normalizedNewCode;
+    return normalizeLineEndings(newCodeOrBlocks as string);
   }
 
-  // For diff updates, parse and apply the changes
-  const diffBlocks = parseDiffBlocks(normalizedNewCode);
+  // For diff updates, apply the pre-parsed changes
+  const diffBlocks = newCodeOrBlocks as DiffBlock[];
+  const normalizedCurrentContent = normalizeLineEndings(currentContent);
 
   // Initialize DMP instance for potential fuzzy patching
   const dmp = new diff_match_patch();

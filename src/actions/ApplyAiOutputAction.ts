@@ -22,37 +22,36 @@ export async function processAiResponseContent(
   const { addLog, setOperations, clearOperations, setActiveTab } = params;
 
   try {
-    const parsedCommands = commands.parseCommand(aiContent);
+    const parsedCommands = await commands.parseCommand(aiContent);
 
     if (!parsedCommands || parsedCommands.length === 0) {
       addLog('No valid commands found in AI response');
       return;
     }
 
-    // Filter commands to separate 'apply changes' from others
-    const applyChangesCommands = parsedCommands.filter(
-      (cmd) => cmd.type === commands.COMMAND_TYPES.APPLY_CHANGES
-    );
-    const otherCommands = parsedCommands.filter(
-      (cmd) => cmd.type !== commands.COMMAND_TYPES.APPLY_CHANGES
-    );
+    // Aggregate all file operations from multiple 'apply changes' commands
+    const allOperations: FileOperation[] = [];
+    const otherCommands = [];
 
-    // Aggregate and process all 'apply changes' commands as a single operation
-    if (applyChangesCommands.length > 0) {
-      const combinedContent = applyChangesCommands
-        .map((cmd) => cmd.content)
-        .join('\n');
-      const combinedFullContent = `<ath command="apply changes">${combinedContent}</ath>`;
+    for (const cmd of parsedCommands) {
+      if (
+        cmd.type === commands.COMMAND_TYPES.APPLY_CHANGES &&
+        Array.isArray(cmd.content)
+      ) {
+        allOperations.push(...cmd.content);
+      } else {
+        otherCommands.push(cmd);
+      }
+    }
 
-      const { diffMode } = useApplyChangesStore.getState();
+    // Process the single aggregated 'apply changes' command
+    if (allOperations.length > 0) {
       const success = await commands.executeApplyChangesCommand({
-        content: combinedContent,
-        fullContent: combinedFullContent,
+        operations: allOperations,
         addLog,
         setOperations,
         clearOperations,
         setActiveTab,
-        diffMode,
       });
 
       if (!success) {
@@ -63,6 +62,12 @@ export async function processAiResponseContent(
     // Process all other commands sequentially
     for (const command of otherCommands) {
       let success = false;
+
+      // Ensure content is a string for these commands
+      if (typeof command.content !== 'string') {
+        addLog(`Invalid content type for ${command.type} command.`);
+        continue;
+      }
 
       switch (command.type) {
         case commands.COMMAND_TYPES.SELECT:
@@ -86,12 +91,16 @@ export async function processAiResponseContent(
           });
           break;
 
+        // APPLY_CHANGES is handled above, so we can ignore it here
+        case commands.COMMAND_TYPES.APPLY_CHANGES:
+          break;
+
         default:
           addLog(`Unknown command type: ${command.type}`);
           continue;
       }
 
-      if (!success) {
+      if (!success && command.type !== commands.COMMAND_TYPES.APPLY_CHANGES) {
         addLog(`Failed to execute ${command.type} command`);
       }
     }
@@ -102,27 +111,5 @@ export async function processAiResponseContent(
         err instanceof Error ? err.message : String(err)
       }`
     );
-  }
-}
-
-/**
- * Apply AI output from clipboard (legacy function)
- */
-export async function applyAiOutput(params: {
-  addLog: (
-    message: string | { message: string; onClick: () => Promise<void> }
-  ) => void;
-  setOperations: (ops: FileOperation[]) => void;
-  clearOperations: () => void;
-  setActiveTab?: (tab: 'workbench' | 'viewer' | 'review') => void;
-}): Promise<void> {
-  const { addLog } = params;
-
-  try {
-    const clipboardContent = await navigator.clipboard.readText();
-    await processAiResponseContent(clipboardContent, params);
-  } catch (err) {
-    console.error('Failed to read clipboard:', err);
-    addLog('Failed to read clipboard content');
   }
 }

@@ -15,6 +15,3 @@ export type { CommandType } from './types';
 // Command parsing
 export { parseCommand } from './parser';
 export type { Command } from './parser';
-
-// Command descriptions
-export { getCommandDescription } from './descriptions';

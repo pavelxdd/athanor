@@ -1,63 +1,48 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Hammer } from 'lucide-react';
-import { useCommandStore } from '../stores/commandStore';
-import { getCommandDescription } from '../commands';
-import { applyAiOutput } from '../actions/ApplyAiOutputAction';
+import { processAiResponseContent } from '../actions/ApplyAiOutputAction';
+import { useLogStore } from '../stores/logStore';
 
 interface CommandButtonProps {
-  addLog: (
-    message: string | { message: string; onClick: () => Promise<void> }
-  ) => void;
   setOperations: (ops: any[]) => void;
   clearOperations: () => void;
   setActiveTab?: (tab: 'workbench' | 'viewer' | 'review') => void;
 }
 
 const CommandButton: React.FC<CommandButtonProps> = ({
-  addLog,
   setOperations,
   clearOperations,
   setActiveTab,
 }) => {
-  const { clipboardContent, hasValidCommands, setClipboardContent } =
-    useCommandStore();
+  const { addLog } = useLogStore();
 
-  // Check clipboard content periodically
-  useEffect(() => {
-    const checkClipboard = async () => {
-      try {
-        const content = await navigator.clipboard.readText();
-        setClipboardContent(content);
-      } catch (error) {
-        console.error('Failed to read clipboard:', error);
-        setClipboardContent(null);
+  const handleApplyClick = async () => {
+    addLog('Reading clipboard for AI commands...');
+    try {
+      const clipboardContent = await navigator.clipboard.readText();
+      if (!clipboardContent || clipboardContent.trim() === '') {
+        addLog('Clipboard is empty.');
+        return;
       }
-    };
-
-    void checkClipboard();
-    const interval = setInterval(checkClipboard, 1000);
-    return () => clearInterval(interval);
-  }, [setClipboardContent]);
-
-  const tooltipText = getCommandDescription(clipboardContent);
+      await processAiResponseContent(clipboardContent, {
+        addLog,
+        setOperations,
+        clearOperations,
+        setActiveTab,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error('Failed to read or process clipboard content:', error);
+      addLog(`Error: ${errorMessage}`);
+    }
+  };
 
   return (
     <button
-      className={`px-4 py-2 bg-green-500 text-white rounded flex items-center ml-4 ${
-        hasValidCommands
-          ? 'hover:bg-green-600'
-          : 'opacity-50 cursor-not-allowed'
-      }`}
-      onClick={() =>
-        applyAiOutput({
-          addLog,
-          setOperations,
-          clearOperations,
-          setActiveTab,
-        })
-      }
-      disabled={!hasValidCommands}
-      title={tooltipText}
+      className="px-4 py-2 bg-green-500 text-white rounded flex items-center ml-4 hover:bg-green-600"
+      onClick={handleApplyClick}
+      title="Parse clipboard and apply AI commands"
     >
       <Hammer className="w-4 h-4 mr-2" />
       Apply AI Output

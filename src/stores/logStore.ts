@@ -4,6 +4,7 @@ export interface LogEntry {
   id: number;
   timestamp: string;
   message: string;
+  level?: 'info' | 'error' | 'warning';
   onClick?: () => void;
 }
 
@@ -27,6 +28,7 @@ export const useLogStore = create<LogState>((set) => ({
               id: nextId,
               timestamp,
               message: messageOrEntry,
+              level: 'info', // Default level for simple string messages
             }
           : {
               id: nextId,

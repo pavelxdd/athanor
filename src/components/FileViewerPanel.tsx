@@ -27,7 +27,6 @@ import diff from 'react-syntax-highlighter/dist/esm/languages/prism/diff';
 
 import { useFileSystemStore } from '../stores/fileSystemStore';
 import { useLogStore } from '../stores/logStore';
-import { useCommandStore } from '../stores/commandStore';
 import { useApplyChangesStore } from '../stores/applyChangesStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { copyToClipboard } from '../actions/ManualCopyAction';
@@ -229,7 +228,7 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
                     const { setOperations, clearOperations } =
                       useApplyChangesStore.getState();
                     const clipboardContent =
-                      useCommandStore.getState().clipboardContent;
+                      await navigator.clipboard.readText();
 
                     // Use osPath for relativization; ensure it's available.
                     // previewedFilePath is the primary key from the store, osPath is its absolute representation.
@@ -292,14 +291,7 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
                     }
                   }}
                   title="Replace file content with clipboard"
-                  disabled={
-                    !previewedFilePath ||
-                    !isText ||
-                    !!error ||
-                    !useCommandStore.getState().clipboardContent ||
-                    typeof useCommandStore.getState().clipboardContent !==
-                      'string'
-                  }
+                  disabled={!previewedFilePath || !isText || !!error}
                 >
                   <ClipboardPaste className="w-4 h-4" />
                   <span>Replace</span>
