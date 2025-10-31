@@ -15,7 +15,6 @@ try {
 module.exports = {
   entry: {
     'main/index': './electron/main.ts',
-    projectAnalysisWorker: './electron/workers/projectAnalysisWorker.ts',
   },
   module: {
     rules: [

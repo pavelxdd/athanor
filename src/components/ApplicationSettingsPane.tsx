@@ -19,12 +19,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   applicationDefaults,
 }) => {
   // Local state for application settings form inputs
-  const [enableSmartFeatures, setEnableSmartFeatures] = useState<boolean>(
-    SETTINGS.defaults.application.enableSmartFeatures
-  );
-  const [maxSmartContextTokens, setMaxSmartContextTokens] = useState<string>(
-    String(SETTINGS.defaults.application.maxSmartContextTokens)
-  );
   const [uiTheme, setUiTheme] = useState<string>(
     SETTINGS.defaults.application.uiTheme
   );
@@ -37,18 +31,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   useEffect(() => {
     const defaults = SETTINGS.defaults.application;
     if (applicationSettings) {
-      setEnableSmartFeatures(
-        applicationSettings.enableSmartFeatures ??
-          applicationDefaults.enableSmartFeatures ??
-          defaults.enableSmartFeatures
-      );
-      setMaxSmartContextTokens(
-        String(
-          applicationSettings.maxSmartContextTokens ??
-            applicationDefaults.maxSmartContextTokens ??
-            defaults.maxSmartContextTokens
-        )
-      );
       setUiTheme(
         applicationSettings.uiTheme ??
           applicationDefaults.uiTheme ??
@@ -56,16 +38,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
       );
     } else {
       // Set default values when no application settings
-      setEnableSmartFeatures(
-        applicationDefaults.enableSmartFeatures ??
-          defaults.enableSmartFeatures
-      );
-      setMaxSmartContextTokens(
-        String(
-          applicationDefaults.maxSmartContextTokens ??
-            defaults.maxSmartContextTokens
-        )
-      );
       setUiTheme(
         applicationDefaults.uiTheme ??
           defaults.uiTheme
@@ -102,32 +74,13 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   );
 
   // Application settings handlers
-  const handleSmartFeaturesChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const newValue = e.target.checked;
-    setEnableSmartFeatures(newValue);
-  };
-
   const handleUiThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setUiTheme(e.target.value);
   };
 
   // Application save button handler
   const handleSaveApplicationSettings = () => {
-    const tokenLimitValue = parseInt(maxSmartContextTokens, 10);
-
-    // Validate and apply defaults/limits
-    const defaults = SETTINGS.defaults.application;
-    const validatedTokenLimit =
-      isNaN(tokenLimitValue) || tokenLimitValue < 0
-        ? (applicationDefaults.maxSmartContextTokens ??
-          defaults.maxSmartContextTokens)
-        : Math.min(tokenLimitValue, 100000);
-
     saveApplicationSettingsCallback({
-      enableSmartFeatures,
-      maxSmartContextTokens: validatedTokenLimit,
       uiTheme,
     });
   };
@@ -135,51 +88,10 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   // Check if application settings have unsaved changes
   const defaults = SETTINGS.defaults.application;
   const hasUnsavedApplicationChanges =
-    enableSmartFeatures !==
-      (applicationSettings?.enableSmartFeatures ??
-        applicationDefaults.enableSmartFeatures ??
-        defaults.enableSmartFeatures) ||
     uiTheme !==
       (applicationSettings?.uiTheme ??
         applicationDefaults.uiTheme ??
-        defaults.uiTheme) ||
-    maxSmartContextTokens !==
-      String(
-        applicationSettings?.maxSmartContextTokens ??
-          applicationDefaults.maxSmartContextTokens ??
-          defaults.maxSmartContextTokens
-      );
-
-  const handleMaxSmartContextTokensChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = e.target.value;
-    // Allow only numeric input
-    if (/^\d*$/.test(value) && value.length <= 6) {
-      setMaxSmartContextTokens(value);
-    }
-  };
-
-  const handleMaxSmartContextTokensBlur = (
-    e: React.FocusEvent<HTMLInputElement>
-  ) => {
-    const value = e.target.value.trim();
-    const numericValue = parseInt(value, 10);
-
-    // Validate and clamp the value
-    if (isNaN(numericValue) || numericValue < 0) {
-      setMaxSmartContextTokens(
-        String(
-          applicationDefaults.maxSmartContextTokens ??
-            SETTINGS.defaults.application.maxSmartContextTokens
-        )
-      ); // Reset to default
-    } else if (numericValue > 100000) {
-      setMaxSmartContextTokens('100000'); // Max value
-    } else {
-      setMaxSmartContextTokens(String(numericValue));
-    }
-  };
+        defaults.uiTheme);
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 h-fit">
@@ -238,69 +150,6 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
                   <option value="Dark">Dark</option>
                   <option value="Auto">Auto (System)</option>
                 </select>
-              </div>
-
-              {/* Smart Features Toggle */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <label
-                    htmlFor="enableSmartFeatures"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Enable Smart Features
-                  </label>
-                  <div
-                    className="relative group"
-                    title="Enables background project analysis for Smart Context suggestions. Disable to improve performance on very large projects."
-                  >
-                    <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
-                  </div>
-                </div>
-                <div className="flex-shrink-0 ml-4">
-                  <input
-                    id="enableSmartFeatures"
-                    type="checkbox"
-                    checked={enableSmartFeatures}
-                    onChange={handleSmartFeaturesChange}
-                    disabled={
-                      isLoadingApplicationSettings || isSavingApplication
-                    }
-                    className="h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              {/* Smart Context Token Limit */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <label
-                    htmlFor="maxSmartContextTokens"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Smart Context Token Limit
-                  </label>
-                  <div
-                    className="relative group"
-                    title="Maximum tokens for files added by Smart Context. Set to 0 to disable. (0-100000). Default: 10000."
-                  >
-                    <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="maxSmartContextTokens"
-                    type="text"
-                    value={maxSmartContextTokens}
-                    onChange={handleMaxSmartContextTokensChange}
-                    onBlur={handleMaxSmartContextTokensBlur}
-                    placeholder="10000"
-                    className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
-                    disabled={
-                      isLoadingApplicationSettings || isSavingApplication
-                    }
-                  />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">tokens</span>
-                </div>
               </div>
             </div>
 

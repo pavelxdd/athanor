@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { X, GripVertical, Trash2, Files, Plus } from 'lucide-react';
-import { useContextStore } from '../../stores/contextStore';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, GripVertical, Trash2, Files } from 'lucide-react';
 
 interface SelectedFilesDisplayProps {
   selectedFiles: string[];
@@ -20,44 +19,12 @@ const SelectedFilesDisplay: React.FC<SelectedFilesDisplayProps> = ({
   removeFileFromSelection,
   clearFileSelection,
   reorderFileSelection,
-  toggleFileSelection,
-  rootItems,
 }) => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-
-  // Get context data
-  const { heuristicSeedFiles, neighboringFiles } = useContextStore();
-
-  // Create unified list of suggested files
-  const suggestedFiles = useMemo(() => {
-    const selectedSet = new Set(selectedFiles);
-    const combined: Array<{
-      path: string;
-      score: number;
-      isHeuristic: boolean;
-    }> = [];
-
-    // Add heuristic seed files
-    heuristicSeedFiles.forEach((file) => {
-      if (!selectedSet.has(file.path)) {
-        combined.push({ ...file, isHeuristic: true });
-      }
-    });
-
-    // Add neighboring files
-    neighboringFiles.forEach((score, path) => {
-      if (!selectedSet.has(path)) {
-        combined.push({ path, score, isHeuristic: false });
-      }
-    });
-
-    // Sort by score descending
-    return combined.sort((a, b) => b.score - a.score);
-  }, [heuristicSeedFiles, neighboringFiles, selectedFiles]);
 
   // Close popover when clicking outside
   useEffect(() => {
@@ -191,7 +158,13 @@ const SelectedFilesDisplay: React.FC<SelectedFilesDisplayProps> = ({
                     {/* Priority Badge */}
                     <div
                       className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs font-medium rounded-full flex items-center justify-center"
-                      title={`Priority: ${index + 1} (${index === 0 ? 'highest' : index === selectedFiles.length - 1 ? 'lowest' : 'medium'})`}
+                      title={`Priority: ${index + 1} (${
+                        index === 0
+                          ? 'highest'
+                          : index === selectedFiles.length - 1
+                            ? 'lowest'
+                            : 'medium'
+                      })`}
                     >
                       {index + 1}
                     </div>
@@ -217,79 +190,6 @@ const SelectedFilesDisplay: React.FC<SelectedFilesDisplayProps> = ({
               </div>
             )}
           </div>
-
-          {/* Potentially Relevant Files Section */}
-          {suggestedFiles.length > 0 && (
-            <>
-              <div className="p-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
-                <h4
-                  className="text-sm font-semibold text-gray-900 dark:text-gray-100"
-                  title="Files identified by Athanor's relevance engine"
-                >
-                  Smart Context Suggestion ({suggestedFiles.length})
-                </h4>
-              </div>
-              <div className="max-h-60 overflow-y-auto">
-                <div className="p-2">
-                  {suggestedFiles.map((file, index) => (
-                    <div
-                      key={`suggested-${file.path}-${index}`}
-                      className="flex items-center gap-2 py-1 px-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
-                    >
-                      {/* File Type Indicator */}
-                      <div className="flex-shrink-0">
-                        {file.isHeuristic ? (
-                          <span
-                            className="text-yellow-500 dark:text-yellow-400"
-                            title="Heuristically identified as relevant"
-                          >
-                            ✨
-                          </span>
-                        ) : (
-                          <span
-                            className="text-blue-500 dark:text-blue-400"
-                            title="Neighboring file"
-                          >
-                            🔗
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Score Badge */}
-                      <div
-                        className="flex-shrink-0 px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs font-medium rounded"
-                        title={`Relevance score: ${file.score}`}
-                      >
-                        {Math.round(file.score)}
-                      </div>
-
-                      {/* File Path */}
-                      <div
-                        className="flex-1 min-w-0 text-sm text-gray-700 dark:text-gray-300"
-                        title={file.path.replace(/^\//, '')}
-                      >
-                        <div className="truncate">
-                          {formatFilePath(file.path)}
-                        </div>
-                      </div>
-
-                      {/* Promote Button */}
-                      <button
-                        onClick={() =>
-                          toggleFileSelection(file.path, false, rootItems)
-                        }
-                        className="flex-shrink-0 p-1 text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors opacity-0 group-hover:opacity-100"
-                        title="Add to selection"
-                      >
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
           {/* Footer with tip */}
           {selectedFiles.length > 1 && (
             <div className="p-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">

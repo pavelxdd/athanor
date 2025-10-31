@@ -43,6 +43,8 @@ First, write down your reasoning in a detailed summary, mentioning all the files
 
 Then, provide the final list of files within a single `<ath command="select">` block. The entire response must be wrapped in an `<athanor>` root tag and enclosed in Markdown code fences.
 
+**XML Formatting:** Do not indent your XML output. Each new tag must start on a new line without any leading spaces.
+
 <example>
 ```xml
 <athanor>

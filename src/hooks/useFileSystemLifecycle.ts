@@ -65,7 +65,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
   const { loadProjectSettings, loadApplicationSettings, projectSettings } =
     useSettingsStore();
   const { setIsGraphAnalysisInProgress } = useFileSystemStore();
-  const { fetchContext, clearContext } = useContextStore();
+  const { clearContext } = useContextStore();
 
   // Track previous project settings to detect changes
   const prevProjectSettingsRef = useRef<typeof projectSettings>(undefined);
@@ -393,13 +393,6 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
       () => {
         addLog('Project graph analysis finished.');
         setIsGraphAnalysisInProgress(false);
-        
-        // Trigger initial context calculation to populate neighboring files
-        console.log('Graph analysis finished, triggering initial context calculation.');
-        fetchContext([], '').catch(err => {
-          console.error('Initial context calculation failed:', err);
-          addLog('Could not retrieve initial neighboring files.');
-        });
       }
     );
 
@@ -410,7 +403,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
       cleanupGraphStarted();
       cleanupGraphFinished();
     };
-  }, [handleOpenFolder, processDirectory, addLog, setIsGraphAnalysisInProgress, fetchContext]);
+  }, [handleOpenFolder, processDirectory, addLog, setIsGraphAnalysisInProgress]);
 
   const handleProjectDialogClose = () => {
     setShowProjectDialog(false);

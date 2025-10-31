@@ -55,16 +55,13 @@ export async function buildTaskAction(params: BuildTaskActionParams): Promise<vo
       throw new Error('No active tab found');
     }
 
-    // Get neighboring files from the context store
-    const { promptNeighborPaths } = useContextStore.getState();
-
     // Build prompt with task content
     const processedTaskDescription = await buildDynamicPrompt(
       task,
       variant,
       rootItems,
       Array.from(selectedItems), // Convert Set to array for buildDynamicPrompt
-      Array.from(promptNeighborPaths),
+      [], // neighboringFiles
       currentDir,
       activeTab.content,
       activeTab.context,

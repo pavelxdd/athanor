@@ -36,12 +36,9 @@ export const SETTINGS = {
     project: {
       projectNameOverride: '',
       projectInfoFilePath: '',
-
       useGitignore: true,
     },
     application: {
-      enableSmartFeatures: false,
-      maxSmartContextTokens: 10000,
       recentProjectPaths: [],
       uiTheme: 'Auto',
     },
@@ -114,55 +111,4 @@ export const DRAG_DROP = {
     draggable: 'cursor-grab hover:cursor-grab active:cursor-grabbing',
     dragging: 'opacity-50 cursor-grabbing',
   },
-};
-
-// Context Builder Configuration
-export const CONTEXT_BUILDER = {
-  // Phase 1: Seeding
-  SEED_TRIGGER_THRESHOLD: 2,
-  SEED_BASKET_SIZE: 3,
-
-  // Phase 2: Scoring Weights
-  SCORE_DIRECT_DEPENDENCY: 50,
-  SCORE_TASK_KEYWORD_SINGLE: 30,
-  SCORE_TASK_KEYWORD_MULTI: 60,
-  // New scores for path matching from the task description
-  SCORE_TASK_PATH_EXACT_MATCH: 200,
-  SCORE_TASK_PATH_FOLDER_MATCH: 60,
-  SCORE_TASK_PATH_BASENAME_OR_PARTIAL_MATCH: 45,
-  SCORE_SHARED_COMMIT_SINGLE: 5,
-  SCORE_SHARED_COMMIT_MULTI: 10,
-  SCORE_ACTIVELY_EDITING: 35,
-  SCORE_SIBLING_FILE: 15,
-  SCORE_PROJECT_HUB_MAX: 30,
-  SCORE_PROJECT_HUB_MIN: 10,
-  SCORE_RECENT_COMMIT_ACTIVITY: 10,
-  SCORE_SAME_FOLDER: 10,
-  SCORE_FILE_MENTION: 8,
-  SCORE_GLOBAL_KEYWORD: 5,
-
-  // Phase 2: Final Selection
-  SCORE_THRESHOLD: 1,
-  NEIGHBOR_SCORE_CUTOFF_RATIO: 0.2,
-  MAX_COMMITS_TO_CHECK: 3,
-
-  // UI Visualization
-  VISUALIZATION_THRESHOLD: 5,
-  MAX_VISUALIZATION_SCORE: 100,
-};
-
-// Project Analysis Configuration
-export const PROJECT_ANALYSIS = {
-  // The number of recent commits to check when analyzing for shared file commits.
-  MAX_COMMITS_FOR_SHARED_ANALYSIS: 200,
-  // The number of days to look back for the "recent commit activity" heuristic.
-  DAYS_FOR_RECENT_COMMIT_ACTIVITY: 7,
-  // Delay in ms after the last file system change before considering the system quiet.
-  FILE_SYSTEM_QUIESCENCE_DELAY: 30000, // 30 seconds
-  // Delay in ms of user inactivity before triggering analysis.
-  USER_INACTIVITY_DELAY: 5000, // 5 seconds
-  // The duration in ms to consider a file "actively edited" after a change.
-  USER_ACTIVITY_WINDOW_MS: 60 * 60 * 1000, // 1 hour
-  // The interval in ms at which to prune the list of actively edited files.
-  USER_ACTIVITY_PRUNE_INTERVAL_MS: 5 * 60 * 1000, // 5 minutes
 };

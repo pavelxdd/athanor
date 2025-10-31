@@ -61,9 +61,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     resizeRef: logResizeRef,
     startResize: startLogResize,
   } = useLogPanelResize();
-  const { isAnalyzingGraph } = useContextStore();
 
-  const { effectiveConfig, fileTree } = useFileSystemStore();
+  const { effectiveConfig, fileTree, isGraphAnalysisInProgress } = useFileSystemStore();
   const { tabs, activeTabIndex } = useWorkbenchStore();
 
   // Calculate selection metrics from active workbench tab
@@ -206,16 +205,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               <button
                 onClick={() => window.electronBridge.graph.forceReanalyze()}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                disabled={isAnalyzingGraph || !currentDirectory}
+                disabled={isGraphAnalysisInProgress || !currentDirectory}
                 title="Refresh project analysis"
               >
                 <Network
                   size={20}
                   className={`${
-                    isAnalyzingGraph || !currentDirectory
+                    isGraphAnalysisInProgress || !currentDirectory
                       ? 'text-gray-400 dark:text-gray-500'
                       : 'text-gray-600 dark:text-gray-300'
-                  } ${isAnalyzingGraph ? 'animate-spin' : ''}`}
+                  } ${isGraphAnalysisInProgress ? 'animate-spin' : ''}`}
                 />
               </button>
               <button

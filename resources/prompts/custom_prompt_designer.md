@@ -87,7 +87,7 @@ Here are the primary variables available for use in your prompt templates:
 
 - `{{project_name}}`: The name of the currently open Athanor project. Often derived from the root folder name or specified in project settings.
 - `{{project_info}}`: General information about the project. This content is typically sourced from a `README.md`, `project.md`, or a user-specified file, and is wrapped in `<project_info>...</project_info>` tags by Athanor if automatically sourced.
-- `{{file_contents}}`: The actual content of the files selected by the user in the Athanor file explorer. This can include full file content or "smart previews" for non-selected or very large files, depending on user settings. Each file's content is typically formatted with a header indicating its path (e.g., `# path/to/file.js`) and enclosed in code blocks (e.g., `javascript ... `) or custom XML tags depending on the `formatType` setting.
+- `{{file_contents}}`: The actual content of the files selected by the user in the Athanor file explorer. Each file's content is typically formatted with a header indicating its path (e.g., `# path/to/file.js`) and enclosed in code blocks (e.g., `javascript ... `) or custom XML tags depending on the `formatType` setting.
 - `{{file_tree}}`: A textual representation of the project's directory structure, showing the hierarchy of files and folders. This is enclosed in `<file_tree>...</file_tree>` tags.
 - `{{task_description}}`: The main task or query input by the user into the "Task Description" field in the Athanor UI for the current task tab.
 - `{{task_context}}`: Ephemeral, user-provided context from the "Context" field in the Athanor UI for the current task tab. This is often used for specific instructions, partial commit messages, or other transient data related to the task. Athanor typically wraps this in `<task_context>...</task_context>` tags if it's not empty.
@@ -468,7 +468,7 @@ The XML block should include:
 - Consider broadly which files might be useful to see for the feature, even if not immediately related
 - These might include preloaders, utility or global constant files, etc.
 - If in doubt whether you need to include a file, include it
-- This list may match the list of highlighted (\*) files above (if any), but might include additional files, or remove some which are clearly not needed
+- This list may match the list of files above (if any), but might include additional files, or remove some which are clearly not needed
 - Use the relative path of each file
 
 <example>
@@ -524,11 +524,10 @@ Important guidelines for commits:
 - Provide clear verification steps
 - Specify any dependencies between commits
 - Order commits to minimize integration complexity
-- 1 or 2 commits should suffice for simple features
-- Complex features might require 3-5 commits
 - **Regarding all textual content generated within the XML blocks:**
-  - By default use standard space characters (U+0020)
-  - Avoid introducing non-breaking spaces (U+00A0) and other non-standard whitespace, unless there is a reason (e.g., within a string literal or specific formatting within the descriptive text)
+  - You MUST preserve the original indentation (e.g., tabs or spaces) of any code that is not being modified. New code that you write MUST match the indentation style of the surrounding or existing code. Do not mix indentation styles.
+  - Use only standard space characters for new whitespace. Do NOT use non-breaking spaces or other non-standard whitespace characters unless they are part of an existing string literal.
+  - Add comments as needed to explain complex code. Do not remove existing comments unless they are incorrect.
 
 Ensure to write valid XML by opening and closing all tags as appropriate
 </current_task>
@@ -598,12 +597,13 @@ The XML block should include:
 - Consider broadly which files might be useful to see for the feature, even if not immediately related
 - These might include preloaders, utility or global constant files, etc.
 - If in doubt whether you need to include a file, include it
-- This list may match the list of highlighted (\*) files above (if any), but might include additional files, or remove some which are clearly not needed
+- This list may match the list of files above (if any), but might include additional files, or remove some which are clearly not needed
 - Use the relative path of each file
 
-* **Regarding all textual content generated within the XML blocks:**
-  - By default use standard space characters (U+0020)
-  - Avoid introducing non-breaking spaces (U+00A0) and other non-standard whitespace, unless there is a reason (e.g., within a string literal or specific formatting within the descriptive text)
+- **Regarding all textual content generated within the XML blocks:**
+  - You MUST preserve the original indentation (e.g., tabs or spaces) of any code that is not being modified. New code that you write MUST match the indentation style of the surrounding or existing code. Do not mix indentation styles.
+  - Use only standard space characters for new whitespace. Do NOT use non-breaking spaces or other non-standard whitespace characters unless they are part of an existing string literal.
+  - Add comments as needed to explain complex code. Do not remove existing comments unless they are incorrect.
 
 Ensure to write valid XML by opening and closing all tags as appropriate
 
@@ -765,8 +765,9 @@ You will respond with 2 sections: A summary section and one or more XML section(
 - Put the XML block inside markdown codeblocks
 - Make sure to enclose the code with <![CDATA[__CODE HERE__]]>
 - **Regarding file content within `CDATA` blocks:**
-  - By default use standard space characters (U+0020)
-  - Avoid introducing non-breaking spaces (U+00A0) and other non-standard whitespace, unless there is a reason (e.g., within a string literal)
+  - You MUST preserve the original indentation (e.g., tabs or spaces) of any code that is not being modified. New code that you write MUST match the indentation style of the surrounding or existing code. Do not mix indentation styles.
+  - Use only standard space characters for new whitespace. Do NOT use non-breaking spaces or other non-standard whitespace characters unless they are part of an existing string literal.
+  - Add comments as needed to explain complex code. Do not remove existing comments unless they are incorrect.
 - You can write multiple `file` blocks in the same `ath` command
 - **Ensure to write valid XML by opening and closing all tags as appropriate**
 
@@ -925,8 +926,9 @@ You will respond with 2 sections: A summary section and one or more XML section(
 - Put the XML block inside markdown codeblocks
 - Make sure to enclose the code with <![CDATA[__CODE HERE__]]>
 - **Regarding file content within `CDATA` blocks:**
-  - By default use standard space characters (U+0020)
-  - Avoid introducing non-breaking spaces (U+00A0) and other non-standard whitespace, unless there is a reason (e.g., within a string literal)
+  - You MUST preserve the original indentation (e.g., tabs or spaces) of any code that is not being modified. New code that you write MUST match the indentation style of the surrounding or existing code. Do not mix indentation styles.
+  - Use only standard space characters for new whitespace. Do NOT use non-breaking spaces or other non-standard whitespace characters unless they are part of an existing string literal.
+  - Add comments as needed to explain complex code. Do not remove existing comments unless they are incorrect.
 - You can write multiple `file` blocks in the same `ath` command
 - **Ensure to write valid XML by opening and closing all tags as appropriate**
 

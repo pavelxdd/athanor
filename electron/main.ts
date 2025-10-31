@@ -1,6 +1,5 @@
 import { app, BrowserWindow, Menu, nativeTheme, ipcMain } from 'electron';
 import fixPath from 'fix-path';
-import { Worker } from 'worker_threads';
 import * as path from 'path';
 import * as fs from 'fs';
 import { spawn } from 'child_process';
@@ -11,14 +10,7 @@ declare const GIT_VERSION: string;
 
 import { FileService } from './services/FileService';
 import { SettingsService } from './services/SettingsService';
-import { RelevanceEngineService } from './services/RelevanceEngineService';
 import { GitService } from './services/GitService';
-import { UserActivityService } from './services/UserActivityService';
-import {
-  ProjectGraphService,
-  ProjectGraphCache,
-} from './services/ProjectGraphService';
-import { PROJECT_ANALYSIS } from '../src/utils/constants';
 import type { ApplicationSettings } from '../src/types/global';
 
 // --- WSL Graphics Fix Start ---
@@ -53,83 +45,6 @@ if (DEBUG_PATH) {
 export const fileService = new FileService();
 export const settingsService = new SettingsService(fileService);
 export const gitService = new GitService(fileService.getBaseDir());
-export const projectGraphService = new ProjectGraphService(
-  fileService,
-  gitService
-);
-export const userActivityService = new UserActivityService(fileService);
-export const relevanceEngine = new RelevanceEngineService(
-  fileService,
-  gitService,
-  projectGraphService,
-  userActivityService
-);
-
-let analysisPromise: Promise<void> | null = null;
-function runProjectAnalysisWorker(): Promise<void> {
-  if (analysisPromise) {
-    console.log('[Main] Analysis worker already running, skipping trigger.');
-    return analysisPromise;
-  }
-
-  analysisPromise = new Promise<void>((resolve, reject) => {
-    console.log('[Main] Spawning project analysis worker...');
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('graph-analysis:started');
-    }
-
-    // Path to worker must be correct after compilation.
-    // NOTE: Webpack is now configured to compile the worker script.
-    // This path points to the compiled worker JS file alongside the main bundle.
-    const worker = new Worker(
-      path.join(__dirname, '../projectAnalysisWorker.js'),
-      {
-        workerData: { baseDir: fileService.getBaseDir() },
-      }
-    );
-
-    worker.on(
-      'message',
-      (message: {
-        success: boolean;
-        data?: ProjectGraphCache;
-        error?: string;
-      }) => {
-        if (message.success && message.data) {
-          projectGraphService.populateGraphFromData(message.data);
-          projectGraphService.saveGraphToCache();
-          console.log(
-            '[Main] Received graph data from worker and updated cache.'
-          );
-        } else {
-          console.error('[Main] Worker reported an error:', message.error);
-        }
-      }
-    );
-
-    worker.on('error', (error: Error) => {
-      console.error('[Main] Worker thread error:', error);
-      // The 'exit' event will still fire, so we don't send 'finished' here
-      // to avoid sending it twice.
-      reject(error);
-    });
-
-    worker.on('exit', (code: number) => {
-      if (code !== 0) {
-        console.error(`[Main] Worker stopped with exit code ${code}`);
-      } else {
-        console.log('[Main] Worker finished successfully.');
-      }
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('graph-analysis:finished');
-      }
-      resolve();
-    });
-  }).finally(() => {
-    analysisPromise = null;
-  });
-  return analysisPromise;
-}
 
 // Get the base directory of the Athanor application
 export function getAppBasePath(): string {
@@ -373,57 +288,13 @@ app.whenReady().then(async () => {
   fileService.on('base-dir-changed', async () => {
     // Update GitService base directory when project changes to fix state sync bug
     gitService.setBaseDir(fileService.getBaseDir());
-    const settings = await settingsService.getApplicationSettings();
-
-    const loadedFromCache = await projectGraphService.loadGraphFromCache();
-    if (loadedFromCache) {
-      console.log(
-        '[ProjectGraphService] Successfully loaded graph from cache.'
-      );
-      // Still send the finished event so the UI can react
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('graph-analysis:finished');
-      }
-    } else if (settings?.enableSmartFeatures ?? true) {
-      console.log(
-        '[ProjectGraphService] Cache not found or invalid, starting full analysis.'
-      );
-      runProjectAnalysisWorker().catch((err) => {
-        console.error(
-          'Error running project analysis worker on base-dir-changed:',
-          err
-        );
-      });
-    } else {
-      console.log('[Main] Smart features disabled. Skipping analysis for new project.');
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('graph-analysis:finished');
-      }
-    }
   });
 
   setupIpcHandlers(
     fileService,
     settingsService,
-    relevanceEngine,
-    projectGraphService,
-    userActivityService,
     gitService
   );
-
-  ipcMain.handle('graph:force-reanalyze', async () => {
-    const settings = await settingsService.getApplicationSettings();
-    if (settings?.enableSmartFeatures ?? true) {
-      runProjectAnalysisWorker().catch((err) => {
-        console.error('Error running manual project analysis:', err);
-      });
-    } else {
-      console.log('[Main] Smart features disabled. Skipping manual re-analysis.');
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('graph-analysis:finished');
-      }
-    }
-  });
 
   // Read package.json for About panel information
   const packageJsonPath = path.join(app.getAppPath(), 'package.json');
@@ -444,93 +315,6 @@ app.whenReady().then(async () => {
   await buildMenu();
 
   await createWindow();
-
-  // --- Automatic Project Analysis Logic ---
-  let fsDebounceTimer: NodeJS.Timeout | null = null;
-  let inactivityTimer: NodeJS.Timeout | null = null;
-  let isWindowFocused = true;
-  let graphIsPotentiallyStale = false;
-
-  const runAnalysisAndCatch = () => {
-    settingsService.getApplicationSettings().then(settings => {
-      if (settings?.enableSmartFeatures ?? true) { // Default to ON if not set
-        runProjectAnalysisWorker()
-          .then(() => {
-            console.log('[Main] Analysis complete, graph is now considered fresh.');
-            graphIsPotentiallyStale = false;
-          })
-          .catch((err) => {
-            console.error('[Main] Automatic project analysis failed:', err);
-          });
-      } else {
-        console.log('[Main] Smart features disabled. Skipping automatic analysis.');
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('graph-analysis:finished');
-        }
-      }
-    }).catch(err => {
-      console.error('[Main] Could not get application settings to check for smart features:', err);
-    });
-  };
-
-  const scheduleInactivityCheck = () => {
-    if (inactivityTimer) clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(() => {
-      console.log(
-        `[Main] User inactive for ${
-          PROJECT_ANALYSIS.USER_INACTIVITY_DELAY / 1000
-        }s. Running analysis.`
-      );
-      runAnalysisAndCatch();
-    }, PROJECT_ANALYSIS.USER_INACTIVITY_DELAY);
-  };
-
-  const scheduleAnalysis = () => {
-    fsDebounceTimer = null;
-    console.log('[Main] File system is quiet. Scheduling analysis.');
-    if (!isWindowFocused) {
-      console.log('[Main] Window not focused. Running analysis immediately.');
-      runAnalysisAndCatch();
-    } else {
-      console.log('[Main] Window is focused. Setting inactivity timer.');
-      scheduleInactivityCheck();
-    }
-  };
-
-  fileService.on('file-changed', () => {
-    graphIsPotentiallyStale = true;
-    if (fsDebounceTimer) clearTimeout(fsDebounceTimer);
-    if (inactivityTimer) clearTimeout(inactivityTimer);
-    fsDebounceTimer = setTimeout(
-      scheduleAnalysis,
-      PROJECT_ANALYSIS.FILE_SYSTEM_QUIESCENCE_DELAY
-    );
-  });
-
-  if (mainWindow) {
-    mainWindow.on('focus', () => {
-      isWindowFocused = true;
-      if (inactivityTimer) clearTimeout(inactivityTimer);
-    });
-
-    mainWindow.on('blur', () => {
-      isWindowFocused = false;
-      // If FS is quiet, window is blurred, AND graph is stale, trigger analysis.
-      if (graphIsPotentiallyStale && !fsDebounceTimer) {
-        console.log(
-          '[Main] FS is quiet, graph is stale, and window blurred. Running analysis.'
-        );
-        runAnalysisAndCatch();
-      }
-    });
-  }
-
-  ipcMain.on('user-activity', () => {
-    if (inactivityTimer) {
-      scheduleInactivityCheck();
-    }
-  });
-  // --- End Automatic Project Analysis Logic ---
 
   // Listen for system theme changes and notify renderer
   nativeTheme.on('updated', () => {
@@ -560,7 +344,6 @@ app.on('window-all-closed', () => {
   fileService.cleanupWatchers().catch((err) => {
     console.error('Error cleaning up FileService watchers:', err);
   });
-  userActivityService.cleanup();
 
   // Quit on all windows closed, including macOS
   app.quit();

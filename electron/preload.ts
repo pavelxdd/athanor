@@ -72,13 +72,6 @@ contextBridge.exposeInMainWorld('electronBridge', {
   // WARNING: For renderer-side logic, always prefer using actions from the
   // relevant Zustand store over calling these IPC functions directly. This ensures the
   // application's in-memory state remains synchronized with the file on disk.
-  userActivity: () => ipcRenderer.send('user-activity'),
-  context: {
-    recalculate: (request: {
-      selectedFilePaths: string[];
-      taskDescription?: string;
-    }) => ipcRenderer.invoke('ath:recalculate-context', request),
-  },
   graph: {
     forceReanalyze: () => ipcRenderer.invoke('graph:force-reanalyze'),
   },

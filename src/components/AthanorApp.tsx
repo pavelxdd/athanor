@@ -26,28 +26,7 @@ const AthanorApp: React.FC = () => {
   const { setChangeAppliedCallback } = useApplyChangesStore();
   const { applicationSettings, loadApplicationSettings } = useSettingsStore();
   const { tabs, activeTabIndex } = useWorkbenchStore();
-  const { clearContext, setIsAnalyzingGraph } = useContextStore();
-
-  // Listen for graph analysis events
-  useEffect(() => {
-    const removeStartedListener = window.electron.receive(
-      'graph-analysis:started',
-      () => {
-        setIsAnalyzingGraph(true);
-      }
-    );
-    const removeFinishedListener = window.electron.receive(
-      'graph-analysis:finished',
-      () => {
-        setIsAnalyzingGraph(false);
-      }
-    );
-
-    return () => {
-      removeStartedListener();
-      removeFinishedListener();
-    };
-  }, [setIsAnalyzingGraph]);
+  const { clearContext } = useContextStore();
 
   // File System Lifecycle
   const {
@@ -159,36 +138,6 @@ const AthanorApp: React.FC = () => {
     setActiveTab(newTab);
     setLastTabChangeTime(Date.now());
   };
-
-  // Notify main process of user activity
-  useEffect(() => {
-    const debounce = (func: () => void, delay: number) => {
-      let timeout: NodeJS.Timeout;
-      return function(...args: []) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func(...args), delay);
-      };
-    };
-
-    const notifyUserActivity = () => {
-      if (window.electronBridge?.userActivity) {
-         window.electronBridge.userActivity();
-      }
-    };
-    
-    const debouncedActivityNotif = debounce(notifyUserActivity, 250);
-
-    window.addEventListener('mousemove', debouncedActivityNotif);
-    window.addEventListener('keydown', debouncedActivityNotif);
-    window.addEventListener('scroll', debouncedActivityNotif);
-
-    return () => {
-      window.removeEventListener('mousemove', debouncedActivityNotif);
-      window.removeEventListener('keydown', debouncedActivityNotif);
-      window.removeEventListener('scroll', debouncedActivityNotif);
-    };
-  }, []);
-
 
   // Show welcome screen when no project is loaded
   if (!currentDirectory && !showProjectDialog) {

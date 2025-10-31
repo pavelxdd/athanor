@@ -55,9 +55,9 @@
 > This section following `task_description` provides detailed instructions for the AI on how to process the task and format its response. It's the core logic of the prompt template.
 > - Thinking Process: Often encourages the AI to "think step-by-step" or "first write down thoughts."
 > - Output Structure: Specifies the exact format of the AI's response. For Athanor, this is typically one or more XML blocks.
-> - Key XML Tags: Details the required Athanor-specific XML tags and their attributes (e.g., `<ath command="task">`, `<ath command="select">`, `<ath command="apply changes">`). All commands must be wrapped in a single root `<athanor>` tag.
+> - Key XML Tags: Details the required Athanor-specific XML tags and their attributes (e.g., `<ath command="task">`, `<ath command="select">`, `<ath command="apply changes">`).
 > - Content Guidelines: Instructions on what information to include within those XML tags (e.g., rewritten task description, analysis, implementation plan, file lists, code changes).
-> - Formatting Rules: Specifics about whitespace, character encoding, or CDATA usage if applicable.
+> - Formatting Rules: Specifics about whitespace, character encoding, or CDATA usage if applicable. Ensure each new XML tag starts on a new line without indentation.
 >
 > Look at other prompt examples in [Athanor's prompts folder](https://github.com/lacerbi/athanor/tree/main/resources/prompts).
 > WRITE TASK-SPECIFIC INSTRUCTIONS HERE -->

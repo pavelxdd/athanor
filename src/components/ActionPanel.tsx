@@ -153,7 +153,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   const { addLog } = useLogStore();
   const { prompts, getDefaultVariant, setActiveVariant, getActiveVariant } =
     usePromptStore();
-  const { promptNeighborPaths, fetchContext } = useContextStore();
+  const { setContext } = useContextStore();
   const { applicationSettings, saveApplicationSettings } = useSettingsStore();
   const { isGeneratingPrompt, setIsGeneratingPrompt } = useWorkbenchStore();
   const { isGraphAnalysisInProgress } = useFileSystemStore();
@@ -172,17 +172,12 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     })
   );
 
+  const { setContext: setContextInStore } = useContextStore();
   // Effect: recalculate context when description or selection *really* changes,
   // but never while a prompt is being generated.
   useEffect(() => {
-    if (isBusy) return; // 🚦 NEW GUARD
-
-    const timeoutHandler = setTimeout(() => {
-      fetchContext(selectedFiles, content);
-    }, 500);
-
-    return () => clearTimeout(timeoutHandler);
-  }, [content, selectedFiles, isBusy]); // note: fetchContext removed from deps
+    setContextInStore(selectedFiles);
+  }, [selectedFiles, setContextInStore]);
 
   // Handler for generating prompts
   const generatePrompt = async (prompt: PromptData, variant: PromptVariant) => {
@@ -199,7 +194,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
         variant,
         rootItems,
         selectedFiles, // Pass ordered array instead of Set
-        Array.from(promptNeighborPaths),
+        [],
         await window.fileSystem.getCurrentDirectory(),
         tabs[activeTabIndex].content, // Current tab's content
         tabs[activeTabIndex].context, // Current tab's context

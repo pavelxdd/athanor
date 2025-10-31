@@ -46,6 +46,7 @@ You will respond with two sections: a Markdown summary and a single  `<athanor>`
 - **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
 - Use the `<ath command="apply changes">` wrapper. You should group all file operations into a single `<ath command="apply changes">` block for easier processing.
 - Inside, include one `<file>` block for each created, updated, or deleted file.
+- **XML Formatting:** Do not indent your XML output. Each new tag must start on a new line without any leading spaces.
 - **Ensure all XML is valid and all tags are properly closed.**
 
 ## 3. File Operations & XML Structure
@@ -75,10 +76,14 @@ Each `<file>` block must contain the following tags:
 >>>>>>> REPLACE
 ]]></file_code>
 ```
-- The `SEARCH` block must be a **verbatim copy** from the original code. Do not reformat, re-indent, or change it in any way.
+- The `SEARCH` block MUST be an **exact, character-for-character, verbatim copy** from the original code section you intend to replace.
+- **This includes all original indentation (e.g., tabs or spaces) and all whitespace.** Do NOT reformat, re-indent, or change it in any way.
+- Failure to provide a perfect, verbatim `SEARCH` block will cause the update to fail.
 - Include enough context lines in the `SEARCH` block to make the location unique within the file.
 
 ## 4. Code Quality
+- **Indentation:** You MUST preserve the original indentation (e.g., tabs or spaces) of any code that is not being modified. New code that you write MUST match the indentation style of the surrounding or existing code. Do not mix indentation styles.
+- **Whitespace:** Use only standard space characters for new whitespace. Do NOT use non-breaking spaces or other non-standard whitespace characters unless they are part of an existing string literal.
 - **Comments:** Add comments as needed to explain complex code. Do not remove existing comments unless they are incorrect.
 - **File Length:** Files should generally have reasonable length.
 
@@ -141,6 +146,7 @@ You will respond with two sections: a Markdown summary and a single `<athanor>` 
 - **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
 - Use the `<ath command="apply changes">` wrapper. You should group all file operations into a single `<ath command="apply changes">` block for easier processing.
 - Inside, include one `<file>` block for each created, updated, or deleted file.
+- **XML Formatting:** Do not indent your XML output. Each new tag must start on a new line without any leading spaces.
 - **Ensure all XML is valid and all tags are properly closed.**
 
 ## 3. File Operations & XML Structure
@@ -170,10 +176,14 @@ Each `<file>` block must contain the following tags:
 >>>>>>> REPLACE
 ]]></file_code>
 ```
-- The `SEARCH` block must be a **verbatim copy** from the original code. Do not reformat, re-indent, or change it in any way.
+- The `SEARCH` block MUST be an **exact, character-for-character, verbatim copy** from the original code section you intend to replace.
+- **This includes all original indentation (e.g., tabs or spaces) and all whitespace.** Do NOT reformat, re-indent, or change it in any way.
+- Failure to provide a perfect, verbatim `SEARCH` block will cause the update to fail.
 - Include enough context lines in the `SEARCH` block to make the location unique within the file.
 
 ## 4. Code Quality
+- **Indentation:** You MUST preserve the original indentation (e.g., tabs or spaces) of any code that is not being modified. New code that you write MUST match the indentation style of the surrounding or existing code. Do not mix indentation styles.
+- **Whitespace:** Use only standard space characters for new whitespace. Do NOT use non-breaking spaces or other non-standard whitespace characters unless they are part of an existing string literal.
 - **Comments:** Add comments as needed to explain complex code. Do not remove existing comments unless they are incorrect.
 - **File Length:** Files should generally have reasonable length.
 

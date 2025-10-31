@@ -11,23 +11,15 @@ export {};
 
 import type { GitDiffData } from '../../common/types/git-service';
 
-// Settings types
 export interface ProjectSettings {
   projectNameOverride?: string;
   projectInfoFilePath?: string;
-
   useGitignore?: boolean;
-  // Future expansion: other project-specific settings
 }
 
 export interface ApplicationSettings {
-  // Example application settings for demonstration
-  enableSmartFeatures?: boolean;
-  maxSmartContextTokens?: number;
   recentProjectPaths?: string[];
   uiTheme?: string;
-
-  // Window state for implicit persistence
   windowState?: {
     width: number;
     height: number;
@@ -35,12 +27,8 @@ export interface ApplicationSettings {
     y: number | undefined;
     isMaximized: boolean;
   };
-
-  // Future expansion: more global settings
-  // defaultLargeFileWarningThreshold?: number;
 }
 
-// Panel resizing types
 export interface PanelResizeState {
   leftPanelWidth: number;
   isResizing: boolean;
@@ -116,18 +104,6 @@ declare global {
 
     // Electron bridge for secure operations
     electronBridge: {
-      userActivity: () => void;
-      context: {
-        recalculate: (request: {
-          selectedFilePaths: string[];
-          taskDescription?: string;
-        }) => Promise<{
-          userSelected: string[];
-          heuristicSeedFiles: Array<{ path: string; score: number }>;
-          allNeighbors: Array<{ path: string; score: number }>;
-          promptNeighbors: string[];
-        }>;
-      };
       graph: {
         forceReanalyze: () => Promise<void>;
       };
