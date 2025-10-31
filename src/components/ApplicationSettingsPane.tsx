@@ -22,6 +22,9 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   const [uiTheme, setUiTheme] = useState<string>(
     SETTINGS.defaults.application.uiTheme
   );
+  const [diffViewMode, setDiffViewMode] = useState<'compact' | 'full'>(
+    SETTINGS.defaults.application.diffViewMode
+  );
   const [isSavingApplication, setIsSavingApplication] = useState(false);
   const [applicationSaveError, setApplicationSaveError] = useState<
     string | null
@@ -36,11 +39,20 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
           applicationDefaults.uiTheme ??
           defaults.uiTheme
       );
+      setDiffViewMode(
+        applicationSettings.diffViewMode ??
+          applicationDefaults.diffViewMode ??
+          defaults.diffViewMode
+      );
     } else {
       // Set default values when no application settings
       setUiTheme(
         applicationDefaults.uiTheme ??
           defaults.uiTheme
+      );
+      setDiffViewMode(
+        applicationDefaults.diffViewMode ??
+          defaults.diffViewMode
       );
     }
     // Clear any previous save errors when settings load
@@ -78,10 +90,15 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
     setUiTheme(e.target.value);
   };
 
+  const handleDiffViewModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setDiffViewMode(e.target.value as 'compact' | 'full');
+  };
+
   // Application save button handler
   const handleSaveApplicationSettings = () => {
     saveApplicationSettingsCallback({
       uiTheme,
+      diffViewMode,
     });
   };
 
@@ -91,7 +108,11 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
     uiTheme !==
       (applicationSettings?.uiTheme ??
         applicationDefaults.uiTheme ??
-        defaults.uiTheme);
+        defaults.uiTheme) ||
+    diffViewMode !==
+      (applicationSettings?.diffViewMode ??
+        applicationDefaults.diffViewMode ??
+        defaults.diffViewMode);
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 h-fit">
@@ -149,6 +170,34 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
                   <option value="Light">Light</option>
                   <option value="Dark">Dark</option>
                   <option value="Auto">Auto (System)</option>
+                </select>
+              </div>
+
+              {/* Default Diff View */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <label
+                    htmlFor="diffViewMode"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Default Diff View
+                  </label>
+                  <div
+                    className="relative group"
+                    title="Choose the default view mode for diffs in the 'Review' tab."
+                  >
+                    <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help" />
+                  </div>
+                </div>
+                <select
+                  id="diffViewMode"
+                  value={diffViewMode}
+                  onChange={handleDiffViewModeChange}
+                  disabled={isLoadingApplicationSettings || isSavingApplication}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
+                >
+                  <option value="compact">Compact</option>
+                  <option value="full">Full File</option>
                 </select>
               </div>
             </div>

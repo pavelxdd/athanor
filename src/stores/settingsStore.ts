@@ -124,8 +124,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     
     try {
       const settings = await window.settingsService.getApplicationSettings();
-      // If no settings file exists, use defaults
-      const applicationSettings = settings || { ...SETTINGS.defaults.application };
+      // If no settings file exists, use defaults and ensure all keys are present
+      const applicationSettings = {
+        ...SETTINGS.defaults.application,
+        ...(settings || {}),
+      };
       set({ 
         applicationSettings,
         isLoadingApplicationSettings: false,

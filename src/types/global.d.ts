@@ -20,6 +20,7 @@ export interface ProjectSettings {
 export interface ApplicationSettings {
   recentProjectPaths?: string[];
   uiTheme?: string;
+  diffViewMode?: 'compact' | 'full';
   windowState?: {
     width: number;
     height: number;

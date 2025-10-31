@@ -37,11 +37,12 @@ export const SETTINGS = {
       projectNameOverride: '',
       projectInfoFilePath: '',
       useGitignore: true,
-    },
+    } as const,
     application: {
-      recentProjectPaths: [],
+      recentProjectPaths: [] as string[],
       uiTheme: 'Auto',
-    },
+      diffViewMode: 'compact',
+    } as const,
   },
 };
 

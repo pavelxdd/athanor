@@ -24,6 +24,7 @@ module.exports = {
           path.resolve(__dirname, 'electron'),
           path.resolve(__dirname, 'electron/handlers'),
           path.resolve(__dirname, 'common'),
+          path.resolve(__dirname, 'src'),
         ],
         use: [{ loader: 'ts-loader' }],
       },

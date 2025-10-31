@@ -9,7 +9,9 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsDown,
+  ChevronsDownUp,
   ChevronsUp,
+  ChevronsUpDown,
   ChevronUp,
   Pen,
   GitCompare,
@@ -24,6 +26,7 @@ import { useLogStore } from '../stores/logStore';
 import { SETTINGS } from '../utils/constants';
 
 const DIFF_MERGE_THRESHOLD = 2; // Diffs separated by 2 or fewer context lines are merged
+const CONTEXT_LINES_COMPACT = 5; // Lines of context for compact diff view
 
 interface DiffBlock {
   start: number;
@@ -33,38 +36,55 @@ interface DiffBlock {
 interface DiffLineProps {
   content: string;
   type: 'add' | 'remove' | 'context' | 'header';
+  oldLineNum?: number;
+  newLineNum?: number;
 }
 
-const DiffLine: React.FC<DiffLineProps> = ({ content, type }) => {
-  const baseClass = 'font-mono text-xs leading-5 whitespace-pre';
+const DiffLine: React.FC<DiffLineProps> = ({ content, type, oldLineNum, newLineNum }) => {
+  const baseClass = 'font-mono text-xs leading-5 whitespace-pre flex';
   let lineClass = baseClass;
   let prefix = ' ';
 
+  const oldNumStr = oldLineNum?.toString().padStart(4, ' ') || '    ';
+  const newNumStr = newLineNum?.toString().padStart(4, ' ') || '    ';
+  
+  const numClass = 'select-none inline-block w-10 text-right opacity-50 pr-2';
+  const contentClass = 'pl-1 flex-1'; // Use flex-1 to fill remaining space
+
   switch (type) {
     case 'add':
-      lineClass +=
-        ' bg-green-100 dark:bg-blue-900/30 text-green-900 dark:text-blue-100';
+      lineClass += ' bg-green-100 dark:bg-blue-900/30 text-green-900 dark:text-blue-100';
       prefix = '+';
       break;
     case 'remove':
-      lineClass +=
-        ' bg-red-100 dark:bg-orange-900/30 text-red-900 dark:text-orange-100';
+      lineClass += ' bg-red-100 dark:bg-orange-900/30 text-red-900 dark:text-orange-100';
       prefix = '-';
       break;
     case 'header':
-      lineClass +=
-        ' bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 font-semibold';
-      prefix = '@';
-      break;
-    default:
+      lineClass += ' bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 font-semibold';
+      return (
+        <div className={lineClass}>
+          <span className={`${numClass} opacity-100`}>...</span>
+          <span className={`${numClass} opacity-100 border-l border-blue-300 dark:border-blue-700`}>...</span>
+          {/* content now holds the full "@@ ... @@" string, so we don't need a separate prefix */}
+          <span className={`${contentClass} opacity-70 pl-5`}>{content}</span>
+        </div>
+      );
+    default: // context
       lineClass += ' text-gray-700 dark:text-gray-300';
       prefix = ' ';
   }
 
   return (
     <div className={lineClass}>
-      <span className="select-none w-4 inline-block">{prefix}</span>
-      {content}
+      <span className={`${numClass} border-r border-gray-200 dark:border-gray-700`}>
+        {type === 'add' ? '' : oldNumStr}
+      </span>
+      <span className={`${numClass} border-r border-gray-200 dark:border-gray-700`}>
+        {type === 'remove' ? '' : newNumStr}
+      </span>
+      <span className="select-none w-4 inline-block text-center">{prefix}</span>
+      <span className={contentClass}>{content}</span>
     </div>
   );
 };
@@ -126,15 +146,29 @@ const DiffView: React.FC<{
   oldText: string;
   newText: string;
   filePath: string;
+  isCompact: boolean;
   onDiffBlocksCalculated?: (blocks: DiffBlock[]) => void;
   diffViewRef?: React.RefObject<HTMLDivElement>;
-}> = ({ oldText, newText, filePath, onDiffBlocksCalculated, diffViewRef }) => {
+}> = ({
+  oldText,
+  newText,
+  filePath,
+  isCompact,
+  onDiffBlocksCalculated,
+  diffViewRef,
+}) => {
   // Only normalize line endings for comparison
   const normalizeForComparison = (text: string) => {
     if (!text) return '';
-    return text
+    let content = text
       .replace(/\r\n/g, '\n') // Normalize Windows line endings
       .replace(/\r/g, '\n'); // Normalize old Mac line endings
+
+    // Match FileService.ts write logic: ensure a final newline if content exists
+    if (content.length > 0 && !content.endsWith('\n')) {
+      content += '\n';
+    }
+    return content;
   };
 
   const normalizedOld = normalizeForComparison(oldText);
@@ -150,7 +184,7 @@ const DiffView: React.FC<{
 
   // Create diff with context
   const patch = createPatch(filePath, normalizedOld, normalizedNew, '', '', {
-    context: 999999,
+    context: isCompact ? CONTEXT_LINES_COMPACT : 999999,
   });
 
   const lines = patch.split('\n').slice(2); // Skip the diff header
@@ -163,19 +197,37 @@ const DiffView: React.FC<{
     }
   }, [lines, onDiffBlocksCalculated]);
 
-  const renderDiffLine = (line: string, index: number) => {
-    if (!line && index === lines.length - 1) return null;
+  // Use useMemo to create the rendered lines array, tracking line numbers
+  const renderedLines = React.useMemo(() => {
+    let currentOldLineNum = 0;
+    let currentNewLineNum = 0;
+    const hunkRegex = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)$/; // Capture content after header
 
-    if (line.startsWith('@@')) {
-      return <DiffLine key={index} content={line} type="header" />;
-    } else if (line.startsWith('+')) {
-      return <DiffLine key={index} content={line.slice(1)} type="add" />;
-    } else if (line.startsWith('-')) {
-      return <DiffLine key={index} content={line.slice(1)} type="remove" />;
-    } else {
-      return <DiffLine key={index} content={line.slice(1)} type="context" />;
-    }
-  };
+    return lines.reduce<React.ReactNode[]>((acc, line, index) => {
+      // Skip final empty line if it exists
+      if (!line && index === lines.length - 1) return acc;
+
+      const hunkMatch = line.match(hunkRegex);
+
+      if (hunkMatch) {
+        currentOldLineNum = parseInt(hunkMatch[1], 10);
+        currentNewLineNum = parseInt(hunkMatch[2], 10);
+        // Pass the *entire* line content
+        acc.push(<DiffLine key={index} content={line} type="header" />);
+      } else if (line.startsWith('+')) {
+        acc.push(<DiffLine key={index} content={line.slice(1)} type="add" newLineNum={currentNewLineNum} />);
+        currentNewLineNum++;
+      } else if (line.startsWith('-')) {
+        acc.push(<DiffLine key={index} content={line.slice(1)} type="remove" oldLineNum={currentOldLineNum} />);
+        currentOldLineNum++;
+      } else { // Context line
+        acc.push(<DiffLine key={index} content={line.slice(1)} type="context" oldLineNum={currentOldLineNum} newLineNum={currentNewLineNum} />);
+        currentOldLineNum++;
+        currentNewLineNum++;
+      }
+      return acc;
+    }, []);
+  }, [lines]); // Recalculate only when lines change
 
   return (
     <div
@@ -183,9 +235,9 @@ const DiffView: React.FC<{
       className="overflow-x-auto bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 p-2 min-w-0"
     >
       <div className="space-y-0 min-w-max">
-        {lines.map((line, index) => (
+        {renderedLines.map((lineNode, index) => (
           <div key={index} data-line-index={index}>
-            {renderDiffLine(line, index)}
+            {lineNode}
           </div>
         ))}
       </div>
@@ -202,6 +254,8 @@ interface FileOperationItemProps {
   isActive?: boolean;
   onDiffBlocksCalculated?: (blocks: DiffBlock[]) => void;
   diffViewRef?: React.RefObject<HTMLDivElement>;
+  isCompact: boolean;
+  onToggleCompact: () => void;
 }
 
 const FileOperationItem = React.forwardRef<
@@ -218,6 +272,8 @@ const FileOperationItem = React.forwardRef<
       isActive = false,
       onDiffBlocksCalculated,
       diffViewRef,
+      isCompact,
+      onToggleCompact,
     },
     ref
   ) => {
@@ -304,7 +360,14 @@ const FileOperationItem = React.forwardRef<
               </p>
             )}
           </div>
-          <div className="text-right shrink-0 ml-4">
+          <div className="flex items-center gap-2 shrink-0 ml-4">
+            <button
+              onClick={onToggleCompact}
+              title={isCompact ? 'Expand (Show full file)' : 'Collapse (Show compact diff)'}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400"
+            >
+              {isCompact ? <ChevronsDown size={16} /> : <ChevronsUp size={16} />}
+            </button>
             <span
               className={`inline-block px-2 py-1 rounded text-xs font-semibold text-white ${
                 op.file_operation === 'CREATE'
@@ -339,6 +402,7 @@ const FileOperationItem = React.forwardRef<
               oldText={op.old_code}
               newText={previewContent ?? ''}
               filePath={op.file_path}
+              isCompact={isCompact}
               onDiffBlocksCalculated={onDiffBlocksCalculated}
               diffViewRef={diffViewRef}
             />
@@ -392,6 +456,15 @@ const FileOperationItem = React.forwardRef<
 FileOperationItem.displayName = 'FileOperationItem';
 
 const ReviewPanel: React.FC = () => {
+  const { applicationSettings } = useSettingsStore();
+  const defaultViewMode =
+    applicationSettings?.diffViewMode || SETTINGS.defaults.application.diffViewMode;
+  const [globalViewMode, setGlobalViewMode] = useState<'compact' | 'full'>(
+    defaultViewMode
+  );
+  const [expandedFiles, setExpandedFiles] = useState(new Set<number>()); // Files user wants to see fully
+  const [collapsedFiles, setCollapsedFiles] = useState(new Set<number>()); // Files user wants to see compactly
+
   const {
     activeOperations,
     mode,
@@ -796,6 +869,16 @@ const ReviewPanel: React.FC = () => {
       );
   }, [activeOperations.length]);
 
+  // Update global view mode when settings change
+  useEffect(() => {
+    setGlobalViewMode(
+      applicationSettings?.diffViewMode || SETTINGS.defaults.application.diffViewMode
+    );
+    // Reset overrides when global setting changes
+    setExpandedFiles(new Set());
+    setCollapsedFiles(new Set());
+  }, [applicationSettings?.diffViewMode]);
+
   // Handle operations list changes - clamp currentIdx to valid range
   useEffect(() => {
     if (activeOperations.length === 0) {
@@ -1089,6 +1172,39 @@ const ReviewPanel: React.FC = () => {
           </button>
           <div className="border-l border-gray-300 dark:border-gray-600 h-6 mx-2" />
           <button
+            onClick={() => {
+              setGlobalViewMode('compact');
+              setExpandedFiles(new Set());
+              setCollapsedFiles(new Set());
+            }}
+            disabled={
+              globalViewMode === 'compact' &&
+              expandedFiles.size === 0 &&
+              collapsedFiles.size === 0
+            }
+            title="Collapse all diffs to compact view"
+            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronsDownUp size={16} />
+          </button>
+          <button
+            onClick={() => {
+              setGlobalViewMode('full');
+              setExpandedFiles(new Set());
+              setCollapsedFiles(new Set());
+            }}
+            disabled={
+              globalViewMode === 'full' &&
+              expandedFiles.size === 0 &&
+              collapsedFiles.size === 0
+            }
+            title="Expand all diffs to show full files"
+            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronsUpDown size={16} />
+          </button>
+          <div className="border-l border-gray-300 dark:border-gray-600 h-6 mx-2" />
+          <button
             onClick={goPrevDiff}
             disabled={isPrevDiffDisabled}
             title="Previous diff block"
@@ -1158,45 +1274,61 @@ const ReviewPanel: React.FC = () => {
         </div>
       )}
       <div className="p-4 space-y-4">
-        <div className="bg-amber-100 dark:bg-amber-900/30 border-l-4 border-amber-500 dark:border-amber-400 p-4 text-amber-700 dark:text-amber-200">
-          <div className="flex items-center">
-            <svg
-              className="w-5 h-5 mr-3"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 011 1v3a1 1 0 11-2 0V6a1 1 0 011-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <strong>Warning:</strong>&nbsp;Applying changes will modify files
-            and may break the code. Ensure you have a backup via Git or other
-            means.
-          </div>
-        </div>
         <div className="space-y-6">
-          {activeOperations.map((op, idx) => (
-            <FileOperationItem
-              key={`${op.file_path}-${idx}`}
-              ref={(el) => {
-                itemRefs.current[idx] = el;
-              }}
-              operation={op}
-              index={idx}
-              mode={mode}
-              onAccept={applyChange}
-              onReject={rejectChange}
-              isActive={idx === currentIdx}
-              onDiffBlocksCalculated={(blocks) => {
-                if (idx === currentIdx) {
-                  setCurrentDiffBlocks(blocks);
-                }
-              }}
-              diffViewRef={diffViewRefs.current[idx]}
-            />
-          ))}
+          {activeOperations.map((op, idx) => {
+            let isCompact: boolean;
+            if (expandedFiles.has(idx)) {
+              isCompact = false;
+            } else if (collapsedFiles.has(idx)) {
+              isCompact = true;
+            } else {
+              isCompact = globalViewMode === 'compact';
+            }
+
+            const toggleFileCompact = () => {
+              setExpandedFiles((prev) => {
+                const nextExpanded = new Set(prev);
+                setCollapsedFiles((prevCollapsed) => {
+                  const nextCollapsed = new Set(prevCollapsed);
+
+                  if (isCompact) {
+                    // Currently compact, so expand
+                    nextExpanded.add(idx);
+                    nextCollapsed.delete(idx);
+                  } else {
+                    // Currently expanded, so collapse
+                    nextExpanded.delete(idx);
+                    nextCollapsed.add(idx);
+                  }
+                  return nextCollapsed;
+                });
+                return nextExpanded;
+              });
+            };
+
+            return (
+              <FileOperationItem
+                key={`${op.file_path}-${idx}`}
+                ref={(el) => {
+                  itemRefs.current[idx] = el;
+                }}
+                operation={op}
+                index={idx}
+                mode={mode}
+                onAccept={applyChange}
+                onReject={rejectChange}
+                isActive={idx === currentIdx}
+                onDiffBlocksCalculated={(blocks) => {
+                  if (idx === currentIdx) {
+                    setCurrentDiffBlocks(blocks);
+                  }
+                }}
+                diffViewRef={diffViewRefs.current[idx]}
+                isCompact={isCompact}
+                onToggleCompact={toggleFileCompact}
+              />
+            );
+          })}
         </div>
       </div>
     </div>
