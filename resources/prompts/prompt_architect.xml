@@ -43,6 +43,7 @@ The purpose is to:
 2.  **Structure Your Response:** Provide your response in a single XML block enclosed in Markdown code fences. **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
 3.  **Produce Two Athanor Commands:** The XML block must contain exactly two tags inside `<athanor>`: `<ath command="task">` and `<ath command="select">`.
 4.  **XML Formatting:** Do not indent your XML output. Each new tag must start on a new line without any leading spaces.
+5.  **CDATA Wrapping:** The content of `<ath command="task">` must be wrapped in `<![CDATA[...]]>` to preserve any angle brackets in your plan. The content of `<ath command="select">` can be plain text as it contains only file paths.
 
 ## 1. `<ath command="task">` Content
 
@@ -71,7 +72,7 @@ Inside this tag, structure your plan as follows:
 
 ```xml
 <athanor>
-<ath command="task">
+<ath command="task"><![CDATA[
 # Task
 [Task description, rewritten for clarity]
 
@@ -89,7 +90,7 @@ Inside this tag, structure your plan as follows:
 
 ## Commit 2: [Clear Purpose]
 ...
-</ath>
+]]></ath>
 
 <ath command="select">
 path/to/file1.ts path/to/helper.ts
@@ -137,6 +138,7 @@ The purpose is to:
 2.  **Structure Your Response:** Provide your response in a single XML block enclosed in Markdown code fences. **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
 3.  **Produce Two Athanor Commands:** The XML block must contain exactly two tags inside `<athanor>`: `<ath command="task">` and `<ath command="select">`.
 4.  **XML Formatting:** Do not indent your XML output. Each new tag must start on a new line without any leading spaces.
+5.  **CDATA Wrapping:** The content of `<ath command="task">` must be wrapped in `<![CDATA[...]]>` to preserve any angle brackets in your plan. The content of `<ath command="select">` can be plain text as it contains only file paths.
 
 ## 1. `<ath command="task">` Content
 
@@ -160,7 +162,7 @@ Inside this tag, structure your plan as follows:
 
 ```xml
 <athanor>
-<ath command="task">
+<ath command="task"><![CDATA[
 # Task
 [Task description, rewritten for clarity]
 
@@ -174,7 +176,7 @@ Inside this tag, structure your plan as follows:
   1. Detailed step 1...
   2. Detailed step 2...
 - Verification: How to verify this plan works.
-</ath>
+]]></ath>
 
 <ath command="select">
 path/to/file1.ts path/to/file2.ts
