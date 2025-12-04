@@ -55,9 +55,11 @@
 > This section following `task_description` provides detailed instructions for the AI on how to process the task and format its response. It's the core logic of the prompt template.
 > - Thinking Process: Often encourages the AI to "think step-by-step" or "first write down thoughts."
 > - Output Structure: Specifies the exact format of the AI's response. For Athanor, this is typically one or more XML blocks.
-> - Key XML Tags: Details the required Athanor-specific XML tags and their attributes (e.g., `<ath command="task">`, `<ath command="select">`, `<ath command="apply changes">`).
+> - Key XML Tags: Details the required Athanor-specific XML tags and their attributes (e.g., `<command type="task">`, `<command type="select">`, `<command type="apply changes">`).
 > - Content Guidelines: Instructions on what information to include within those XML tags (e.g., rewritten task description, analysis, implementation plan, file lists, code changes).
 > - Formatting Rules: Specifics about whitespace, character encoding, or CDATA usage if applicable. Ensure each new XML tag starts on a new line without indentation.
+> - **CRITICAL:** All Athanor commands must be wrapped in a single `<athanor>` root tag (including both opening `<athanor>` and closing `</athanor>` tags). If the AI omits or forgets to close the root tag, Athanor's parser will not find the commands and no changes will be applied.
+> - **Nesting Rules:** For `<command type="apply changes">`, include one `<file>` block per file. Within a `<file_code>` CDATA section, multiple `SEARCH/REPLACE` blocks can be used for multiple changes in the same file. Do NOT nest `<file>` blocks. For `<command type="select">`, use separate `<file_path>` tags for each file path.
 >
 > Look at other prompt examples in [Athanor's prompts folder](https://github.com/lacerbi/athanor/tree/main/resources/prompts).
 > WRITE TASK-SPECIFIC INSTRUCTIONS HERE -->
@@ -98,7 +100,7 @@
 > ### 5. `<current_task>` Block:
 > This block contains the user's specific request and detailed instructions for the AI.
 > -   `<task_description>`: Athanor injects the user's task here using `{{task_description}}` and optional `{{task_context}}`.
-> -   The subsequent content within `<current_task>` provides detailed instructions on how the AI should process the task, structure its thinking, and format its response, often specifying Athanor-specific XML output. All commands must be wrapped in a single root `<athanor>` tag.
+> -   The subsequent content within `<current_task>` provides detailed instructions on how the AI should process the task, structure its thinking, and format its response, often specifying Athanor-specific XML output. All commands must be wrapped in a single root `<athanor>` tag (including both opening `<athanor>` and closing `</athanor>` tags). If you omit or forget to close the root tag, Athanor's parser will not find your commands and no changes will be applied.
 >
 > ADDITIONAL EXPLANATION (REMOVE THIS SECTION) -->
 

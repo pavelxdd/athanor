@@ -36,27 +36,134 @@ Consider the task described above.
 
 Your goal is to SELECT which files from the provided `file_tree` you need to read, change, or delete to complete the task.
 
--   Be broad: include any files you *might* need to see, even if they are not directly related (e.g., utility files, constants, configurations).
--   If in doubt, include the file.
+## File Selection Criteria
+Apply these criteria to ensure comprehensive context:
+
+1. **Directly relevant files:** Files that contain code, configuration, or documentation directly related to the task.
+2. **Dependencies:** Files that import/export the relevant code, provide types/interfaces, or define constants used.
+3. **Configuration files:** Project configs, build scripts, package manifests that affect behavior.
+4. **Utility/helper files:** Shared utilities, helpers, common functions that the relevant code depends on.
+5. **Test files:** Existing tests for the area being modified; include them to understand expected behavior.
+6. **Documentation files:** README, API docs, design documents that provide context.
+7. **Supplementary section:** If a `<supplementary_section>` is provided, prioritize files referenced there.
+
+**When in doubt, include the file.** It's better to have slightly more context than to miss critical information.
 
 First, write down your reasoning in a detailed summary, mentioning all the files you plan to select.
 
-Then, provide the final list of files within a single `<ath command="select">` block. Inside this block, include one `<file_path>` tag for each project-relative file path, with the path as the tag's content. The entire response must be wrapped in an `<athanor>` root tag and enclosed in Markdown code fences.
+Then, provide the final list of files within a single `<command type="select">` block. Inside this block, include one `<file_path>` tag for each project-relative file path, with the path as the tag's content. The entire response must be wrapped in an `<athanor>` root tag and enclosed in Markdown code fences. **CRITICAL:** If you omit the `<athanor>` root tag or forget to close it with `</athanor>`, Athanor will not be able to parse your commands and the file selection will fail.
 
 **XML Formatting:** Do not indent your XML output. Each new tag must start on a new line without any leading spaces.
 
 <example>
 ```xml
 <athanor>
-<ath command="select">
+<command type="select">
 <file_path>path/to/file1.ts</file_path>
 <file_path>path/to/another/file2.md</file_path>
-</ath>
+</command>
 </athanor>
 ```
 </example>
 
+### XML Structure Rules
+- **Root tag required:** All commands must be wrapped in a single `<athanor>` root tag with both opening and closing tags.
+- **One `<command type="select">` block:** Include exactly one `<command type="select">` block inside `<athanor>`.
+- **Separate `<file_path>` tags:** Each file path must be wrapped in its own `<file_path>` tag. Do NOT nest `<file_path>` tags.
+- **No indentation:** Do not indent your XML output. Each new tag must start on a new line without leading spaces.
+
 Ensure your XML is valid by properly opening and closing all tags, including the root `<athanor>` tag.
+</current_task>
+</ath_prompt_variant>
+
+<ath_prompt_variant
+    id="enhanced-selection"
+    label="Enhanced file selection"
+    tooltip="Autoselect prompt with detailed criteria and examples">
+<project>
+# Documentation `{{project_name}}`
+
+{{project_info}}
+<file_contents>
+{{file_contents}}
+</file_contents>
+
+{{file_tree}}
+{{supplementary_section}}
+</project>
+
+<system_prompt>
+You are an expert AI assistant and software engineer specializing in project analysis.
+Use the included project information as a general guide.
+</system_prompt>
+
+<current_task>
+<next_task>
+{{task_description}}
+{{task_context}}
+</next_task>
+
+## Task Analysis & File Selection
+
+Your goal is to SELECT which files from the provided `file_tree` you need to read, change, or delete to complete the task described above.
+
+### Step‑by‑Step Process
+
+1. **Understand the Task:** Read the task description carefully. Identify key components, actions, and expected outcomes.
+2. **Identify Relevant Areas:** Determine which parts of the codebase are likely involved (modules, components, services, etc.).
+3. **Apply Selection Criteria:** Use the criteria below to compile a comprehensive file list.
+4. **Consider Dependencies:** Think about transitive dependencies—files that may not be directly mentioned but are needed for full context.
+5. **Write Reasoning:** Document your thought process, explaining why each file category is included.
+6. **Generate XML:** Output the final list in the required Athanor XML format.
+
+### Selection Criteria
+
+**Always include:**
+- **Core implementation files:** Where the main logic resides.
+- **Interface/type definitions:** Types, interfaces, prop types, schemas.
+- **Configuration files:** Build configs, environment variables, feature flags.
+- **Utility/helper modules:** Shared functions, constants, formatters.
+- **Test files:** Existing unit/integration tests for the area.
+- **Documentation:** Relevant README, design docs, API specifications.
+- **Supplementary references:** Any files mentioned in the `<supplementary_section>`.
+
+**When in doubt, include the file.** Better to have extra context than to miss something crucial.
+
+### Example Scenario
+
+**Task:** "Add validation to the user registration form"
+
+**Likely file categories:**
+1. Frontend form component (e.g., `src/components/RegistrationForm.tsx`)
+2. Validation utility (`src/utils/validation.ts`)
+3. Type definitions (`src/types/user.ts`)
+4. API client for user creation (`src/services/userApi.ts`)
+5. Configuration for validation rules (`src/config/validationRules.ts`)
+6. Existing tests (`src/components/__tests__/RegistrationForm.test.tsx`)
+7. Storybook or documentation (`src/docs/registration.md`)
+
+### XML Format Requirements
+
+- Wrap everything in a single `<athanor>` root tag.
+- Use one `<command type="select">` block.
+- Each file path in its own `<file_path>` tag, no indentation.
+- Enclose XML in a Markdown code fence.
+
+```xml
+<athanor>
+<command type="select">
+<file_path>src/components/RegistrationForm.tsx</file_path>
+<file_path>src/utils/validation.ts</file_path>
+<file_path>src/types/user.ts</file_path>
+</command>
+</athanor>
+```
+
+### Output Instructions
+
+First, provide a detailed reasoning summary listing the files you plan to select and why.
+
+Then, output the XML block with the final selection.
 </current_task>
 </ath_prompt_variant>
 

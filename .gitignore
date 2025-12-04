@@ -36,5 +36,8 @@ codebase.md
 .athignore
 .ath_materials
 
+.crush
 .claude
 CLAUDE.md
+AGENTS.md
+GEMINI.md

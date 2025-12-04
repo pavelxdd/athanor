@@ -73,7 +73,7 @@ You MUST ensure the generated XML strictly adheres to the structure exemplified 
 - **`<system_prompt>` Block:** User-defined. This sets the stage for the AI assistant that will _receive_ the generated prompt. It includes role definition, core goals, high-level instructions, and constraints.
 - **`<current_task>` Block:**
   - `<task_description>`: This sub-element is where Athanor injects the user's runtime task description and any ephemeral context (using `{{task_description}}` and `{{task_context}}` variables). Include this as-is.
-  - **Task-Specific Instructions (following `</task_description>`):** This is user-defined and _critical_. It provides detailed, step-by-step instructions to the AI on how to process the `task_description` and how to format its response. This is where the user might instruct the AI to use Athanor-specific XML tags for its output (e.g., `<ath command="apply changes">...</ath>`, `<ath command="select">...</ath>`) if the AI's response needs to be programmatically processed by Athanor.
+  - **Task-Specific Instructions (following `</task_description>`):** This is user-defined and _critical_. It provides detailed, step-by-step instructions to the AI on how to process the `task_description` and how to format its response. This is where the user might instruct the AI to use Athanor-specific XML tags for its output (e.g., `<command type="apply changes">...</command>`, `<command type="select">...</command>`) if the AI's response needs to be programmatically processed by Athanor.
 
 ## SECTION 3: Understanding Athanor's Dynamic Content and AI Directives
 
@@ -98,29 +98,47 @@ Here are the primary variables available for use in your prompt templates:
 **Usage:**
 You would typically include these within the relevant blocks of your `prompt_*.xml` file. For example, the standard `<project>` block uses `{{project_name}}`, `{{project_info}}`, `{{file_contents}}`, and `{{file_tree}}`. The `{{task_description}}` and `{{task_context}}` variables are typically placed within the `<current_task><task_description>...</task_description></current_task>` element.
 
-### Athanor-Specific XML Commands (`<ath command="...">` for AI Responses)
+### Athanor-Specific XML Commands (`<command type="...">` for AI Responses)
 
-If your prompt is designed to elicit a response that Athanor can directly act upon (e.g., applying code changes, selecting files in the UI), you need to instruct the AI to format parts of its output using specific XML-like tags. **All Athanor commands must be wrapped in a single `<athanor>` root tag.** Athanor parses these commands from the AI's response when the user pastes it back.
+If your prompt is designed to elicit a response that Athanor can directly act upon (e.g., applying code changes, selecting files in the UI), you need to instruct the AI to format parts of its output using specific XML-like tags. **All Athanor commands must be wrapped in a single `<athanor>` root tag (including both opening `<athanor>` and closing `</athanor>` tags).** If you omit or forget to close the root tag, Athanor's parser will not find your commands and no changes will be applied. Athanor parses these commands from the AI's response when the user pastes it back.
 
 The primary commands are:
 
-1.  **`<ath command="apply changes"> ... </ath>`**:
+1.  **`<command type="apply changes"> ... </command>`**:
 
     - **Purpose**: Instructs Athanor to stage changes to files (create, update, or delete).
     - **Content**: This tag should wrap one or more `<file>` elements. Each `<file>` element details an operation on a specific file.
     - **Example (from `prompt_develop.xml`)**:
       ```xml
-      <ath command="apply changes">
-        <file>
-          <file_message>Brief change description</file_message>
-          <file_operation>CREATE|UPDATE_FULL|UPDATE_DIFF|DELETE|RENAME|APPEND|PREPEND</file_operation>
-          <file_path>path/to/file — The full, project-relative path to the file (the old path for `RENAME`)</file_path>
-          <file_path_new>path/to/file_new — The new project-relative path for the file (required for `RENAME` only)</file_path_new>
-          <file_code><![CDATA[
-          [Full file content for CREATE/UPDATE_FULL, diff content for UPDATE_DIFF, new content for APPEND/PREPEND, or empty for DELETE/RENAME]
-          ]]></file_code>
-        </file>
-      </ath>
+<athanor>
+<command type="apply changes">
+<file>
+<file_message>Brief change description for File A</file_message>
+<file_operation>UPDATE_DIFF</file_operation>
+<file_path>path/to/fileA.js</file_path>
+<file_code><![CDATA[
+<<<<<<< SEARCH
+[Exact original code section 1]
+=======
+[New code for section 1]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+[Exact original code section 2]
+=======
+[New code for section 2]
+>>>>>>> REPLACE
+]]></file_code>
+</file>
+<file>
+<file_message>Brief change description for File B</file_message>
+<file_operation>UPDATE_FULL</file_operation>
+<file_path>path/to/fileB.js</file_path>
+<file_code><![CDATA[
+[Full file content for CREATE/UPDATE_FULL]
+]]></file_code>
+</file>
+</command>
+</athanor>
       ```
     - **Operations within `<file_operation>`**:
       - `CREATE`: Creates a new file with the content in `<file_code>`.
@@ -131,29 +149,51 @@ The primary commands are:
       - `APPEND`: Appends the content from `<file_code>` to the end of the specified file.
       - `PREPEND`: Prepends the content from `<file_code>` to the beginning of the specified file.
 
-2.  **`<ath command="select"> ... </ath>`**:
+2.  **`<command type="select"> ... </command>`**:
 
     - **Purpose**: Instructs Athanor to select specific files in its file explorer.
     - **Content**: One `<file_path>` tag per project-relative file path.
     - **Example (from `prompt_autoselect.xml`)**:
       ```xml
-      <ath command="select">
-      <file_path>path/to/file1.ts</file_path>
-      <file_path>path/to/another/file2.md</file_path>
-      </ath>
+<athanor>
+<command type="select">
+<file_path>path/to/file1.ts</file_path>
+<file_path>path/to/another/file2.md</file_path>
+</command>
+</athanor>
       ```
 
-3.  **`<ath command="task"> ... </ath>`**:
+3.  **`<command type="task"> ... </command>`**:
     - **Purpose**: Instructs Athanor to update the "Task Description" field in the active workbench tab with new content. This is useful for multi-step processes where one AI interaction sets up the task for a subsequent one.
     - **Content**: The new text for the task description.
     - **Example (from `prompt_architect.xml`)**:
       ```xml
-      <ath command="task">
-      # New Task Title
-      This is the rewritten and updated task description for the next step.
-      It can include analysis, a plan, etc.
-      </ath>
+<athanor>
+<command type="task"><![CDATA[
+# New Task Title
+This is the rewritten and updated task description for the next step.
+It can include analysis, a plan, etc.
+]]></command>
+</athanor>
       ```
+
+### XML Hierarchy and Nesting Rules
+
+When designing prompts that use Athanor XML commands, ensure the AI understands these critical nesting rules:
+
+1. **Root `<athanor>` tag:** All commands must be wrapped in a single `<athanor>` root tag with both opening and closing tags.
+2. **Command blocks:** Inside `<athanor>`, include one or more `<command type="...">` blocks (e.g., `type="apply changes"`, `type="select"`, `type="task"`).
+3. **File blocks for apply changes:** Inside `<command type="apply changes">`, include one `<file>` block for each distinct file. Each `<file>` block contains:
+   - `<file_message>`, `<file_operation>`, `<file_path>`, optional `<file_path_new>`, and `<file_code>`
+   - Within `<file_code>` (wrapped in `<![CDATA[...]]>`), you can include multiple `SEARCH/REPLACE` blocks for multiple changes in the same file.
+4. **File paths for select:** Inside `<command type="select">`, include separate `<file_path>` tags for each file path. Do NOT nest `<file_path>` tags.
+5. **CDATA for task content:** The content of `<command type="task">` must be wrapped in `<![CDATA[...]]>` to preserve angle brackets.
+6. **No indentation:** Do not indent XML output. Each new tag should start on a new line without leading spaces.
+7. **Common mistakes to avoid:**
+   - Nesting `<file>` blocks inside other `<file>` blocks (they should be siblings)
+   - Creating separate `<file_code>` tags for each change in the same file (use multiple `SEARCH/REPLACE` blocks instead)
+   - Forgetting to close the `<athanor>` root tag
+   - Using indentation in XML output
 
 **Important Considerations for AI Instructions:**
 When writing the `<system_prompt>` or the task-specific instructions within `<current_task>` for your custom prompt, if you want the AI to use these commands:
@@ -191,9 +231,9 @@ Your primary role is to guide the user to provide the content for the customizab
       3.  **Variant Tooltip:** A short hover description for this specific variant. What should it highlight? (e.g., "Generates standard Jest tests.", "Focuses on Python with PyTest.")
       4.  **System Prompt (`<system_prompt>`):** This is crucial. It sets the general role and high-level instructions for the AI that will _receive_ the prompt generated by Athanor. For a '`[variant_label]`' variant aimed at '`[user's goal]`', you might say something like: 'You are an expert AI assistant specializing in `[domain, e.g., TypeScript unit testing with Jest]`. Your primary goal is to `[goal, e.g., generate comprehensive Jest unit tests based on the provided code and task description]`. Adhere to best practices and ensure all generated code is complete and runnable.' What is the system prompt you'd like to use?
       5.  **Task-Specific Instructions (`<current_task>` block, after `</task_description>`):** This is the most important part for guiding the AI's behavior for this specific variant. After Athanor injects the user's runtime task (e.g., 'Write tests for the `calculateTotal` function'), what detailed, step-by-step instructions should the AI follow?
-          - Consider: How should it structure its response? (e.g., plain markdown, or specific Athanor XML like `<ath command="apply changes">...</ath>` if Athanor needs to parse code changes, or `<ath command="task">...</ath>` to update the task field for multi-step workflows).
+          - Consider: How should it structure its response? (e.g., plain markdown, or specific Athanor XML like `<command type="apply changes">...</command>` if Athanor needs to parse code changes, or `<command type="task">...</command>` to update the task field for multi-step workflows).
           - Should it 'think step-by-step'?
-          - Are there specific formats or outputs it needs to produce? For example, if generating code changes, the `prompt_develop.xml` example has detailed instructions for `UPDATE_DIFF` or `UPDATE_FULL` within `<ath command="apply changes">`. If it's about planning, `prompt_architect.xml` instructs the AI to break tasks into commits and use `<ath command="task">` and `<ath command="select">`.
+          - Are there specific formats or outputs it needs to produce? For example, if generating code changes, the `prompt_develop.xml` example has detailed instructions for `UPDATE_DIFF` or `UPDATE_FULL` within `<command type="apply changes">`. If it's about planning, `prompt_architect.xml` instructs the AI to break tasks into commits and use `<command type="task">` and `<command type="select">`.
           - What are the key deliverables, constraints, or things it must absolutely do or avoid for this '`[variant_label]`' variant?
             Please provide the full text for these instructions."
     - **Multiple Variants:**
@@ -322,7 +362,7 @@ tooltip="This prompt explains the structure of Athanor prompt files.">
 >
 > - Thinking Process: Often encourages the AI to "think step-by-step" or "first write down thoughts."
 > - Output Structure: Specifies the exact format of the AI's response. For Athanor, this is typically one or more XML blocks.
-> - Key XML Tags: Details the required Athanor-specific XML tags and their attributes (e.g., `<ath command="task">`, `<ath command="select">`, `<ath command="apply changes">`).
+> - Key XML Tags: Details the required Athanor-specific XML tags and their attributes (e.g., `<command type="task">`, `<command type="select">`, `<command type="apply changes">`).
 > - Content Guidelines: Instructions on what information to include within those XML tags (e.g., rewritten task description, analysis, implementation plan, file lists, code changes).
 > - Formatting Rules: Specifics about whitespace, character encoding, or CDATA usage if applicable.
 >
@@ -445,7 +485,7 @@ The purpose is to:
 
 The XML block should include:
 
-1. An XML tag <ath command="task"></ath>
+1. An XML tag <command type="task"></command>
 
 - The task_description slightly edited and rewritten for clarity (do not omit parts)
 - An extended, thorough answer and analysis
@@ -463,7 +503,7 @@ The XML block should include:
   - How to verify the commit works as intended
 - For a simple task, one commit might be enough
 
-2. A XML tag <ath command="select"></ath> with a list of all relevant files
+2. A XML tag <command type="select"></command> with a list of all relevant files
 
 - List all the files that the developer will need to read in full, change or delete from the file_tree provided above
 - Consider broadly which files might be useful to see for the feature, even if not immediately related
@@ -475,7 +515,7 @@ The XML block should include:
 <example>
 ```xml
 <athanor>
-<ath command="task">
+<command type="task">
 # Task
 [Task description, rewritten for clarity]
 
@@ -507,12 +547,12 @@ The XML block should include:
 - Verification: How to verify this commit works
 
 [Additional commits as needed...]
-</ath>
+</command>
 
-<ath command="select">
+<command type="select">
 <file_path>file1</file_path>
 <file_path>file2</file_path>
-</ath>
+</command>
 </athanor>
 ```
 
@@ -582,7 +622,7 @@ The purpose is to:
 
 The XML block should include:
 
-1. An XML tag <ath command="task"></ath>
+1. An XML tag <command type="task"></command>
 
 - The task_description slightly edited and rewritten for clarity (do not omit parts)
 - An extended, thorough answer and analysis
@@ -593,7 +633,7 @@ The XML block should include:
   - Detailed step-by-step implementation instructions
   - How to verify the implementation works as intended
 
-2. A XML tag <ath command="select"></ath> with a list of all relevant files
+2. A XML tag <command type="select"></command> with a list of all relevant files
 
 - List all the files that the developer will need to read in full, change or delete from the file_tree provided above
 - Consider broadly which files might be useful to see for the feature, even if not immediately related
@@ -612,7 +652,7 @@ Ensure to write valid XML by opening and closing all tags as appropriate
 <example>
 ```xml
 <athanor>
-<ath command="task">
+<command type="task">
 # Task
 [Task description, rewritten for clarity]
 
@@ -629,12 +669,12 @@ Ensure to write valid XML by opening and closing all tags as appropriate
   2. Detailed step 2
      ...
 - Verification: How to verify this plan works
-  </ath>
+  </command>
 
-<ath command="select">
+<command type="select">
 <file_path>file1</file_path>
 <file_path>file2</file_path>
-</ath>
+</command>
 </athanor>
 ```
 </example>
@@ -698,10 +738,10 @@ Then, write the selected files in a code block as:
 
 ```xml
 <athanor>
-<ath command="select">
+<command type="select">
 <file_path>file1</file_path>
 <file_path>file2</file_path>
-</ath>
+</command>
 </athanor>
 ```
 
@@ -782,24 +822,24 @@ You can provide changes in two formats:
 1. Full File Content (for CREATE and UPDATE_FULL):
 
    ```xml
-   <ath command="apply changes">
-   <file>
-   <file_message>Brief change description</file_message>
-   <file_operation>CREATE|UPDATE_FULL</file_operation>
-   <file_path>path/to/file</file_path>
-   <file_code><![CDATA[
-   [Full file content here]
-   ]]></file_code>
-   </file>
+<command type="apply changes">
+<file>
+<file_message>Brief change description</file_message>
+<file_operation>CREATE|UPDATE_FULL</file_operation>
+<file_path>path/to/file</file_path>
+<file_code><![CDATA[
+[Full file content here]
+]]></file_code>
+</file>
 
-   [other files can be added here]
-   </ath>
+[other files can be added here]
+</command>
    ```
 
 2. Enhanced Diff Format (for UPDATE_DIFF only):
 
 ```xml
-<ath command="apply changes">
+<command type="apply changes">
 <file>
 <file_message>Brief change description</file_message>
 <file_operation>UPDATE_DIFF</file_operation>
@@ -826,7 +866,7 @@ if value is None:
 </file>
 
 [other files can be added here]
-</ath>
+</command>
 ```
 
 When using enhanced diff format:
@@ -943,7 +983,7 @@ You will provide changes as follows:
 For CREATE and UPDATE_FULL, report the full file content:
 
 ```xml
-<ath command="apply changes">
+<command type="apply changes">
 <file>
 <file_message>Brief change description</file_message>
 <file_operation>CREATE|UPDATE_FULL</file_operation>
@@ -954,7 +994,7 @@ For CREATE and UPDATE_FULL, report the full file content:
 </file>
 
 [keep adding files here if any]
-</ath>
+</command>
 ```
 
 For DELETE operations, leave the file content empty
@@ -1075,10 +1115,10 @@ Write the required files in a code block as:
 
 ```xml
 <athanor>
-<ath command="select">
+<command type="select">
 <file_path>file1</file_path>
 <file_path>file2</file_path>
-</ath>
+</command>
 </athanor>
 ```
 

@@ -15,7 +15,7 @@ export interface Command {
 }
 
 /**
- * Parses the content of an <ath command="apply changes"> block.
+ * Parses the content of an <command type="apply changes"> block.
  * This is a helper function for the main parseCommand function.
  */
 async function parseApplyChangesContent(
@@ -172,15 +172,15 @@ export async function parseCommand(
       attrkey: '$',
     });
 
-    if (!parsedJs.athanor || !parsedJs.athanor.ath) {
+    if (!parsedJs.athanor || !parsedJs.athanor.command) {
       return null;
     }
 
-    const athBlocks = parsedJs.athanor.ath;
+    const athBlocks = parsedJs.athanor.command;
     const commands: Command[] = [];
 
     for (const block of athBlocks) {
-      const commandType = block.$?.command as CommandType;
+      const commandType = block.$?.type as CommandType;
       if (!commandType || !Object.values(COMMAND_TYPES).includes(commandType)) {
         continue;
       }
