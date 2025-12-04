@@ -64,7 +64,8 @@ Inside this tag, structure your plan as follows:
 
 ## 2. `<ath command="select">` Content
 
--   Inside this tag, list all project-relative file paths that are relevant to the entire task.
+-   Inside this tag, include one `<file_path>` tag for each project-relative file path that is relevant to the entire task.
+-   Each file path must be wrapped in its own `<file_path>` tag, with the path as the tag's content.
 -   Include files that need to be read, changed, or deleted.
 -   Be broad: include utility files, constants, or other context that might be useful. If in doubt, include the file.
 
@@ -93,7 +94,8 @@ Inside this tag, structure your plan as follows:
 ]]></ath>
 
 <ath command="select">
-path/to/file1.ts path/to/helper.ts
+<file_path>path/to/file1.ts</file_path>
+<file_path>path/to/helper.ts</file_path>
 </ath>
 </athanor>
 ```
@@ -154,7 +156,8 @@ Inside this tag, structure your plan as follows:
 
 ## 2. `<ath command="select">` Content
 
--   Inside this tag, list all project-relative file paths that are relevant to the entire task.
+-   Inside this tag, include one `<file_path>` tag for each project-relative file path that is relevant to the entire task.
+-   Each file path must be wrapped in its own `<file_path>` tag, with the path as the tag's content.
 -   Include files that need to be read, changed, or deleted.
 -   Be broad: include utility files, constants, or other context that might be useful. If in doubt, include the file.
 
@@ -179,7 +182,8 @@ Inside this tag, structure your plan as follows:
 ]]></ath>
 
 <ath command="select">
-path/to/file1.ts path/to/file2.ts
+<file_path>path/to/file1.ts</file_path>
+<file_path>path/to/file2.ts</file_path>
 </ath>
 </athanor>
 ```

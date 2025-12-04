@@ -14,9 +14,10 @@ export async function executeSelectCommand({
   const { setSelection } = useWorkbenchStore.getState();
   const { fileTree } = useFileSystemStore.getState();
 
+  // Split by Unit Separator (ASCII 31) - new format with <file_path> tags
   const filePaths = content
     .trim()
-    .split(/\s+/)
+    .split('\x1F')
     .filter((path) => path.length > 0);
 
   const validFilePaths = filePaths.filter((path) => {

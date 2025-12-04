@@ -134,11 +134,12 @@ The primary commands are:
 2.  **`<ath command="select"> ... </ath>`**:
 
     - **Purpose**: Instructs Athanor to select specific files in its file explorer.
-    - **Content**: A space-separated list of project-relative file paths.
+    - **Content**: One `<file_path>` tag per project-relative file path.
     - **Example (from `prompt_autoselect.xml`)**:
       ```xml
       <ath command="select">
-      path/to/file1.ts path/to/another/file2.md
+      <file_path>path/to/file1.ts</file_path>
+      <file_path>path/to/another/file2.md</file_path>
       </ath>
       ```
 
@@ -509,7 +510,8 @@ The XML block should include:
 </ath>
 
 <ath command="select">
-file1 file2 [...]
+<file_path>file1</file_path>
+<file_path>file2</file_path>
 </ath>
 </athanor>
 ```
@@ -630,7 +632,8 @@ Ensure to write valid XML by opening and closing all tags as appropriate
   </ath>
 
 <ath command="select">
-file1 file2 [...]
+<file_path>file1</file_path>
+<file_path>file2</file_path>
 </ath>
 </athanor>
 ```
@@ -696,7 +699,8 @@ Then, write the selected files in a code block as:
 ```xml
 <athanor>
 <ath command="select">
-file1 file2 [...]
+<file_path>file1</file_path>
+<file_path>file2</file_path>
 </ath>
 </athanor>
 ```
@@ -1072,7 +1076,8 @@ Write the required files in a code block as:
 ```xml
 <athanor>
 <ath command="select">
-file1 file2 [...]
+<file_path>file1</file_path>
+<file_path>file2</file_path>
 </ath>
 </athanor>
 ```

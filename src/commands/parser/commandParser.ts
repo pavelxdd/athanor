@@ -193,6 +193,22 @@ export async function parseCommand(
             content: operations,
           });
         }
+      } else if (commandType === COMMAND_TYPES.SELECT) {
+        // Parse select command: new format with <file_path> tags (old plain text format not supported)
+        if (!block.file_path || !Array.isArray(block.file_path)) {
+          addLog('Select command ignored: missing <file_path> tags. Please use the new format with <file_path> tags.');
+          continue; // Skip this command entirely
+        }
+        // Collect paths from <file_path> tags
+        const paths = block.file_path
+          .map((fp: any) => fp._ || '')
+          .filter((path: string) => path.trim().length > 0);
+        // Join with Unit Separator (ASCII 31) to preserve paths with spaces
+        const content = paths.join('\x1F');
+        commands.push({
+          type: commandType,
+          content: content.trim(),
+        });
       } else {
         const content = block._ || '';
         commands.push({

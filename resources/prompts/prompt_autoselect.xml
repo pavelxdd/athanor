@@ -41,7 +41,7 @@ Your goal is to SELECT which files from the provided `file_tree` you need to rea
 
 First, write down your reasoning in a detailed summary, mentioning all the files you plan to select.
 
-Then, provide the final list of files within a single `<ath command="select">` block. The entire response must be wrapped in an `<athanor>` root tag and enclosed in Markdown code fences.
+Then, provide the final list of files within a single `<ath command="select">` block. Inside this block, include one `<file_path>` tag for each project-relative file path, with the path as the tag's content. The entire response must be wrapped in an `<athanor>` root tag and enclosed in Markdown code fences.
 
 **XML Formatting:** Do not indent your XML output. Each new tag must start on a new line without any leading spaces.
 
@@ -49,7 +49,8 @@ Then, provide the final list of files within a single `<ath command="select">` b
 ```xml
 <athanor>
 <ath command="select">
-path/to/file1.ts path/to/another/file2.md
+<file_path>path/to/file1.ts</file_path>
+<file_path>path/to/another/file2.md</file_path>
 </ath>
 </athanor>
 ```
