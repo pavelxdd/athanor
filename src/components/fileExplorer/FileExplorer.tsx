@@ -24,6 +24,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     contextMenu,
     handleIgnoreItem,
     toggleFolder,
+    toggleFolderRecursive,
     handleContextMenu,
     handleCloseContextMenu,
     handleExpandRecursively,
@@ -44,6 +45,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
           isRoot={level === 0}
           expandedFolders={expandedFolders}
           onToggleFolder={toggleFolder}
+          onToggleFolderRecursive={toggleFolderRecursive}
           onViewFile={onViewFile}
           onContextMenu={handleContextMenu}
         />

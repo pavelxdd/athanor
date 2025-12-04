@@ -57,6 +57,16 @@ export function useFileExplorer(items: FileItem[], onRefresh: () => void) {
     });
   };
 
+  const toggleFolderRecursive = (item: FileItem) => {
+    if (item.type !== 'folder') return;
+    const isExpanded = expandedFolders.has(item.id);
+    if (isExpanded) {
+      handleCollapseRecursively(item);
+    } else {
+      handleExpandRecursively(item);
+    }
+  };
+
   const handleExpandRecursively = useCallback((item: FileItem) => {
     if (item.type !== 'folder') return;
     const descendantIds = getAllDescendantFolderIds(item);
@@ -112,6 +122,7 @@ export function useFileExplorer(items: FileItem[], onRefresh: () => void) {
     currentDirectory,
     handleIgnoreItem,
     toggleFolder,
+    toggleFolderRecursive,
     handleContextMenu,
     handleCloseContextMenu,
     handleExpandRecursively,

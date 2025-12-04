@@ -21,6 +21,7 @@ interface FileExplorerItemProps {
   isRoot?: boolean;
   expandedFolders: Set<string>;
   onToggleFolder: (itemId: string) => void;
+  onToggleFolderRecursive: (item: FileItem) => void;
   onViewFile: () => void;
   onContextMenu: (e: React.MouseEvent, item: FileItem) => void;
 }
@@ -31,6 +32,7 @@ const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
   isRoot = false,
   expandedFolders,
   onToggleFolder,
+  onToggleFolderRecursive,
   onViewFile,
   onContextMenu,
 }) => {
@@ -112,6 +114,15 @@ const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
     toggleFileSelection(item.id, item.type === 'folder', fileTree);
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Middle click (button === 1) for recursive toggle
+    if (e.button === 1 && item.type === 'folder') {
+      e.preventDefault();
+      e.stopPropagation();
+      onToggleFolderRecursive(item);
+    }
+  };
+
   const handleFileClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const isNameOrIcon =
@@ -130,6 +141,7 @@ const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
       <div
         className={`file-item-row flex items-center py-1 rounded-sm ${isContextSelected ? 'bg-blue-100 dark:bg-blue-900/40' : ''}`}
         onClick={handleFileClick}
+        onMouseDown={handleMouseDown}
         onContextMenu={(e) => onContextMenu(e, item)}
       >
         {/* Checkbox or placeholder - Not draggable */}
@@ -213,6 +225,7 @@ const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
                 level={level + 1}
                 expandedFolders={expandedFolders}
                 onToggleFolder={onToggleFolder}
+                onToggleFolderRecursive={onToggleFolderRecursive}
                 onViewFile={onViewFile}
                 onContextMenu={onContextMenu}
               />
