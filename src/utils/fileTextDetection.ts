@@ -106,18 +106,28 @@ export async function isTextFile(filePath: string): Promise<boolean> {
 
     // Analyze only the first portion of the file
     const analysisBuffer = uint8Array.slice(0, FILE_DETECTION.maxBufferSize);
-
-    // Check if file contains mostly printable ASCII characters
-    const printableChars = analysisBuffer.filter(
-      (byte) =>
-        (byte >= FILE_DETECTION.asciiPrintableMin &&
-          byte <= FILE_DETECTION.asciiPrintableMax) ||
-        FILE_DETECTION.whitespaceChars.has(byte)
-    ).length;
-
-    return (
-      printableChars / analysisBuffer.length >= FILE_DETECTION.textThreshold
-    );
+    const length = analysisBuffer.length;
+    
+    // If buffer is empty, treat as text (empty file)
+    if (length === 0) {
+      return true;
+    }
+    
+    const { asciiPrintableMin, asciiPrintableMax, whitespaceChars, textThreshold } = FILE_DETECTION;
+    let printableChars = 0;
+    
+    // Manual iteration avoids filter allocation
+    for (let i = 0; i < length; i++) {
+      const byte = analysisBuffer[i];
+      if (
+        (byte >= asciiPrintableMin && byte <= asciiPrintableMax) ||
+        whitespaceChars.has(byte)
+      ) {
+        printableChars++;
+      }
+    }
+    
+    return printableChars / length >= textThreshold;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Error analyzing file ${filePath}: ${error.message}`);
@@ -127,24 +137,29 @@ export async function isTextFile(filePath: string): Promise<boolean> {
 }
 
 export function isBufferText(buffer: ArrayBuffer): boolean {
-  // Convert to Uint8Array for analysis
+  // Convert to Uint8Array for analysis (view, no copy)
   const uint8Array = new Uint8Array(buffer);
-
-  // Analyze only the first portion of the file
-  const analysisBuffer = uint8Array.slice(0, FILE_DETECTION.maxBufferSize);
-
+  const maxBytes = FILE_DETECTION.maxBufferSize;
+  const length = Math.min(uint8Array.length, maxBytes);
+  
   // If buffer is empty, treat as text (empty file)
-  if (analysisBuffer.length === 0) {
+  if (length === 0) {
     return true;
   }
-
-  // Check if file contains mostly printable ASCII characters
-  const printableChars = analysisBuffer.filter(
-    (byte) =>
-      (byte >= FILE_DETECTION.asciiPrintableMin &&
-        byte <= FILE_DETECTION.asciiPrintableMax) ||
-      FILE_DETECTION.whitespaceChars.has(byte)
-  ).length;
-
-  return printableChars / analysisBuffer.length >= FILE_DETECTION.textThreshold;
+  
+  const { asciiPrintableMin, asciiPrintableMax, whitespaceChars } = FILE_DETECTION;
+  let printableChars = 0;
+  
+  // Manual iteration avoids filter allocation
+  for (let i = 0; i < length; i++) {
+    const byte = uint8Array[i];
+    if (
+      (byte >= asciiPrintableMin && byte <= asciiPrintableMax) ||
+      whitespaceChars.has(byte)
+    ) {
+      printableChars++;
+    }
+  }
+  
+  return printableChars / length >= FILE_DETECTION.textThreshold;
 }

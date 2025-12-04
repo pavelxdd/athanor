@@ -174,6 +174,7 @@ describe('setupCoreHandlers', () => {
         'app:getGlobalPromptsPath',
         'app:getProjectPromptsPath',
         'app:get-initial-path',
+        'graph:force-reanalyze',
       ];
 
       expectedChannels.forEach(channel => {

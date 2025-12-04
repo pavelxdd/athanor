@@ -943,7 +943,7 @@ const ReviewPanel: React.FC = () => {
     const container = containerRef.current;
     if (!container) return;
 
-    let debounceTimer: NodeJS.Timeout;
+    let rafId: number | undefined;
 
     const updateButtonStates = () => {
       const diffViewRef = diffViewRefs.current[currentIdx];
@@ -1006,15 +1006,19 @@ const ReviewPanel: React.FC = () => {
     };
 
     const debouncedHandler = () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(updateButtonStates, 100);
+      if (rafId !== undefined) {
+        cancelAnimationFrame(rafId);
+      }
+      rafId = requestAnimationFrame(updateButtonStates);
     };
 
     container.addEventListener('scroll', debouncedHandler, { passive: true });
     updateButtonStates(); // Initial check
 
     return () => {
-      clearTimeout(debounceTimer);
+      if (rafId !== undefined) {
+        cancelAnimationFrame(rafId);
+      }
       container.removeEventListener('scroll', debouncedHandler);
     };
   }, [currentIdx, currentDiffBlocks]);
@@ -1026,7 +1030,7 @@ const ReviewPanel: React.FC = () => {
       return;
     }
 
-    let debounceTimer: NodeJS.Timeout;
+    let rafId: number | undefined;
 
     const handleScroll = () => {
       if (
@@ -1077,8 +1081,10 @@ const ReviewPanel: React.FC = () => {
     };
 
     const debouncedScrollHandler = () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(handleScroll, 100);
+      if (rafId !== undefined) {
+        cancelAnimationFrame(rafId);
+      }
+      rafId = requestAnimationFrame(handleScroll);
     };
 
     container.addEventListener('scroll', debouncedScrollHandler, {
@@ -1087,7 +1093,9 @@ const ReviewPanel: React.FC = () => {
     handleScroll(); // Initial check
 
     return () => {
-      clearTimeout(debounceTimer);
+      if (rafId !== undefined) {
+        cancelAnimationFrame(rafId);
+      }
       container.removeEventListener('scroll', debouncedScrollHandler);
     };
   }, [currentIdx, activeOperations.length]);
