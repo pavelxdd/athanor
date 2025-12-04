@@ -35,15 +35,17 @@ async function parseApplyChangesContent(
   for (const block of fileBlocks) {
     try {
       const path = block.file_path?.[0]?._;
-      let operation: FileOperationType = block.file_operation?.[0]?._;
-      const message = block.file_message?.[0]?._ || '';
-      const newPath = block.file_path_new?.[0]?._;
-      const code = block.file_code?.[0]?._ || block.file_code?.[0] || '';
-
-      if (!path || !operation) {
+      const rawOperation = block.file_operation?.[0]?._;
+      
+      if (!path || !rawOperation) {
         addLog('Skipping malformed file block: missing path or operation.');
         continue;
       }
+
+      let operation: FileOperationType = rawOperation.toUpperCase() as FileOperationType;
+      const message = block.file_message?.[0]?._ || '';
+      const newPath = block.file_path_new?.[0]?._;
+      const code = block.file_code?.[0]?._ || block.file_code?.[0] || '';
 
       let oldCode = '';
       let processedNewCode = '';

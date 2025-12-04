@@ -397,10 +397,14 @@ const FileOperationItem = React.forwardRef<
             <div className="p-4 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-200 rounded border border-red-200 dark:border-red-700 font-mono text-xs">
               {previewError}
             </div>
+          ) : previewContent === null ? (
+            <div className="p-4 text-gray-500 dark:text-gray-400 italic text-sm">
+              Generating preview...
+            </div>
           ) : (
             <DiffView
               oldText={op.old_code}
-              newText={previewContent ?? ''}
+              newText={previewContent}
               filePath={op.file_path}
               isCompact={isCompact}
               onDiffBlocksCalculated={onDiffBlocksCalculated}
