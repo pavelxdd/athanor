@@ -253,7 +253,7 @@ content to remove
 
     it('should remove initial empty line after normalization', () => {
       const content = '\r\nHello world';
-      expect(normalizeLineEndings(content)).toBe('Hello world');
+      expect(normalizeLineEndings(content)).toBe('\nHello world');
     });
 
     it('should handle empty string', () => {

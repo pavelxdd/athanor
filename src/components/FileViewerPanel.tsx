@@ -76,6 +76,10 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(
     document.documentElement.classList.contains('dark')
   );
+  const [forceHighlight, setForceHighlight] = useState<boolean>(false);
+
+  // Threshold for disabling syntax highlighting to prevent UI freezes
+  const HIGHLIGHT_LINE_LIMIT = 2000;
 
   // Listen for theme changes
   useEffect(() => {
@@ -91,6 +95,8 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
 
   useEffect(() => {
     const loadFile = async () => {
+      setForceHighlight(false);
+      
       if (!previewedFilePath) {
         setFileContent('');
         setError('');
@@ -99,34 +105,30 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
         return;
       }
 
+      // Clear content immediately to show loading state
+      setFileContent('');
+      setError('');
+      setLineCount(0);
+
       try {
-        // Get current directory and OS-specific path
-        const dir = await window.fileService.getCurrentDirectory();
+        const [dir, resolvedPath, isDirectory, isTextFileResult] = await Promise.all([
+           window.fileService.getCurrentDirectory(),
+           window.fileService.resolve(previewedFilePath),
+           window.fileService.isDirectory(previewedFilePath),
+           isTextFile(previewedFilePath)
+        ]);
+
         setCurrentDir(dir);
-
-        const resolvedPath =
-          await window.fileService.resolve(previewedFilePath);
         setOsPath(resolvedPath);
+        setIsText(isTextFileResult);
 
-        const isDirectory =
-          await window.fileService.isDirectory(previewedFilePath);
         if (isDirectory) {
-          setFileContent('');
           setError('Cannot display folder contents.');
-          setLineCount(0);
           return;
         }
 
-        // Check if file is text-based
-        const isTextFileResult = await isTextFile(previewedFilePath);
-        setIsText(isTextFileResult);
-
         if (!isTextFileResult) {
-          setFileContent('');
-          setError(
-            'Cannot preview file content (binary or unsupported format)'
-          );
-          setLineCount(0);
+          setError('Cannot preview file content (binary or unsupported format)');
           return;
         }
 
@@ -136,7 +138,6 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
         const contentStr = content as string;
         setFileContent(contentStr);
         setLineCount(contentStr.split('\n').length);
-        setError('');
       } catch (err) {
         console.error('Error reading file:', err);
         setError('Error reading file content.');
@@ -148,23 +149,38 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
     void loadFile();
   }, [previewedFilePath]);
 
+  const shouldHighlight = lineCount <= HIGHLIGHT_LINE_LIMIT || forceHighlight;
+
   return (
     <div className="w-full h-full flex flex-col space-y-2">
       {previewedFilePath ? (
         <>
           <div className="flex items-center justify-between text-sm mb-2">
-            <div className="flex-grow text-gray-600 dark:text-gray-300">
+            <div className="flex-grow text-gray-600 dark:text-gray-300 flex items-center gap-2">
               <span className="truncate" title={osPath}>
                 {osPath}
               </span>
               {lineCount > 0 && (
-                <span className="text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
+                <span className="text-gray-500 dark:text-gray-400 flex-shrink-0">
                   ({lineCount} lines)
+                </span>
+              )}
+              {!shouldHighlight && isText && !error && (
+                <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 rounded rounded-md">
+                  Plain text mode (large file)
                 </span>
               )}
             </div>
             {isText && (
               <div className="flex gap-2">
+                {!shouldHighlight && (
+                  <button
+                    className="px-2 py-1 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded text-xs"
+                    onClick={() => setForceHighlight(true)}
+                  >
+                    Force Highlight
+                  </button>
+                )}
                 <button
                   className={`px-2 py-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 rounded flex items-center gap-1 ${
                     'hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -181,6 +197,7 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
                   <WrapText className="w-4 h-4" />
                   <span>Wrap</span>
                 </button>
+                {/* ... (rest of buttons) */}
                 <button
                   className="px-2 py-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-1"
                   onClick={() => {
@@ -314,58 +331,64 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
             'overflow-hidden'
           }`}
         >
-          <SyntaxHighlighter
-            language={getLanguageFromPath(previewedFilePath || '')}
-            style={isDarkMode ? atomDark : coy}
-            showLineNumbers={true}
-            wrapLines={true}
-            wrapLongLines={false}
-            lineNumberStyle={{
-              opacity: 0.5,
-              color: isDarkMode ? '#6b7280' : '#9ca3af',
-              backgroundColor: 'transparent',
-              borderRight: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
-              paddingRight: '0.5rem',
-              marginRight: '0.5rem',
-              minWidth: '2.5rem',
-              textAlign: 'right',
-            }}
-            customStyle={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              height: '100%',
-              width: '100%',
-              margin: 0,
-              padding: '0.5rem',
-              backgroundColor: 'transparent',
-              minHeight: '100%',
-              flexGrow: 1,
-              fontSize: '0.875rem',
-              lineHeight: '1.25rem',
-              overflowX: 'auto',
-              overflowY: 'auto',
-              boxSizing: 'border-box',
-            }}
-            codeTagProps={{
-              style: {
-                fontFamily:
-                  'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                fontSize: 'inherit',
-                lineHeight: 'inherit',
-              },
-            }}
-            lineProps={(lineNumber) => ({
-              style: {
-                display: 'block',
+          {shouldHighlight ? (
+            <SyntaxHighlighter
+              language={getLanguageFromPath(previewedFilePath || '')}
+              style={isDarkMode ? atomDark : coy}
+              showLineNumbers={true}
+              wrapLines={true}
+              wrapLongLines={false}
+              lineNumberStyle={{
+                opacity: 0.5,
+                color: isDarkMode ? '#6b7280' : '#9ca3af',
+                backgroundColor: 'transparent',
+                borderRight: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
+                paddingRight: '0.5rem',
+                marginRight: '0.5rem',
+                minWidth: '2.5rem',
+                textAlign: 'right',
+              }}
+              customStyle={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                height: '100%',
                 width: '100%',
-                paddingLeft: '0',
-                textIndent: '0',
-              },
-            })}
-          >
-            {fileContent}
-          </SyntaxHighlighter>
+                margin: 0,
+                padding: '0.5rem',
+                backgroundColor: 'transparent',
+                minHeight: '100%',
+                flexGrow: 1,
+                fontSize: '0.875rem',
+                lineHeight: '1.25rem',
+                overflowX: 'auto',
+                overflowY: 'auto',
+                boxSizing: 'border-box',
+              }}
+              codeTagProps={{
+                style: {
+                  fontFamily:
+                    'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                  fontSize: 'inherit',
+                  lineHeight: 'inherit',
+                },
+              }}
+              lineProps={(lineNumber) => ({
+                style: {
+                  display: 'block',
+                  width: '100%',
+                  paddingLeft: '0',
+                  textIndent: '0',
+                },
+              })}
+            >
+              {fileContent}
+            </SyntaxHighlighter>
+          ) : (
+            <pre className="w-full h-full p-2 overflow-auto font-mono text-sm whitespace-pre-wrap">
+              {fileContent}
+            </pre>
+          )}
         </div>
       )}
       {isText && !error && !fileContent && previewedFilePath && (

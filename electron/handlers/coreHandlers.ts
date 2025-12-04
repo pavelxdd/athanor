@@ -13,6 +13,9 @@ let _fileService: FileService;
 let _settingsService: SettingsService;
 let _gitService: GitService;
 
+// Cache for xdg-open availability check (Linux only)
+let xdgOpenAvailable: boolean | null = null;
+
 // Define channel name for confirmation dialog
 const SHOW_CONFIRM_DIALOG_CHANNEL = 'dialog:show-confirm-dialog';
 
@@ -25,6 +28,18 @@ export function setupCoreHandlers(
   _fileService = fileService;
   _settingsService = settingsService;
   _gitService = gitService;
+
+  // Pre-check xdg-open availability on Linux (once at startup)
+  if (process.platform === 'linux') {
+    try {
+      execSync('command -v xdg-open');
+      xdgOpenAvailable = true;
+      console.log('[CoreHandlers] xdg-open is available on this system');
+    } catch (error) {
+      xdgOpenAvailable = false;
+      console.warn('[CoreHandlers] xdg-open is not available on this system');
+    }
+  }
 
   // Add handler for confirmation dialog
   ipcMain.handle(
@@ -333,12 +348,10 @@ export function setupCoreHandlers(
       );
     }
 
-    // Proactively check for xdg-open on Linux, which is required by shell.openExternal
+    // Check for xdg-open on Linux using cached availability
     if (process.platform === 'linux') {
-      try {
-        execSync('command -v xdg-open');
-      } catch (error) {
-        // This command fails if xdg-open is not in the PATH
+      if (xdgOpenAvailable === false) {
+        // xdg-open is known to be unavailable
         console.warn('`xdg-utils` is not installed. Cannot open external link.');
         dialog.showErrorBox(
           'Could Not Open Link',
@@ -348,6 +361,8 @@ export function setupCoreHandlers(
           '`xdg-utils` is not installed. Cannot open external link.'
         );
       }
+      // If xdgOpenAvailable is true or null (not checked yet), proceed
+      // shell.openExternal will handle the actual opening
     }
 
     // If the check passed (or not on Linux), proceed with the original call.
@@ -401,6 +416,12 @@ export function setupCoreHandlers(
     } catch (error) {
       handleError(error, 'getting project prompts path');
     }
+  });
+
+  // Stub for graph analysis (feature not yet implemented)
+  ipcMain.handle('graph:force-reanalyze', async () => {
+    console.warn('[Graph] Force reanalyze requested but graph service is not implemented.');
+    return null;
   });
 }
 

@@ -30,6 +30,9 @@ if (process.env.ELECTRON_USE_DESKTOP_GL === '1') {
 const DEBUG_MENU = false;
 const DEBUG_PATH = false;
 
+// Cached package.json content for menu and about panel
+let cachedPackageJson: any = null;
+
 // Adjusts PATH in packaged Electron app to match the shell PATH
 if (DEBUG_PATH) {
   console.log('[Main] PATH before fix-path:', process.env.PATH);
@@ -82,9 +85,13 @@ async function buildMenu() {
           }))
         : [{ label: 'No Recent Projects', enabled: false }];
 
-    // Read package.json for About panel information
-    const packageJsonPath = path.join(app.getAppPath(), 'package.json');
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    // Read package.json for About panel information (use cache if available)
+    let packageJson = cachedPackageJson;
+    if (!packageJson) {
+      const packageJsonPath = path.join(app.getAppPath(), 'package.json');
+      const packageJsonContent = await fs.promises.readFile(packageJsonPath, 'utf8');
+      packageJson = JSON.parse(packageJsonContent);
+    }
 
     // Create application menu template
     const menuTemplate: Electron.MenuItemConstructorOptions[] = [
@@ -298,16 +305,17 @@ app.whenReady().then(async () => {
 
   // Read package.json for About panel information
   const packageJsonPath = path.join(app.getAppPath(), 'package.json');
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const packageJsonContent = await fs.promises.readFile(packageJsonPath, 'utf8');
+  cachedPackageJson = JSON.parse(packageJsonContent);
 
   // Configure About panel
   app.setAboutPanelOptions({
     applicationName:
-      packageJson.name.charAt(0).toUpperCase() + packageJson.name.slice(1),
+      cachedPackageJson.name.charAt(0).toUpperCase() + cachedPackageJson.name.slice(1),
     applicationVersion: `Version ${GIT_VERSION}`,
-    authors: [packageJson.author],
-    copyright: `Copyright © ${new Date().getFullYear()} ${packageJson.author}`,
-    credits: `${packageJson.description}`,
+    authors: [cachedPackageJson.author],
+    copyright: `Copyright © ${new Date().getFullYear()} ${cachedPackageJson.author}`,
+    credits: `${cachedPackageJson.description}`,
   });
 
   // Set up menu rebuild listener and build initial menu

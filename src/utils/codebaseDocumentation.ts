@@ -2,7 +2,7 @@ import { FileItem, sortItems, isEmptyFolder, getBaseName } from './fileTree';
 import { AthanorConfig } from '../types/global';
 import { areAllDescendantsSelected } from './fileSelection';
 import { FILE_SYSTEM, DOC_FORMAT } from './constants';
-import { isTextFile } from './fileTextDetection';
+import { isTextFile, isTextFileExtension, KNOWN_TEXT_EXTENSIONS, FILE_DETECTION, isBufferText } from './fileTextDetection';
 
 // Get the appropriate language for code block formatting
 export function getFileLanguage(filename: string): string {
@@ -124,81 +124,131 @@ async function generateFileContentString(
   const regularFileContents: string[] = [];
   const supplementaryFileContents: string[] = [];
 
-  // Process each file
-  const processItem = async (item: FileItem): Promise<void> => {
-    if (item.type === 'file') {
-      const isSelected = selectedItemsSet.has(item.id);
-      const isNeighbor = neighboringItemsSet.has(item.id);
-      const isSupplementary = supplementaryItemsSet.has(item.id);
+  // Collect all files that need processing
+  interface FileToProcess {
+    path: string;
+    isSelected: boolean;
+    isNeighbor: boolean;
+    isSupplementary: boolean;
+  }
+  const filesToProcess: FileToProcess[] = [];
 
-      // Only include content for selected, neighboring, or supplementary files
-      if (!isSelected && !isNeighbor && !isSupplementary) {
-        return;
-      }
+  // Recursive collection
+  const collectFiles = (items: FileItem[]): void => {
+    for (const item of sortItems(items)) {
+      if (item.type === 'file') {
+        const isSelected = selectedItemsSet.has(item.id);
+        const isNeighbor = neighboringItemsSet.has(item.id);
+        const isSupplementary = supplementaryItemsSet.has(item.id);
 
-      // Check if this file is the source of project_info
-      if (projectInfoFilePath && item.path === projectInfoFilePath) {
-        const relativePath = rootPath
-          ? item.path.replace(rootPath, '').replace(/^[/\\]/, '')
-          : item.path;
-        
-        // Add placeholder message instead of duplicating content
-        const placeholderContent = `# ${relativePath}${isSelected ? ' *' : ''}\n\n` +
-          `The content of this file is fully reported above inside \`<project_info>\` tags.\n`;
-        
-        if (isSupplementary) {
-          supplementaryFileContents.push(placeholderContent);
-        } else {
-          regularFileContents.push(placeholderContent);
+        // Only include content for selected, neighboring, or supplementary files
+        if (!isSelected && !isNeighbor && !isSupplementary) {
+          continue;
         }
-        return;
-      }
 
-      try {
-        const isText = await isTextFile(item.path);
-        if (!isText) {
-          console.log('Skipping non-text file: ${item.path}');
-          return;
-        }
-        const content = await window.fileSystem.readFile(item.path, {
-          encoding: 'utf8',
-        });
-
-        // Ensure content is treated as string since we specified utf8 encoding
-        const contentString = content.toString();
-
-        // Use full content for selected files, smart preview for neighboring files
-        const processedContent = contentString;
-
-        if (processedContent) {
-          const formattedContent = formatSingleFile(
-            item.path,
-            processedContent,
-            rootPath,
-            false,
-            format
-          );
+        // Check if this file is the source of project_info
+        if (projectInfoFilePath && item.path === projectInfoFilePath) {
+          const relativePath = rootPath
+            ? item.path.replace(rootPath, '').replace(/^[/\\]/, '')
+            : item.path;
+          
+          // Add placeholder message instead of duplicating content
+          const placeholderContent = `# ${relativePath}${isSelected ? ' *' : ''}\n\n` +
+            `The content of this file is fully reported above inside \`<project_info>\` tags.\n`;
           
           if (isSupplementary) {
-            supplementaryFileContents.push(formattedContent);
-          } else if (isSelected || isNeighbor) {
-            regularFileContents.push(formattedContent);
+            supplementaryFileContents.push(placeholderContent);
+          } else {
+            regularFileContents.push(placeholderContent);
           }
+          continue;
         }
-      } catch (error) {
-        console.error(`Error reading file ${item.path}:`, error);
-      }
-    }
 
-    if (item.children) {
-      for (const child of sortItems(item.children)) {
-        await processItem(child);
+        filesToProcess.push({
+          path: item.path,
+          isSelected,
+          isNeighbor,
+          isSupplementary,
+        });
+      } else if (item.children) {
+        collectFiles(item.children);
       }
     }
   };
 
-  for (const item of sortItems(fileItems)) {
-    await processItem(item);
+  collectFiles(fileItems);
+
+  // If no files to read, return early
+  if (filesToProcess.length === 0) {
+    return {
+      regularContent: regularFileContents.join('\n'),
+      supplementaryContent: supplementaryFileContents.join('\n'),
+    };
+  }
+
+  // Batch read all files as binary buffers
+  const paths = filesToProcess.map(f => f.path);
+  const results = await window.fileSystem.readMultiple(paths, { encoding: null });
+
+  // Process each file
+  for (let i = 0; i < filesToProcess.length; i++) {
+    const { path, isSelected, isNeighbor, isSupplementary } = filesToProcess[i];
+    const bufferOrNull = results[path];
+
+    // Handle read errors
+    if (bufferOrNull === null) {
+      console.error(`Error reading file ${path}: batch read returned null`);
+      continue;
+    }
+
+    // Convert to ArrayBuffer (Buffer in Node.js is a Uint8Array)
+    let arrayBuffer: ArrayBuffer;
+    if (bufferOrNull instanceof ArrayBuffer) {
+      arrayBuffer = bufferOrNull;
+    } else if (typeof bufferOrNull === 'string') {
+      // Should not happen because we requested encoding: null
+      console.warn(`File ${path} returned as string, not buffer`);
+      continue;
+    } else {
+      // Assume it's a Node.js Buffer (Uint8Array)
+      arrayBuffer = (bufferOrNull.buffer as ArrayBuffer).slice(
+        bufferOrNull.byteOffset,
+        bufferOrNull.byteOffset + bufferOrNull.byteLength
+      );
+    }
+
+    // Check if file is text using extension first, then buffer analysis
+    let isText = isTextFileExtension(path);
+    if (!isText) {
+      isText = isBufferText(arrayBuffer);
+    }
+
+    if (!isText) {
+      console.log(`Skipping non-text file: ${path}`);
+      continue;
+    }
+
+    // Decode buffer to UTF‑8 string
+    const decoder = new TextDecoder('utf-8', { fatal: false });
+    const contentString = decoder.decode(arrayBuffer);
+
+    if (!contentString) {
+      continue;
+    }
+
+    const formattedContent = formatSingleFile(
+      path,
+      contentString,
+      rootPath,
+      false,
+      format
+    );
+
+    if (isSupplementary) {
+      supplementaryFileContents.push(formattedContent);
+    } else if (isSelected || isNeighbor) {
+      regularFileContents.push(formattedContent);
+    }
   }
 
   return {

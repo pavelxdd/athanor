@@ -206,6 +206,11 @@ declare global {
        */
       ensureDirectory: (path: string) => Promise<void>;
 
+      /**
+       * Get the full file tree structure
+       */
+      getFileTree: (path: string) => Promise<any>;
+
       // File operations
       /**
        * Check if a file exists
@@ -219,6 +224,14 @@ declare global {
         path: string,
         options?: { encoding?: BufferEncoding } | BufferEncoding
       ) => Promise<string | ArrayBuffer>;
+
+      /**
+       * Read multiple files in parallel
+       */
+      readMultiple: (
+        paths: string[],
+        options?: { encoding?: BufferEncoding } | BufferEncoding
+      ) => Promise<Record<string, string | Buffer | null>>;
 
       /**
        * Write data to a file
@@ -356,6 +369,10 @@ declare global {
         path: string,
         options?: { encoding?: BufferEncoding | null } | BufferEncoding | null
       ) => Promise<string | ArrayBuffer>;
+      readMultiple: (
+        paths: string[],
+        options?: { encoding?: BufferEncoding | null } | BufferEncoding | null
+      ) => Promise<Record<string, string | Buffer | null>>;
       writeFile: (path: string, data: string) => Promise<void>;
       deleteFile: (path: string) => Promise<void>;
       addToIgnore: (itemPath: string, ignoreAll?: boolean) => Promise<boolean>;

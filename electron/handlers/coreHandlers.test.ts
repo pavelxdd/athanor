@@ -56,6 +56,11 @@ jest.mock('fs', () => ({
   },
 }));
 
+// Mock child_process to avoid execSync calls during setup
+jest.mock('child_process', () => ({
+  execSync: jest.fn(),
+}));
+
 // Actual imports AFTER mocks and variable definitions for mock factories
 import { setupCoreHandlers } from './coreHandlers';
 import { FileService } from '../services/FileService'; // Type import or relies on prior mock
@@ -121,6 +126,7 @@ describe('setupCoreHandlers', () => {
       isDirectory: jest.fn(),
       getMaterialsDir: jest.fn(),
       setBaseDir: jest.fn(),
+      cliPath: null,
     } as any;
 
     // Create mock SettingsService
@@ -1063,60 +1069,56 @@ describe('setupCoreHandlers', () => {
 
     beforeEach(() => {
       handler = ipcHandlers.get('app:get-initial-path')!;
+      // Reset cliPath to null before each test
+      mockFileService.cliPath = null;
     });
 
-    it('should return null when no application settings exist', async () => {
-      mockSettingsService.getApplicationSettings.mockResolvedValue(null);
-
+    it('should return null when cliPath is not set', async () => {
       const result = await handler(mockEvent);
-
       expect(result).toBeNull();
-      expect(mockSettingsService.getApplicationSettings).toHaveBeenCalled();
     });
 
-    it('should return null when directory does not contain .athignore', async () => {
-      const projectPath = '/valid/project';
-      mockSettingsService.getApplicationSettings.mockResolvedValue({});
-      mockFileService.exists.mockImplementation((path) => {
-        if (path === projectPath) return Promise.resolve(true);
-        if (path === '/valid/project/.athignore') return Promise.resolve(false);
-        return Promise.resolve(false);
-      });
-      mockFileService.isDirectory.mockResolvedValue(true);
-      mockFileService.join.mockReturnValue('/valid/project/.athignore');
+    it('should return null when cliPath does not exist', async () => {
+      mockFileService.cliPath = '/some/path';
+      mockFileService.exists.mockResolvedValue(false);
 
       const result = await handler(mockEvent);
-
+      
       expect(result).toBeNull();
-      expect(mockFileService.join).toHaveBeenCalledWith(projectPath, '.athignore');
+      expect(mockFileService.exists).toHaveBeenCalledWith('/some/path');
     });
 
-    it('should return valid project path when all checks pass', async () => {
-      const projectPath = '/valid/project';
-      mockSettingsService.getApplicationSettings.mockResolvedValue({});
-      mockFileService.exists.mockImplementation((path) => {
-        if (path === projectPath) return Promise.resolve(true);
-        if (path === '/valid/project/.athignore') return Promise.resolve(true);
-        return Promise.resolve(false);
-      });
-      mockFileService.isDirectory.mockResolvedValue(true);
-      mockFileService.join.mockReturnValue('/valid/project/.athignore');
+    it('should return null when cliPath exists but is not a directory', async () => {
+      mockFileService.cliPath = '/some/file.txt';
+      mockFileService.exists.mockResolvedValue(true);
+      mockFileService.isDirectory.mockResolvedValue(false);
 
       const result = await handler(mockEvent);
+      
+      expect(result).toBeNull();
+      expect(mockFileService.exists).toHaveBeenCalledWith('/some/file.txt');
+      expect(mockFileService.isDirectory).toHaveBeenCalledWith('/some/file.txt');
+    });
 
+    it('should return valid project path when cliPath exists and is a directory', async () => {
+      const projectPath = '/valid/project';
+      mockFileService.cliPath = projectPath;
+      mockFileService.exists.mockResolvedValue(true);
+      mockFileService.isDirectory.mockResolvedValue(true);
+
+      const result = await handler(mockEvent);
+      
       expect(result).toBe(projectPath);
-      expect(mockSettingsService.getApplicationSettings).toHaveBeenCalled();
       expect(mockFileService.exists).toHaveBeenCalledWith(projectPath);
       expect(mockFileService.isDirectory).toHaveBeenCalledWith(projectPath);
-      expect(mockFileService.join).toHaveBeenCalledWith(projectPath, '.athignore');
-      expect(mockFileService.exists).toHaveBeenCalledWith('/valid/project/.athignore');
     });
 
     it('should return null and handle errors gracefully', async () => {
-      mockSettingsService.getApplicationSettings.mockRejectedValue(new Error('Settings error'));
+      mockFileService.cliPath = '/error/path';
+      mockFileService.exists.mockRejectedValue(new Error('File system error'));
 
       const result = await handler(mockEvent);
-
+      
       expect(result).toBeNull();
     });
   });

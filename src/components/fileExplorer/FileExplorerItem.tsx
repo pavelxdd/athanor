@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, File, Scissors, Book } from 'lucide-react';
+import { ChevronRight, ChevronDown, File, Book } from 'lucide-react';
 import { FileItem, getBaseName, isEmptyFolder } from '../../utils/fileTree';
 import {
   FILE_SYSTEM,
@@ -11,7 +11,6 @@ import {
 } from '../../utils/fileSelection';
 import { useFileSystemStore } from '../../stores/fileSystemStore';
 import { useWorkbenchStore } from '../../stores/workbenchStore';
-import { useSettingsStore } from '../../stores/settingsStore'; // Added settings store
 import { useContextStore } from '../../stores/contextStore';
 import useDarkMode from '../../hooks/useDarkMode';
 
@@ -26,7 +25,7 @@ interface FileExplorerItemProps {
   onContextMenu: (e: React.MouseEvent, item: FileItem) => void;
 }
 
-const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
+const FileExplorerItem: React.FC<FileExplorerItemProps> = React.memo(({
   item,
   level,
   isRoot = false,
@@ -37,35 +36,40 @@ const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
   onContextMenu,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const { previewedFilePath, setPreviewedFilePath, fileTree } =
-    useFileSystemStore();
-  const { tabs, activeTabIndex, toggleFileSelection } = useWorkbenchStore();
-  const { applicationSettings } = useSettingsStore(); // Get application settings
-  const {
-    selectedFiles: contextSelected,
-  } = useContextStore();
+  
+  // Use granular selectors to avoid re-renders when unrelated state changes (like prompt typing)
+  const previewedFilePath = useFileSystemStore(s => s.previewedFilePath);
+  const fileTree = useFileSystemStore(s => s.fileTree);
+  const setPreviewedFilePath = useFileSystemStore(s => s.setPreviewedFilePath);
+  
+  const toggleFileSelection = useWorkbenchStore(s => s.toggleFileSelection);
+  const selectedFiles = useWorkbenchStore(s => s.tabs[s.activeTabIndex]?.selectedFiles || []);
+  
+  const contextSelected = useContextStore(s => s.selectedFiles);
+  
+  // Removed unused hooks or selectors if possible
+  // useDarkMode is likely fine as it changes rarely
   const isDarkMode = useDarkMode();
   const checkboxRef = React.useRef<HTMLInputElement>(null);
 
   // Determine the context tier for visual styling
   const isContextSelected = contextSelected.has(item.id);
 
-  // Get current tab's selected files
-  const activeTab = tabs[activeTabIndex];
-  const selectedFiles = activeTab?.selectedFiles || [];
-
   // Convert to Set for efficient O(1) lookups in selection checks
-  const selectedFilesSet = new Set(selectedFiles);
+  // Memoize this set to avoid recreation if selectedFiles array ref hasn't changed
+  const selectedFilesSet = React.useMemo(() => new Set(selectedFiles), [selectedFiles]);
 
   const isExpanded = expandedFolders.has(item.id);
-  const hasSelectedDescendants = areSomeDescendantsSelected(
+  const hasSelectedDescendants = React.useMemo(() => areSomeDescendantsSelected(
     item,
     selectedFilesSet
-  );
-  const allDescendantsSelected = areAllDescendantsSelected(
+  ), [item, selectedFilesSet]);
+  
+  const allDescendantsSelected = React.useMemo(() => areAllDescendantsSelected(
     item,
     selectedFilesSet
-  );
+  ), [item, selectedFilesSet]);
+  
   const isEmpty = isEmptyFolder(item);
   const isCurrentlyViewed = item.path === previewedFilePath;
 
@@ -130,9 +134,13 @@ const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
       target.classList.contains('file-icon') ||
       target.closest('.file-icon-wrapper');
 
-    if (isNameOrIcon && item.type === 'file') {
-      setPreviewedFilePath(item.path);
-      onViewFile();
+    if (isNameOrIcon) {
+      if (item.type === 'file') {
+        setPreviewedFilePath(item.path);
+        onViewFile();
+      } else if (item.type === 'folder') {
+        onToggleFolder(item.id);
+      }
     }
   };
 
@@ -234,6 +242,6 @@ const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
         )}
     </div>
   );
-};
+});
 
 export default FileExplorerItem;

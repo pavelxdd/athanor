@@ -14,6 +14,7 @@ export interface IFileService {
   // --- Basic FS Operations (Async) ---
   // All methods accept either project-relative paths or absolute paths
   read(pathStr: string, opts?: { encoding?: BufferEncoding }): Promise<string | Buffer>;
+  readMultiple(paths: string[], opts?: { encoding?: BufferEncoding }): Promise<Map<string, string | Buffer | null>>;
   write(pathStr: string, data: string | Buffer): Promise<void>;
   append(pathStr: string, data: string | Buffer): Promise<void>;
   prepend(pathStr: string, data: string | Buffer): Promise<void>;
@@ -24,6 +25,7 @@ export interface IFileService {
   isDirectory(pathStr: string): Promise<boolean>; // Convenience method
   ensureDir(pathStr: string): Promise<void>; // Ensures directory exists (recursive)
   readdir(pathStr: string, opts?: { applyIgnores?: boolean }): Promise<string[]>; // Returns basenames
+  getFileTree(dirPath: string): Promise<any>; // Returns full tree structure
 
   // --- Watcher Management ---
   // Returns an unsubscribe function

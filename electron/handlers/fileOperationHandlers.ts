@@ -49,34 +49,31 @@ export function setupFileOperationHandlers(fileService: FileService) {
   });
 
   // Handle reading file contents
-  ipcMain.handle(
-    'fs:readFile',
-    async (
-      _,
-      filePath: string,
-      options?: { encoding?: BufferEncoding } | BufferEncoding
-    ) => {
-      try {
-        // Convert options format if needed
-        const readOptions =
-          typeof options === 'string' ? { encoding: options } : options;
-
-        // Normalize to Unix format
-        const unix = _fileService.toUnix(filePath);
-        
-        // Only relativize if absolute AND inside base directory
-        const pathForFs = 
-          PathUtils.isAbsolute(unix) && PathUtils.isPathInside(_fileService.getBaseDir(), unix)
-            ? _fileService.relativize(unix)
-            : unix;  // absolute path outside project or already relative, use as-is
-
-        // Read the file
-        return await _fileService.read(pathForFs, readOptions);
-      } catch (error) {
-        handleError(error, `reading file ${filePath}`);
-      }
+  ipcMain.handle('fs:readFile', async (_, filePath: string, options?: { encoding?: BufferEncoding }) => {
+    try {
+      const pathForFs = _fileService.toUnix(filePath); // Normalize path
+      const data = await _fileService.read(pathForFs, options);
+      return data;
+    } catch (error) {
+      // For file reading, we just return null/throw so renderer can handle "file not found" etc
+      // Don't necessarily show global error toast for every missing file check
+      console.error(`Error reading file ${filePath}:`, error);
+      throw error;
     }
-  );
+  });
+
+  // Handle reading multiple files
+  ipcMain.handle('fs:readMultipleFiles', async (_, paths: string[], options?: { encoding?: BufferEncoding }) => {
+    try {
+      const unixPaths = paths.map(p => _fileService.toUnix(p));
+      const resultMap = await _fileService.readMultiple(unixPaths, options);
+      // Maps aren't serializable over IPC, convert to Array of tuples or Object
+      // Object is easier for JS/TS consumption: Record<string, string | Buffer | null>
+      return Object.fromEntries(resultMap);
+    } catch (error) {
+      handleError(error, `batch reading files`);
+    }
+  });
 
   // Handle writing file contents
   ipcMain.handle('fs:writeFile', async (_, filePath: string, data: string) => {
@@ -176,24 +173,29 @@ export function setupFileOperationHandlers(fileService: FileService) {
     }
   });
 
-  // Handle ensuring directory exists
+  // Handle ensuring a directory exists
   ipcMain.handle('fs:ensureDirectory', async (_, dirPath: string) => {
     try {
-      // Normalize to Unix format
-      const unix = _fileService.toUnix(dirPath);
-      
-      // Only relativize if absolute AND inside base directory
-      const pathForFs = 
-        PathUtils.isAbsolute(unix) && PathUtils.isPathInside(_fileService.getBaseDir(), unix)
-          ? _fileService.relativize(unix)
-          : unix;  // absolute path outside project or already relative, use as-is
-
+      const pathForFs = _fileService.toUnix(dirPath); // Normalize
       await _fileService.ensureDir(pathForFs);
-      // No explicit return value for void promise on success
+      return true;
     } catch (error) {
       handleError(error, `ensuring directory ${dirPath}`);
     }
   });
+
+  // Handle getting file tree
+  ipcMain.handle('fs:getFileTree', async (_, dirPath: string) => {
+    try {
+      const pathForFs = _fileService.toUnix(dirPath); // Normalize
+      const tree = await _fileService.getFileTree(pathForFs);
+      return tree;
+    } catch (error) {
+      handleError(error, `getting file tree for ${dirPath}`);
+    }
+  });
+
+  // Handle checking if file exists
 }
 
 // Enhanced error handling

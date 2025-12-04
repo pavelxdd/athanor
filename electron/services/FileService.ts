@@ -1,5 +1,5 @@
 import * as fs from 'fs/promises';
-import { Stats, constants, statSync } from 'fs';
+import { Stats, constants, statSync, existsSync } from 'fs';
 import * as chokidar from 'chokidar';
 import { app } from 'electron';
 import { EventEmitter } from 'events';
@@ -105,7 +105,9 @@ export class FileService extends EventEmitter implements IFileService {
     if (mustExist) {
       try {
         const platformPath = this.toOS(absolutePath);
-        statSync(platformPath);
+        if (!existsSync(platformPath)) {
+          throw new Error(`Path does not exist: ${pathStr}`);
+        }
       } catch (error) {
         throw new Error(`Path does not exist: ${pathStr}`);
       }
@@ -222,6 +224,36 @@ export class FileService extends EventEmitter implements IFileService {
       console.error(`Error reading file ${pathStr}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Read multiple files in parallel
+   * @param paths Array of file paths (absolute or project-relative)
+   * @param opts Optional read options
+   * @returns Map of file paths (as provided) to their content (or null if read failed)
+   */
+  async readMultiple(paths: string[], opts?: { encoding?: BufferEncoding }): Promise<Map<string, string | Buffer | null>> {
+    const results = new Map<string, string | Buffer | null>();
+    
+    // Process in chunks to avoid too many open file descriptors if array is huge
+    // But for typical batch sizes (10-50), Promise.all is fine.
+    // Let's limit concurrency just in case.
+    const CONCURRENCY_LIMIT = 50;
+    
+    for (let i = 0; i < paths.length; i += CONCURRENCY_LIMIT) {
+      const chunk = paths.slice(i, i + CONCURRENCY_LIMIT);
+      await Promise.all(chunk.map(async (pathStr) => {
+        try {
+          const content = await this.read(pathStr, opts);
+          results.set(pathStr, content);
+        } catch (error) {
+          console.error(`Error batch reading file ${pathStr}:`, error);
+          results.set(pathStr, null);
+        }
+      }));
+    }
+    
+    return results;
   }
 
   /**
@@ -522,6 +554,69 @@ export class FileService extends EventEmitter implements IFileService {
       console.warn(`Could not read directory ${absoluteDir}:`, readError);
     }
     return allFiles;
+  }
+
+  /**
+   * Recursively builds a file tree for the given directory.
+   * This is an optimized version of the renderer-side buildFileTree, running in the main process.
+   * @param dirPath Directory path to scan (absolute or project-relative)
+   * @returns FileItem structure representing the tree
+   */
+  async getFileTree(dirPath: string): Promise<any> {
+    try {
+      const absDir = this.toAbsolute(dirPath);
+      const stats = await this.stats(absDir);
+      
+      // Base case: if it's a file, return file item
+      if (!stats?.isDirectory()) {
+        return {
+          id: this.relativize(absDir),
+          name: PathUtils.basename(absDir),
+          type: 'file',
+          path: absDir, // Keep absolute path for internal use if needed, or relative?
+          // Note: lineCount is expensive, maybe skip or load on demand?
+          // For now, let's skip lineCount to keep it fast.
+        };
+      }
+
+      const entries = await this.readdir(absDir, { applyIgnores: true });
+      const children = [];
+
+      for (const entry of entries) {
+        const entryPath = this.join(absDir, entry);
+        const child = await this.getFileTree(entryPath);
+        if (child) {
+          children.push(child);
+        }
+      }
+
+      // Sort: folders first, then files, alphabetical
+      children.sort((a, b) => {
+        if (a.type === b.type) {
+          return a.name.localeCompare(b.name);
+        }
+        return a.type === 'folder' ? -1 : 1;
+      });
+
+      // Determine if empty (no files, only empty folders)
+      const hasOnlyEmptyFolders = children.every(
+        (child) => child.type === 'folder' && (child.isEmpty || !child.children?.length)
+      );
+      const isEmpty = children.length === 0 || hasOnlyEmptyFolders;
+
+      return {
+        id: this.relativize(absDir) || '/', // Root is '/' or empty string
+        name: PathUtils.basename(absDir) || PathUtils.basename(this.getBaseDir()),
+        type: 'folder',
+        path: absDir,
+        children,
+        isEmpty,
+      };
+
+    } catch (error) {
+      console.error(`Error building file tree for ${dirPath}:`, error);
+      return null;
+    }
   }
 
   // --- Watcher Management ---

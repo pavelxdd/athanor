@@ -149,7 +149,7 @@ const DiffView: React.FC<{
   isCompact: boolean;
   onDiffBlocksCalculated?: (blocks: DiffBlock[]) => void;
   diffViewRef?: React.RefObject<HTMLDivElement>;
-}> = ({
+}> = React.memo(({
   oldText,
   newText,
   filePath,
@@ -157,6 +157,14 @@ const DiffView: React.FC<{
   onDiffBlocksCalculated,
   diffViewRef,
 }) => {
+  const [lines, setLines] = useState<string[]>([]);
+  const [isCalculating, setIsCalculating] = useState(true);
+  const onDiffBlocksCalculatedRef = useRef(onDiffBlocksCalculated);
+
+  useEffect(() => {
+    onDiffBlocksCalculatedRef.current = onDiffBlocksCalculated;
+  }, [onDiffBlocksCalculated]);
+
   // Only normalize line endings for comparison
   const normalizeForComparison = (text: string) => {
     if (!text) return '';
@@ -171,10 +179,58 @@ const DiffView: React.FC<{
     return content;
   };
 
-  const normalizedOld = normalizeForComparison(oldText);
-  const normalizedNew = normalizeForComparison(newText);
+  useEffect(() => {
+    setIsCalculating(true);
+    
+    // Use setTimeout to unblock the main thread and allow UI to update (show loading state)
+    // before the heavy synchronous createPatch operation runs.
+    const timer = setTimeout(() => {
+      const normalizedOld = normalizeForComparison(oldText);
+      const normalizedNew = normalizeForComparison(newText);
 
-  if (normalizedOld === normalizedNew) {
+      if (normalizedOld === normalizedNew) {
+        setLines([]);
+        setIsCalculating(false);
+        return;
+      }
+
+      try {
+        // Heavy operation
+        const patch = createPatch(filePath, normalizedOld, normalizedNew, '', '', {
+          context: isCompact ? CONTEXT_LINES_COMPACT : 999999,
+        });
+        const newLines = patch.split('\n').slice(2); // Skip the diff header
+        setLines(newLines);
+      } catch (error) {
+        console.error('Error calculating diff:', error);
+        setLines([]);
+      } finally {
+        setIsCalculating(false);
+      }
+    }, 10); // Small delay to ensure render cycle completes
+
+    return () => clearTimeout(timer);
+  }, [oldText, newText, filePath, isCompact]);
+
+  // Calculate diff blocks (consecutive sequences of +/- lines)
+  useEffect(() => {
+    if (lines.length > 0) {
+      const mergedBlocks = calculateMergedDiffBlocks(lines);
+      if (onDiffBlocksCalculatedRef.current) {
+        onDiffBlocksCalculatedRef.current(mergedBlocks);
+      }
+    }
+  }, [lines]);
+
+  if (isCalculating) {
+    return (
+      <div className="p-4 text-gray-500 dark:text-gray-400 italic text-sm animate-pulse">
+        Calculating diff...
+      </div>
+    );
+  }
+
+  if (lines.length === 0) {
     return (
       <div className="p-4 text-gray-500 dark:text-gray-400 italic">
         No changes (files are identical after normalizing line endings)
@@ -182,52 +238,36 @@ const DiffView: React.FC<{
     );
   }
 
-  // Create diff with context
-  const patch = createPatch(filePath, normalizedOld, normalizedNew, '', '', {
-    context: isCompact ? CONTEXT_LINES_COMPACT : 999999,
-  });
+  // Let's reconstruct the rendering logic properly
+  let currentOldLineNum = 0;
+  let currentNewLineNum = 0;
+  const hunkRegex = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)$/;
 
-  const lines = patch.split('\n').slice(2); // Skip the diff header
-
-  // Calculate diff blocks (consecutive sequences of +/- lines)
-  useEffect(() => {
-    if (onDiffBlocksCalculated) {
-      const mergedBlocks = calculateMergedDiffBlocks(lines);
-      onDiffBlocksCalculated(mergedBlocks);
-    }
-  }, [lines, onDiffBlocksCalculated]);
-
-  // Use useMemo to create the rendered lines array, tracking line numbers
-  const renderedLines = React.useMemo(() => {
-    let currentOldLineNum = 0;
-    let currentNewLineNum = 0;
-    const hunkRegex = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)$/; // Capture content after header
-
-    return lines.reduce<React.ReactNode[]>((acc, line, index) => {
+  const lineNodes = lines.map((line, index) => {
       // Skip final empty line if it exists
-      if (!line && index === lines.length - 1) return acc;
+      if (!line && index === lines.length - 1) return null;
 
       const hunkMatch = line.match(hunkRegex);
 
       if (hunkMatch) {
         currentOldLineNum = parseInt(hunkMatch[1], 10);
         currentNewLineNum = parseInt(hunkMatch[2], 10);
-        // Pass the *entire* line content
-        acc.push(<DiffLine key={index} content={line} type="header" />);
+        return <DiffLine key={index} content={line} type="header" />;
       } else if (line.startsWith('+')) {
-        acc.push(<DiffLine key={index} content={line.slice(1)} type="add" newLineNum={currentNewLineNum} />);
+        const node = <DiffLine key={index} content={line.slice(1)} type="add" newLineNum={currentNewLineNum} />;
         currentNewLineNum++;
+        return node;
       } else if (line.startsWith('-')) {
-        acc.push(<DiffLine key={index} content={line.slice(1)} type="remove" oldLineNum={currentOldLineNum} />);
+        const node = <DiffLine key={index} content={line.slice(1)} type="remove" oldLineNum={currentOldLineNum} />;
         currentOldLineNum++;
+        return node;
       } else { // Context line
-        acc.push(<DiffLine key={index} content={line.slice(1)} type="context" oldLineNum={currentOldLineNum} newLineNum={currentNewLineNum} />);
+        const node = <DiffLine key={index} content={line.slice(1)} type="context" oldLineNum={currentOldLineNum} newLineNum={currentNewLineNum} />;
         currentOldLineNum++;
         currentNewLineNum++;
+        return node;
       }
-      return acc;
-    }, []);
-  }, [lines]); // Recalculate only when lines change
+  }).filter(Boolean);
 
   return (
     <div
@@ -235,7 +275,7 @@ const DiffView: React.FC<{
       className="overflow-x-auto bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 p-2 min-w-0"
     >
       <div className="space-y-0 min-w-max">
-        {renderedLines.map((lineNode, index) => (
+        {lineNodes.map((lineNode, index) => (
           <div key={index} data-line-index={index}>
             {lineNode}
           </div>
@@ -243,7 +283,7 @@ const DiffView: React.FC<{
       </div>
     </div>
   );
-};
+});
 
 interface FileOperationItemProps {
   operation: any;

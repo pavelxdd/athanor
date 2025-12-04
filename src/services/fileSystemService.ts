@@ -39,90 +39,55 @@ export async function buildFileTree(
   isMaterialsTree: boolean = false,
   applyIgnores: boolean = true
 ): Promise<FileItem> {
-  // Construct the full path by joining base and current paths
+  // For materials tree, we might still want to do it manually if it's special, 
+  // but let's try to use the optimized path for everything.
+  // The main process `getFileTree` handles recursion.
+  
+  // Construct the full path
   const fullPath = await window.pathUtils.join(basePath, currentPath);
-  // Get the name from the last part of the current path, or base path if at root
-  let name = currentPath
-    ? currentPath.split('/').pop() || ''
-    : basePath.split('/').pop() || '';
-
-  // Set root name for supplementary materials tree
-  if (isMaterialsTree && !currentPath) {
-    name = 'Supplementary Materials';
-  }
-
+  
   try {
-    const isDir = await window.fileService.isDirectory(fullPath);
-    // Generate ID relative to base path
-    const id = isMaterialsTree
-      ? `materials:${currentPath}`
-      : currentPath || '/';
+    // Use the optimized IPC call
+    const tree = await window.fileService.getFileTree(fullPath);
+    
+    if (!tree) {
+      throw new Error('Failed to get file tree');
+    }
 
-    if (!isDir) {
-      const lineCount = await countFileLines(fullPath);
-      return {
-        id,
-        name,
-        type: 'file',
-        path: fullPath,
-        lineCount,
+    // Post-process the tree to match exact FileItem structure if needed, 
+    // and handle specific logic like "Supplementary Materials" name
+    if (isMaterialsTree && !currentPath) {
+      tree.name = 'Supplementary Materials';
+      tree.id = `materials:${currentPath}`;
+      // We might need to fix IDs recursively for materials tree to match 'materials:...' convention
+      // But for now let's assume standard IDs are fine or we fix them here.
+      
+      // Helper to prefix IDs
+      const prefixIds = (item: any) => {
+        if (item.id !== '/') {
+           // If id is relative path, prepend materials:
+           item.id = `materials:${item.id}`;
+        } else {
+           item.id = 'materials:';
+        }
+        if (item.children) {
+          item.children.forEach(prefixIds);
+        }
       };
+      prefixIds(tree);
     }
 
-    const entries = await window.fileService.readDirectory(
-      fullPath,
-      applyIgnores
-    );
-    const children: FileItem[] = [];
+    // Note: The main process getFileTree skips lineCount for performance. 
+    // If lineCount is strictly required for the UI (e.g. stats), we would need to fetch it.
+    // For now, we accept 0/undefined to keep it fast.
 
-    for (const entry of entries) {
-      // Skip supplementary materials directory in main tree to avoid recursion
-      if (!isMaterialsTree && entry === FILE_SYSTEM.materialsDirName) {
-        continue;
-      }
-      // Build the relative path for the child
-      const childRelativePath = currentPath ? `${currentPath}/${entry}` : entry;
-
-      // Skip if somehow we got into a recursive path
-      if (childRelativePath === currentPath) {
-        console.warn('Skipping recursive path for', childRelativePath);
-        continue;
-      }
-
-      // Recursive call with the same base path but updated relative path
-      const child = await buildFileTree(
-        basePath,
-        childRelativePath,
-        isMaterialsTree,
-        applyIgnores
-      );
-      children.push(child);
-    }
-
-    // Sort children with folders first, then files, both in lexicographic order
-    const sortedChildren = sortItems(children);
-
-    // Determine if this is an empty folder (no files, only empty folders)
-    const hasOnlyEmptyFolders = sortedChildren.every(
-      (child) =>
-        child.type === 'folder' && (child.isEmpty || !child.children?.length)
-    );
-    const isEmpty = sortedChildren.length === 0 || hasOnlyEmptyFolders;
-
-    return {
-      id,
-      name,
-      type: 'folder',
-      path: fullPath,
-      children: sortedChildren,
-      isEmpty,
-    };
+    return tree;
   } catch (error) {
     console.error(`Error building file tree for ${fullPath}:`, error);
     return {
       id: fullPath,
-      name,
-      type: 'file',
+      name: currentPath ? currentPath.split('/').pop() || '' : basePath.split('/').pop() || '',
+      type: 'file', // Fallback
       path: fullPath,
       error: true,
     };
@@ -160,43 +125,71 @@ export async function readFileByPath(relativePath: string): Promise<string> {
 }
 
 // Function to get all files in a tree
-export function getAllFiles(tree: FileItem): string[] {
-  if (tree.type === 'file') {
-    return [tree.path];
-  }
+export function getAllFiles(tree: FileItem, maxDepth: number = 100): string[] {
+  function collectFiles(node: FileItem, depth: number): string[] {
+    if (depth <= 0) {
+      console.warn(`Maximum depth (${maxDepth}) reached while collecting files from path: ${node.path}`);
+      return [];
+    }
+    
+    if (node.type === 'file') {
+      return [node.path];
+    }
 
-  return (tree.children || []).flatMap(getAllFiles);
+    return (node.children || []).flatMap(child => collectFiles(child, depth - 1));
+  }
+  
+  return collectFiles(tree, maxDepth);
 }
 
 // Function to get all folders in a tree
-export function getAllFolders(tree: FileItem): string[] {
-  if (tree.type === 'file') {
-    return [];
-  }
+export function getAllFolders(tree: FileItem, maxDepth: number = 100): string[] {
+  function collectFolders(node: FileItem, depth: number): string[] {
+    if (depth <= 0) {
+      console.warn(`Maximum depth (${maxDepth}) reached while collecting folders from path: ${node.path}`);
+      return [];
+    }
+    
+    if (node.type === 'file') {
+      return [];
+    }
 
-  const folders = [tree.path];
-  return folders.concat((tree.children || []).flatMap(getAllFolders));
+    const folders = [node.path];
+    return folders.concat((node.children || []).flatMap(child => collectFolders(child, depth - 1)));
+  }
+  
+  return collectFolders(tree, maxDepth);
 }
 
 // Function to find a file/folder in the tree by path
 export function findItemByPath(
   tree: FileItem,
-  targetPath: string
+  targetPath: string,
+  maxDepth: number = 100
 ): FileItem | null {
-  if (tree.path === targetPath) {
-    return tree;
-  }
+  function search(node: FileItem, depth: number): FileItem | null {
+    if (depth <= 0) {
+      console.warn(`Maximum depth (${maxDepth}) reached while searching for path: ${targetPath}`);
+      return null;
+    }
+    
+    if (node.path === targetPath) {
+      return node;
+    }
 
-  if (tree.type === 'folder' && tree.children) {
-    for (const child of tree.children) {
-      const found = findItemByPath(child, targetPath);
-      if (found) {
-        return found;
+    if (node.type === 'folder' && node.children) {
+      for (const child of node.children) {
+        const found = search(child, depth - 1);
+        if (found) {
+          return found;
+        }
       }
     }
-  }
 
-  return null;
+    return null;
+  }
+  
+  return search(tree, maxDepth);
 }
 
 // Function to update a specific item in the tree

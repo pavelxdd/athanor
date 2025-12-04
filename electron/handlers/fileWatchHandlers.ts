@@ -35,13 +35,39 @@ export function setupFileWatchHandlers(fileService: FileService) {
         console.log(`Cleaned up existing watcher for: ${watcherKey}`);
       }
 
+      // Debounce timer for this watcher
+      let debounceTimer: NodeJS.Timeout | null = null;
+
       // Set up new watcher with FileService
-      const unsubscribe = _fileService.watch(pathForFs, (eventName, filePath) => {
-        if (!event.sender.isDestroyed()) {
-          // Forward the event to the renderer process
-          event.sender.send('fs:change', eventName, filePath);
+      const unsubscribeWatcher = _fileService.watch(pathForFs, (eventName, filePath) => {
+        if (event.sender.isDestroyed()) return;
+
+        // Clear existing timer
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
         }
+
+        // Set new timer to debounce IPC events
+        // We use a short delay (100ms) to batch rapid file system changes (like git checkout or npm install)
+        // into fewer IPC messages, while keeping the UI responsive.
+        debounceTimer = setTimeout(() => {
+          if (!event.sender.isDestroyed()) {
+            // Forward the last event to the renderer process
+            // The renderer refreshes the whole tree anyway, so one event is sufficient to trigger it
+            event.sender.send('fs:change', eventName, filePath);
+          }
+          debounceTimer = null;
+        }, 100);
       });
+
+      // Create a wrapper unsubscribe function that also clears the timer
+      const unsubscribe = () => {
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+          debounceTimer = null;
+        }
+        unsubscribeWatcher();
+      };
 
       // Store the unsubscribe function
       unsubscribeFunctions.set(watcherKey, unsubscribe);

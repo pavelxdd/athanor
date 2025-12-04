@@ -21,16 +21,33 @@ export interface Command {
 async function parseApplyChangesContent(
   commandContent: any // Parsed XML object from xml2js
 ): Promise<FileOperation[]> {
-  const operations: FileOperation[] = [];
   const { addLog } = useLogStore.getState();
 
   const fileBlocks = commandContent.file;
   if (!fileBlocks || !Array.isArray(fileBlocks)) {
     addLog('No <file> blocks found inside the apply changes command');
-    return operations;
+    return [];
   }
 
+  const operations: FileOperation[] = [];
   const failedDiffPaths: string[] = [];
+
+  // First pass: collect file data and determine which files need to be read
+  interface FileData {
+    path: string;
+    rawOperation: string;
+    operation: FileOperationType;
+    message: string;
+    newPath?: string;
+    code: string;
+    warning?: string;
+    needOldCode: boolean;
+    ignoreReadError: boolean; // For DELETE/RENAME operations
+    isDirectory?: boolean; // Will be filled later
+  }
+
+  const fileDataList: FileData[] = [];
+  const pathsToCheckExistence: string[] = []; // For CREATE operations that need exists check
 
   for (const block of fileBlocks) {
     try {
@@ -46,83 +63,160 @@ async function parseApplyChangesContent(
       const message = block.file_message?.[0]?._ || '';
       const newPath = block.file_path_new?.[0]?._;
       const code = block.file_code?.[0]?._ || block.file_code?.[0] || '';
-
-      let oldCode = '';
-      let processedNewCode = '';
       let warning: string | undefined;
 
+      // For CREATE operations, we need to check if file exists
       if (operation === 'CREATE') {
-        const fileExists = await window.fileService.exists(path);
-        if (fileExists) {
-          operation = 'UPDATE_FULL';
-          warning = `File already exists. Operation changed from CREATE to a full update.`;
-          addLog(`Warning for ${path}: ${warning}`);
-        }
+        pathsToCheckExistence.push(path);
       }
 
-      if (operation !== 'CREATE') {
+      const needOldCode = operation !== 'CREATE';
+      const ignoreReadError = operation === 'DELETE' || operation === 'RENAME';
+
+      fileDataList.push({
+        path,
+        rawOperation,
+        operation,
+        message,
+        newPath,
+        code,
+        warning,
+        needOldCode,
+        ignoreReadError,
+      });
+    } catch (error) {
+      const filePath = block.file_path?.[0] || 'unknown file';
+      addLog(`Failed to process file block: ${filePath} - ${error}`);
+    }
+  }
+
+  // Batch check file existence for CREATE operations
+  const existenceResults: Record<string, boolean> = {};
+  if (pathsToCheckExistence.length > 0) {
+    await Promise.all(
+      pathsToCheckExistence.map(async (path) => {
         try {
-          if (!(await window.fileService.isDirectory(path))) {
-            oldCode = (await window.fileService.read(path, {
-              encoding: 'utf8',
-            })) as string;
-          }
+          existenceResults[path] = await window.fileService.exists(path);
         } catch (error) {
-          if (operation !== 'DELETE' && operation !== 'RENAME') {
-            throw error;
-          }
+          // If exists check fails, assume file doesn't exist
+          existenceResults[path] = false;
+        }
+      })
+    );
+  }
+
+  // Update operation types for CREATE files that already exist
+  for (const fileData of fileDataList) {
+    if (fileData.operation === 'CREATE' && existenceResults[fileData.path]) {
+      fileData.operation = 'UPDATE_FULL';
+      fileData.warning = `File already exists. Operation changed from CREATE to a full update.`;
+      addLog(`Warning for ${fileData.path}: ${fileData.warning}`);
+      fileData.needOldCode = true; // Now we need old code for UPDATE_FULL
+    }
+  }
+
+  // Collect paths that need old code reading
+  const pathsToRead: string[] = [];
+  const fileDataForPath: Record<string, FileData> = {};
+  for (const fileData of fileDataList) {
+    if (fileData.needOldCode) {
+      pathsToRead.push(fileData.path);
+      fileDataForPath[fileData.path] = fileData;
+    }
+  }
+
+  // Batch check which paths are directories (for those that need reading)
+  const directoryChecks: Record<string, boolean> = {};
+  if (pathsToRead.length > 0) {
+    await Promise.all(
+      pathsToRead.map(async (path) => {
+        try {
+          directoryChecks[path] = await window.fileService.isDirectory(path);
+        } catch (error) {
+          // If isDirectory check fails, assume it's not a directory
+          directoryChecks[path] = false;
+        }
+      })
+    );
+  }
+
+  // Filter out directories from reading (they don't have old code)
+  const pathsToReadFiles = pathsToRead.filter((path) => !directoryChecks[path]);
+
+  // Batch read file contents for non-directory paths
+  const fileContents: Record<string, string | Buffer | null> = {};
+  if (pathsToReadFiles.length > 0) {
+    const readResults = await window.fileService.readMultiple(pathsToReadFiles, {
+      encoding: 'utf8',
+    });
+    Object.assign(fileContents, readResults);
+  }
+
+  // Second pass: process each file data with old code
+  for (const fileData of fileDataList) {
+    try {
+      let oldCode = '';
+      let processedNewCode = '';
+
+      // Get old code if needed
+      if (fileData.needOldCode && !directoryChecks[fileData.path]) {
+        const content = fileContents[fileData.path];
+        if (content !== null && content !== undefined) {
+          oldCode = content as string;
+        } else if (!fileData.ignoreReadError) {
+          // Read failed and we don't ignore errors
+          throw new Error(`Failed to read file: ${fileData.path}`);
         }
       }
 
-      if (operation === 'DELETE' || operation === 'RENAME') {
+      if (fileData.operation === 'DELETE' || fileData.operation === 'RENAME') {
         processedNewCode = '';
       } else if (
-        operation === 'CREATE' ||
-        operation === 'APPEND' ||
-        operation === 'PREPEND' ||
-        operation === 'UPDATE_FULL'
+        fileData.operation === 'CREATE' ||
+        fileData.operation === 'APPEND' ||
+        fileData.operation === 'PREPEND' ||
+        fileData.operation === 'UPDATE_FULL'
       ) {
-        processedNewCode = normalizeLineEndings(code);
-      } else if (operation === 'UPDATE_DIFF') {
+        processedNewCode = normalizeLineEndings(fileData.code);
+      } else if (fileData.operation === 'UPDATE_DIFF') {
         // For UPDATE_DIFF, we parse the blocks but don't apply them yet.
         const { parseDiffBlocks } = await import(
           '../../utils/fileOperations'
         );
         try {
-          const diffBlocks = parseDiffBlocks(code);
+          const diffBlocks = parseDiffBlocks(fileData.code);
           operations.push({
-            file_message: message,
-            file_operation: operation,
-            file_path: path,
-            new_file_path: newPath,
+            file_message: fileData.message,
+            file_operation: fileData.operation,
+            file_path: fileData.path,
+            new_file_path: fileData.newPath,
             new_code: '', // new_code is generated on apply
             old_code: normalizeLineEndings(oldCode),
             accepted: false,
             rejected: false,
             diff_blocks: diffBlocks,
-            warning: warning,
+            warning: fileData.warning,
           });
         } catch (error) {
-          addLog(`Error parsing diff blocks for ${path}: ${error}`);
-          failedDiffPaths.push(path);
+          addLog(`Error parsing diff blocks for ${fileData.path}: ${error}`);
+          failedDiffPaths.push(fileData.path);
         }
         continue;
       }
 
       operations.push({
-        file_message: message,
-        file_operation: operation,
-        file_path: path,
-        new_file_path: newPath,
+        file_message: fileData.message,
+        file_operation: fileData.operation,
+        file_path: fileData.path,
+        new_file_path: fileData.newPath,
         new_code: processedNewCode,
         old_code: normalizeLineEndings(oldCode),
         accepted: false,
         rejected: false,
-        warning: warning,
+        warning: fileData.warning,
       });
     } catch (error) {
-      const filePath = block.file_path?.[0] || 'unknown file';
-      addLog(`Failed to process file: ${filePath} - ${error}`);
+      addLog(`Failed to process file: ${fileData.path} - ${error}`);
     }
   }
 

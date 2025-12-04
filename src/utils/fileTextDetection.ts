@@ -1,7 +1,7 @@
 import { FILE_SYSTEM } from './constants';
 
 // File detection configuration
-const FILE_DETECTION = {
+export const FILE_DETECTION = {
   // Maximum buffer size for MIME type detection (256KB)
   maxBufferSize: 262144,
   // Minimum ratio of printable characters to consider a file as text
@@ -70,7 +70,7 @@ const TEXT_MIME_PATTERNS = [
  * @param filePath Path to the file
  * @returns boolean indicating if the extension matches known text files
  */
-function isTextFileExtension(filePath: string): boolean {
+export function isTextFileExtension(filePath: string): boolean {
   const extension = filePath.split('.').pop()?.toLowerCase();
   return extension ? KNOWN_TEXT_EXTENSIONS.has(extension) : false;
 }
@@ -124,4 +124,27 @@ export async function isTextFile(filePath: string): Promise<boolean> {
     }
     throw new Error(`Unknown error analyzing file ${filePath}`);
   }
+}
+
+export function isBufferText(buffer: ArrayBuffer): boolean {
+  // Convert to Uint8Array for analysis
+  const uint8Array = new Uint8Array(buffer);
+
+  // Analyze only the first portion of the file
+  const analysisBuffer = uint8Array.slice(0, FILE_DETECTION.maxBufferSize);
+
+  // If buffer is empty, treat as text (empty file)
+  if (analysisBuffer.length === 0) {
+    return true;
+  }
+
+  // Check if file contains mostly printable ASCII characters
+  const printableChars = analysisBuffer.filter(
+    (byte) =>
+      (byte >= FILE_DETECTION.asciiPrintableMin &&
+        byte <= FILE_DETECTION.asciiPrintableMax) ||
+      FILE_DETECTION.whitespaceChars.has(byte)
+  ).length;
+
+  return printableChars / analysisBuffer.length >= FILE_DETECTION.textThreshold;
 }

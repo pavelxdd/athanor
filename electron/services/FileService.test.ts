@@ -169,7 +169,7 @@ describe('FileService', () => {
       
       expect(fsPromises.writeFile).toHaveBeenCalledWith(
         expect.any(String),
-        'new content'
+        'new content\n'
       );
     });
 
@@ -179,7 +179,7 @@ describe('FileService', () => {
       expect(fsPromises.mkdir).toHaveBeenCalled();
       expect(fsPromises.writeFile).toHaveBeenCalledWith(
         expect.any(String),
-        'new content'
+        'new content\n'
       );
     });
 
@@ -188,7 +188,7 @@ describe('FileService', () => {
       
       expect(fsPromises.writeFile).toHaveBeenCalledWith(
         expect.any(String),
-        'line1\nline2\nline3'
+        'line1\nline2\nline3\n'
       );
     });
 

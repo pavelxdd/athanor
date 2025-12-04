@@ -79,22 +79,23 @@ export async function copyFailedDiffContent(
   const { formatType } = useFileSystemStore.getState();
 
   try {
-    // Gather content for each file
+    // Gather content for each file using batch read
     const fileContents: string[] = [];
+    const results = await window.fileSystem.readMultiple(filePaths, {
+      encoding: 'utf8',
+    });
 
-    for (const filePath of filePaths) {
-      try {
-        const content = (await window.fileSystem.readFile(filePath, {
-          encoding: 'utf8',
-        })) as string;
-        fileContents.push(
-          formatSingleFile(filePath, content, rootPath, false, formatType)
-        );
-      } catch (err) {
-        console.error(`Error reading file ${filePath}:`, err);
+    for (let i = 0; i < filePaths.length; i++) {
+      const filePath = filePaths[i];
+      const content = results[filePath];
+      if (content === null || typeof content !== 'string') {
+        console.error(`Error reading file ${filePath}:`, content);
         addLog(`Failed to read file: ${filePath}`);
         return;
       }
+      fileContents.push(
+        formatSingleFile(filePath, content, rootPath, false, formatType)
+      );
     }
 
     // Create final content block with message

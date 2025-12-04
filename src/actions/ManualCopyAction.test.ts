@@ -40,12 +40,14 @@ Object.defineProperty(navigator, 'clipboard', {
 
 // Mock window.fileSystem (Electron IPC)
 const mockWindowFsReadFile = jest.fn();
+const mockWindowFsReadMultiple = jest.fn();
 if (typeof window === 'undefined') {
   (global as any).window = {};
 }
 (window as any).fileSystem = {
   ...((window as any).fileSystem || {}),
   readFile: mockWindowFsReadFile,
+  readMultiple: mockWindowFsReadMultiple,
 };
 
 // Mock console.error to avoid noise in test output
@@ -95,6 +97,7 @@ describe('ManualCopyAction', () => {
 
     mockClipboardWriteText.mockResolvedValue(undefined);
     mockWindowFsReadFile.mockResolvedValue('mocked file content from readFile');
+    mockWindowFsReadMultiple.mockResolvedValue({});
 
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -407,9 +410,10 @@ describe('ManualCopyAction', () => {
         rootPath: '/project',
       };
 
-      mockWindowFsReadFile
-        .mockResolvedValueOnce('content of file1')
-        .mockResolvedValueOnce('content of file2');
+      mockWindowFsReadMultiple.mockResolvedValueOnce({
+        'src/file1.ts': 'content of file1',
+        'src/file2.js': 'content of file2',
+      });
 
       (codebaseDocumentationUtils.formatSingleFile as jest.Mock)
         .mockReturnValueOnce('# src/file1.ts\n```\ncontent of file1\n```')
@@ -417,9 +421,9 @@ describe('ManualCopyAction', () => {
 
       await copyFailedDiffContent(params);
 
-      expect(mockWindowFsReadFile).toHaveBeenCalledTimes(2);
-      expect(mockWindowFsReadFile).toHaveBeenCalledWith('src/file1.ts', { encoding: 'utf8' });
-      expect(mockWindowFsReadFile).toHaveBeenCalledWith('src/file2.js', { encoding: 'utf8' });
+      expect(mockWindowFsReadMultiple).toHaveBeenCalledTimes(1);
+      expect(mockWindowFsReadMultiple).toHaveBeenCalledWith(['src/file1.ts', 'src/file2.js'], { encoding: 'utf8' });
+      expect(mockWindowFsReadFile).not.toHaveBeenCalled();
 
       expect(codebaseDocumentationUtils.formatSingleFile).toHaveBeenCalledWith(
         'src/file1.ts',
@@ -459,10 +463,15 @@ describe('ManualCopyAction', () => {
         rootPath: '/project',
       };
 
-      mockWindowFsReadFile.mockResolvedValueOnce('test content');
+      mockWindowFsReadMultiple.mockResolvedValueOnce({
+        'src/test.ts': 'test content',
+      });
 
       await copyFailedDiffContent(params);
 
+      expect(mockWindowFsReadMultiple).toHaveBeenCalledTimes(1);
+      expect(mockWindowFsReadMultiple).toHaveBeenCalledWith(['src/test.ts'], { encoding: 'utf8' });
+      expect(mockWindowFsReadFile).not.toHaveBeenCalled();
       expect(codebaseDocumentationUtils.formatSingleFile).toHaveBeenCalledWith(
         'src/test.ts',
         'test content',
@@ -479,14 +488,17 @@ describe('ManualCopyAction', () => {
         rootPath: '/project',
       };
 
-      const readError = new Error('File read failed');
-      mockWindowFsReadFile.mockRejectedValueOnce(readError);
+      mockWindowFsReadMultiple.mockResolvedValueOnce({
+        'src/file1.ts': null,
+        'src/file2.js': 'content of file2',
+      });
 
       await copyFailedDiffContent(params);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error reading file src/file1.ts:', readError);
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error reading file src/file1.ts:', null);
       expect(mockAddLog).toHaveBeenCalledWith('Failed to read file: src/file1.ts');
       expect(mockClipboardWriteText).not.toHaveBeenCalled();
+      expect(mockWindowFsReadFile).not.toHaveBeenCalled();
     });
 
     it('should log error if clipboard.writeText fails', async () => {
@@ -496,7 +508,9 @@ describe('ManualCopyAction', () => {
         rootPath: '/project',
       };
 
-      mockWindowFsReadFile.mockResolvedValueOnce('test content');
+      mockWindowFsReadMultiple.mockResolvedValueOnce({
+        'src/test.ts': 'test content',
+      });
       const clipboardError = new Error('Clipboard failed');
       mockClipboardWriteText.mockRejectedValue(clipboardError);
 
@@ -504,6 +518,7 @@ describe('ManualCopyAction', () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to copy failed diff content:', clipboardError);
       expect(mockAddLog).toHaveBeenCalledWith('Failed to copy failed diff content');
+      expect(mockWindowFsReadFile).not.toHaveBeenCalled();
     });
 
     it('should handle empty filePaths array', async () => {
@@ -533,7 +548,9 @@ describe('ManualCopyAction', () => {
         rootPath: '/root',
       };
 
-      mockWindowFsReadFile.mockResolvedValueOnce('single file content');
+      mockWindowFsReadMultiple.mockResolvedValueOnce({
+        'single.ts': 'single file content',
+      });
       (codebaseDocumentationUtils.formatSingleFile as jest.Mock).mockReturnValueOnce(
         'formatted single file'
       );
@@ -548,6 +565,7 @@ describe('ManualCopyAction', () => {
       ];
 
       expect(mockClipboardWriteText).toHaveBeenCalledWith(expectedParts.join('\n'));
+      expect(mockWindowFsReadFile).not.toHaveBeenCalled();
     });
   });
 });

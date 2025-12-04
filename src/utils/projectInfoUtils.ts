@@ -101,44 +101,49 @@ export async function readProjectInfo(basePath: string): Promise<{ content: stri
       lower: entry.toLowerCase()
     }));
 
-    // Create candidate filenames from basenames and extensions
-    const candidates = [];
+    // Create candidate filenames from basenames and extensions in priority order
+    const candidates: string[] = [];
     for (const basename of PROJECT_INFO.BASENAMES) {
       for (const ext of PROJECT_INFO.EXTENSIONS) {
         candidates.push(basename + ext);
       }
     }
 
-    // Find the first matching file
+    // Collect matching file paths in priority order
+    const matchingPaths: string[] = [];
     for (const candidate of candidates) {
       const match = entriesLower.find(entry => entry.lower === candidate.toLowerCase());
       if (match) {
-        // Found a match - read the file using the original filename (preserving case)
         const filePath = await window.fileSystem.joinPaths(basePath, match.original);
-        
-        try {
-          const content = await window.fileSystem.readFile(filePath, {
-            encoding: 'utf8',
-          });
-          
-          if (typeof content !== 'string') {
-            console.warn(`Project info file content is not text: ${filePath}`);
-            continue; // Try next candidate
-          }
-          
-          // Normalize the content and return it along with the file path
-          return {
-            content: normalizeContent(content),
-            path: filePath
-          };
-        } catch (fileError) {
-          console.warn(`Error reading project info file: ${filePath}`, fileError);
-          continue; // Try next candidate
-        }
+        matchingPaths.push(filePath);
       }
     }
 
-    // No matching file found
+    if (matchingPaths.length === 0) {
+      return null;
+    }
+
+    // Read all matching files at once using batch read
+    const readResults = await window.fileSystem.readMultiple(matchingPaths, {
+      encoding: 'utf8',
+    });
+
+    // Find the first successful read in priority order
+    for (const filePath of matchingPaths) {
+      const content = readResults[filePath];
+      if (content !== null && content !== undefined && typeof content === 'string') {
+        // Normalize the content and return it along with the file path
+        return {
+          content: normalizeContent(content),
+          path: filePath
+        };
+      } else {
+        console.warn(`Project info file read failed or not text: ${filePath}`);
+        // Continue to next candidate
+      }
+    }
+
+    // No matching file could be read successfully
     return null;
   } catch (error) {
     console.error('Error during project info auto-discovery:', error);

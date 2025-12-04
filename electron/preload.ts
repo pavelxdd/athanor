@@ -113,11 +113,14 @@ contextBridge.exposeInMainWorld('fileService', {
   readDirectory: (path: string, applyIgnores?: boolean) => 
     ipcRenderer.invoke('fs:readDirectory', path, applyIgnores),
   ensureDirectory: (path: string) => ipcRenderer.invoke('fs:ensureDirectory', path),
+  getFileTree: (path: string) => ipcRenderer.invoke('fs:getFileTree', path),
   
   // File operations
   exists: (path: string) => ipcRenderer.invoke('fs:fileExists', path),
   read: (path: string, options?: { encoding?: BufferEncoding } | BufferEncoding) => 
     ipcRenderer.invoke('fs:readFile', path, options),
+  readMultiple: (paths: string[], options?: { encoding?: BufferEncoding } | BufferEncoding) =>
+    ipcRenderer.invoke('fs:readMultipleFiles', paths, options),
   write: (path: string, data: string) => ipcRenderer.invoke('fs:writeFile', path, data),
   append: (path: string, data: string) => ipcRenderer.invoke('fs:appendFile', path, data),
   prepend: (path: string, data: string) => ipcRenderer.invoke('fs:prependFile', path, data),
@@ -196,6 +199,10 @@ contextBridge.exposeInMainWorld('fileSystem', {
     path: string,
     options?: { encoding?: BufferEncoding } | BufferEncoding
   ) => ipcRenderer.invoke('fs:readFile', path, options),
+  readMultiple: (
+    paths: string[],
+    options?: { encoding?: BufferEncoding } | BufferEncoding
+  ) => ipcRenderer.invoke('fs:readMultipleFiles', paths, options),
   fileExists: (path: string) => ipcRenderer.invoke('fs:fileExists', path),
   writeFile: (path: string, data: string) =>
     ipcRenderer.invoke('fs:writeFile', path, data),
