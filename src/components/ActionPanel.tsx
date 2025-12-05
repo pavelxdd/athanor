@@ -721,9 +721,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                       selectedItems: selectedItemsSet,
                       addLog,
                       setIsLoading,
-                      currentThresholdLineLength:
-                        applicationSettings?.thresholdLineLength ??
-                        SETTINGS.defaults.application.thresholdLineLength,
                     });
                   }
                 }
