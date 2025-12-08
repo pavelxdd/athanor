@@ -1,7 +1,7 @@
 module.exports = {
   packagerConfig: {
     name: 'Athanor',
-    executableName: 'athanor',
+    executableName: process.env.BUILD_FOR_LINUX ? 'athanor' : 'Athanor',
     asar: true,
     prune: true,
     icon: 'assets/athanor',

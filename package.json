@@ -12,7 +12,7 @@
     "nogpu": "electron-forge start -- --disable-gpu",
     "make": "cross-env NODE_ENV=production electron-forge make",
     "build:win": "cross-env NODE_ENV=production electron-forge make --platform win32",
-    "build:linux": "cross-env NODE_ENV=production electron-forge make --platform linux",
+    "build:linux": "cross-env BUILD_FOR_LINUX=true NODE_ENV=production electron-forge make --platform linux",
     "lint": "eslint ./src --ext .ts,.tsx",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch"
