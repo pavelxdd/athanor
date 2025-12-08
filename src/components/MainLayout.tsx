@@ -69,7 +69,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   const activeWorkbenchTab = tabs[activeTabIndex];
   const selectedFiles = activeWorkbenchTab?.selectedFiles || [];
   const selectedFileCount = selectedFiles.length;
-  const selectedLinesTotal = calculateSelectionTotals(selectedFiles, fileTree);
+  // We'll calculate the line count asynchronously and update as needed
+  const [selectedLinesTotal, setSelectedLinesTotal] = useState(0);
+
+  // Update selected lines total when selected files change
+  useEffect(() => {
+    const updateLineCount = async () => {
+      const count = await calculateSelectionTotals(selectedFiles, fileTree);
+      setSelectedLinesTotal(count);
+    };
+    updateLineCount();
+  }, [selectedFiles, fileTree]);
 
   const handleFileView = () => {
     onTabChange('viewer');

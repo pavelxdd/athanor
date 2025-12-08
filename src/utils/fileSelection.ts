@@ -56,19 +56,42 @@ export function areSomeDescendantsSelected(
 }
 
 // Calculate total lines across selected files
-export function calculateSelectionTotals(selectedItems: Set<string> | string[], fileTree: FileItem[]): number {
+export async function calculateSelectionTotals(selectedItems: Set<string> | string[], fileTree: FileItem[]): Promise<number> {
   if (!fileTree || fileTree.length === 0) return 0;
   let total = 0;
-  
+
   // Convert array to Set if needed for consistent iteration
   const selectedSet = Array.isArray(selectedItems) ? new Set(selectedItems) : selectedItems;
-  
-  selectedSet.forEach((id) => {
+
+  // Get line count for each selected file, fetching on-demand if not available
+  for (const id of selectedSet) {
     const item = getFileItemById(id, fileTree);
-    if (item?.type === 'file' && item.lineCount) {
-      total += item.lineCount;
+    if (item?.type === 'file') {
+      if (item.lineCount) {
+        // Use existing line count if available
+        total += item.lineCount;
+      } else {
+        // Fetch line count on demand
+        try {
+          const content = await window.fileService.read(item.path, { encoding: 'utf8' });
+          // Count lines after normalizing line endings
+          const contentStr = content as string;
+          const normalizedContent = contentStr
+            .replace(/\r\n/g, '\n') // Convert Windows line endings to Unix
+            .replace(/\r/g, '\n') // Convert old Mac line endings to Unix
+            .split('\n')
+            .map((line) => line.trimEnd()) // Remove trailing whitespace from each line
+            .join('\n')
+            .trim() + '\n'; // Ensure single trailing newline
+          const lineCount = normalizedContent.split('\n').length;
+          total += lineCount;
+        } catch (error) {
+          console.error(`Error counting lines in file ${item.path}:`, error);
+          // If we can't read the file, don't add to the total
+        }
+      }
     }
-  });
-  
+  }
+
   return total;
 }

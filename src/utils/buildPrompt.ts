@@ -47,11 +47,11 @@ function renderTemplate(
 }
 
 // Get list of selected files with relative paths and line counts, preserving order
-function getSelectedFilesWithInfo(
+async function getSelectedFilesWithInfo(
   items: FileItem[],
   selectedFiles: string[],
   rootPath: string
-): string {
+): Promise<string> {
   const filesWithInfo: string[] = [];
 
   // Create a map for quick file lookup
@@ -64,16 +64,40 @@ function getSelectedFilesWithInfo(
   }
   items.forEach(buildFileMap);
 
-  // Process selected files in order
-  selectedFiles.forEach(fileId => {
+  // Process selected files in order, with async line count calculation
+  for (const fileId of selectedFiles) {
     const item = fileMap.get(fileId);
     if (item) {
       // Use item.id which is already relative path, just remove leading slash
       const relativePath = item.id.replace(/^\//, '');
-      const lineCount = item.lineCount || '?';
+      let lineCount: string | number = '?';
+
+      if (item.lineCount) {
+        // Use existing line count if available
+        lineCount = item.lineCount;
+      } else {
+        // Fetch line count on demand
+        try {
+          const content = await window.fileService.read(item.path, { encoding: 'utf8' });
+          // Count lines after normalizing line endings
+          const contentStr = content as string;
+          const normalizedContent = contentStr
+            .replace(/\r\n/g, '\n') // Convert Windows line endings to Unix
+            .replace(/\r/g, '\n') // Convert old Mac line endings to Unix
+            .split('\n')
+            .map((line) => line.trimEnd()) // Remove trailing whitespace from each line
+            .join('\n')
+            .trim() + '\n'; // Ensure single trailing newline
+          lineCount = normalizedContent.split('\n').length;
+        } catch (error) {
+          console.error(`Error counting lines in file ${item.path}:`, error);
+          lineCount = '?';
+        }
+      }
+
       filesWithInfo.push(`${relativePath} (${lineCount} lines)`);
     }
-  });
+  }
 
   return filesWithInfo.join('\n');
 }
@@ -200,7 +224,7 @@ export async function buildDynamicPrompt(
     task_context: formattedTaskContext,
     task_tab_name: formattedTabName,
     selected_files: getSelectedFilesList(items, selectedFiles, rootPath),
-    selected_files_with_info: getSelectedFilesWithInfo(
+    selected_files_with_info: await getSelectedFilesWithInfo(
       items,
       selectedFiles,
       rootPath
