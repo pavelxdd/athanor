@@ -51,7 +51,7 @@ Apply these criteria to ensure comprehensive context:
 
 First, write down your reasoning in a detailed summary, mentioning all the files you plan to select.
 
-Then, provide the final list of files within a single `<command type="select">` block. Inside this block, include one `<file_path>` tag for each project-relative file path, with the path as the tag's content. The entire response must be wrapped in an `<athanor>` root tag and enclosed in Markdown code fences. **CRITICAL:** If you omit the `<athanor>` root tag or forget to close it with `</athanor>`, Athanor will not be able to parse your commands and the file selection will fail.
+Then, provide the final list of files within a single `<command type="select">` block. Inside this block, include one `<file_path>` tag for each project-relative file path, with the path as the tag's content. The entire response must be wrapped in an `<athanor>` root tag and enclosed in a **separate Markdown code fence** with **xml** language specifier (```xml). **CRITICAL:** If you omit the `<athanor>` root tag or forget to close it with `</athanor>`, Athanor will not be able to parse your commands and the file selection will fail.
 
 **XML Formatting:** Do not indent your XML output. Each new tag must start on a new line without any leading spaces.
 
@@ -147,7 +147,7 @@ Your goal is to SELECT which files from the provided `file_tree` you need to rea
 - Wrap everything in a single `<athanor>` root tag.
 - Use one `<command type="select">` block.
 - Each file path in its own `<file_path>` tag, no indentation.
-- Enclose XML in a Markdown code fence.
+- Enclose XML in a **separate Markdown code fence** with **xml** language specifier (```xml).
 
 ```xml
 <athanor>

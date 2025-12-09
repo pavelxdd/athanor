@@ -34,7 +34,7 @@ To prevent errors, you must correctly track the "current state" of each file as 
 - **User Input is Final:** If the user provides new code themselves, that version immediately becomes the official state, overriding any of your proposals.
 
 ## 2. Response Format
-You will respond with two sections: a Markdown summary and a single  `<athanor>` XML block.
+You will respond with two sections: a Markdown summary and a single `<athanor>` XML block.
 
 ### Summary Section
 - Provide a brief overall summary of the changes.
@@ -42,7 +42,8 @@ You will respond with two sections: a Markdown summary and a single  `<athanor>`
 - Format this section as Markdown.
 
 ### XML Section
-- The `<athanor>` XML block *MUST* be enclosed in a Markdown code block.
+- **CRITICAL:** The `<athanor>` XML block **MUST** be in a **separate code block** from your summary, using **xml** language specifier: ```xml
+- **NEVER mix XML with regular text:** Always place the entire XML response in its own dedicated code block. Do not write XML as plain text in your response.
 - **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
 - **CRITICAL:** You must include both the opening `<athanor>` and the closing `</athanor>` tags. If you omit the root tag or forget to close it, Athanor's parser will not find your commands and no changes will be applied.
 - Use the `<command type="apply changes">` wrapper. You should group all file operations into a single `<command type="apply changes">` block for easier processing.
@@ -191,7 +192,8 @@ You will respond with two sections: a Markdown summary and a single `<athanor>` 
 - Format this section as Markdown.
 
 ### XML Section
-- The `<athanor>` XML block *MUST* be enclosed in a Markdown code block.
+- **CRITICAL:** The `<athanor>` XML block **MUST** be in a **separate code block** from your summary, using **xml** language specifier: ```xml
+- **NEVER mix XML with regular text:** Always place the entire XML response in its own dedicated code block. Do not write XML as plain text in your response.
 - **All Athanor commands MUST be wrapped in a single `<athanor>` root tag.**
 - **CRITICAL:** You must include both the opening `<athanor>` and the closing `</athanor>` tags. If you omit the root tag or forget to close it, Athanor's parser will not find your commands and no changes will be applied.
 - Use the `<command type="apply changes">` wrapper. You should group all file operations into a single `<command type="apply changes">` block for easier processing.

@@ -97,7 +97,7 @@ If unit tests already exist for the selected file(s), the primary goal is to ens
 2.  **Design Tests**:
     * If no tests exist: Devise a set of test cases that cover the aspects mentioned in "General Unit Testing Best Practices" and are relevant to the specific functionality of the target files.
     * If tests exist: Identify necessary updates, extensions, and potential pruning as outlined in "Handling Existing Unit Tests." Design new test cases to fill coverage gaps.
-3.  **Generate/Modify Code**: Write the test code (for new tests) or suggest modifications (for existing tests) using the Athanor XML commands for file creation or modification.
+3.  **Generate/Modify Code**: Write the test code (for new tests) or suggest modifications (for existing tests) using the Athanor XML commands for file creation or modification. **All XML output must be enclosed in a separate Markdown code block with xml language specifier (```xml).**
 4.  **Focus**: Prioritize tests and modifications that provide the most value in terms of verifying critical functionality, covering recent changes, and preventing regressions.
 </ath_task_variant>
 </ath_task>
