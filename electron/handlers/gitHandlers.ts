@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import type { GitService } from '../services/GitService';
 import type { FileService } from '../services/FileService';
 import type { GitDiffData } from '../../common/types/git-service';
@@ -33,5 +33,9 @@ export function setupGitHandlers(
 
   ipcMain.handle('git:is-repo', () => {
     return gitService.isGitRepository();
+  });
+
+  ipcMain.handle('git:execute-command', async (_event: IpcMainInvokeEvent, command: string) => {
+    return await gitService.executeGitCommand(command);
   });
 }

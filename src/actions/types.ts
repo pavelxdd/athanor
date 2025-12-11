@@ -1,5 +1,5 @@
 // Action state types
-export type ActionState = 'loading' | 'noTask' | 'noSelection';
+export type ActionState = 'loading' | 'noTask' | 'noSelection' | 'noGit';
 
 // Common action parameters
 export interface BaseActionParams {

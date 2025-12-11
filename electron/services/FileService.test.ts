@@ -33,7 +33,10 @@ describe('FileService', () => {
     // Setup mock chokidar watcher
     mockChokidarWatcher = {
       on: jest.fn().mockReturnThis(),
-      close: jest.fn().mockResolvedValue(undefined)
+      close: jest.fn().mockResolvedValue(undefined),
+      // Add mock methods that might be called
+      add: jest.fn().mockReturnThis(),
+      unwatch: jest.fn().mockReturnThis(),
     };
     (chokidar.watch as jest.Mock).mockReturnValue(mockChokidarWatcher);
     
@@ -48,6 +51,20 @@ describe('FileService', () => {
   afterEach(async () => {
     // Ensure any watchers created during a test are cleaned up
     await fileService.cleanupWatchers();
+
+    // Clear any pending timers
+    jest.clearAllTimers();
+
+    // Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+    }
+  });
+
+  afterAll(async () => {
+    // Final cleanup
+    jest.clearAllMocks();
+    jest.useRealTimers();
   });
 
   describe('Path Helpers', () => {

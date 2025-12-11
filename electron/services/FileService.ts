@@ -7,6 +7,7 @@ import type { IFileService } from '../../common/types/file-service';
 import { PathUtils } from './PathUtils';
 import { ignoreRulesManager } from '../ignoreRulesManager';
 import { FILE_SYSTEM } from '../../src/utils/constants';
+import { Logger } from '../../src/utils/logger';
 
 /**
  * FileService provides a centralized API for file system operations in the main process.
@@ -159,9 +160,9 @@ export class FileService extends EventEmitter implements IFileService {
     await ignoreRulesManager.setBaseDir(this.baseDir);
     this.materialsDir = PathUtils.joinUnix(this.baseDir, FILE_SYSTEM.materialsDirName);
     await this.ensureMaterialsDir();
-    
-    console.log(`Base directory set to: ${this.baseDir}`);
-    
+
+    Logger.log(`Base directory set to: ${this.baseDir}`);
+
     // Emit event for other services to hook into
     this.emit('base-dir-changed');
   }
@@ -191,9 +192,9 @@ export class FileService extends EventEmitter implements IFileService {
   private async ensureMaterialsDir(): Promise<void> {
     try {
       await this.ensureDir(FILE_SYSTEM.materialsDirName);
-      console.log('Supplementary materials directory ready');
+      Logger.log('Supplementary materials directory ready');
     } catch (error) {
-      console.error('Failed to ensure materials directory:', error);
+      Logger.error('Failed to ensure materials directory:', error);
       throw error;
     }
   }
@@ -221,7 +222,7 @@ export class FileService extends EventEmitter implements IFileService {
       
       return fs.readFile(platformPath, opts);
     } catch (error) {
-      console.error(`Error reading file ${pathStr}:`, error);
+      Logger.error(`Error reading file ${pathStr}:`, error);
       throw error;
     }
   }
@@ -247,7 +248,7 @@ export class FileService extends EventEmitter implements IFileService {
           const content = await this.read(pathStr, opts);
           results.set(pathStr, content);
         } catch (error) {
-          console.error(`Error batch reading file ${pathStr}:`, error);
+          Logger.error(`Error batch reading file ${pathStr}:`, error);
           results.set(pathStr, null);
         }
       }));
@@ -290,7 +291,7 @@ export class FileService extends EventEmitter implements IFileService {
       // Write file
       await fs.writeFile(this.toOS(absPath), finalData);
     } catch (error) {
-      console.error(`Error writing file ${pathStr}:`, error);
+      Logger.error(`Error writing file ${pathStr}:`, error);
       throw error;
     }
   }
@@ -313,7 +314,7 @@ export class FileService extends EventEmitter implements IFileService {
 
       await fs.appendFile(platformPath, normalizedData);
     } catch (error) {
-      console.error(`Error appending to file ${pathStr}:`, error);
+      Logger.error(`Error appending to file ${pathStr}:`, error);
       throw error;
     }
   }
@@ -341,7 +342,7 @@ export class FileService extends EventEmitter implements IFileService {
 
       await fs.writeFile(platformPath, newContent);
     } catch (error) {
-      console.error(`Error prepending to file ${pathStr}:`, error);
+      Logger.error(`Error prepending to file ${pathStr}:`, error);
       throw error;
     }
   }
@@ -366,7 +367,7 @@ export class FileService extends EventEmitter implements IFileService {
       // Perform the rename operation
       await fs.rename(platformOldPath, platformNewPath);
     } catch (error) {
-      console.error(`Error renaming file from ${oldPathStr} to ${newPathStr}:`, error);
+      Logger.error(`Error renaming file from ${oldPathStr} to ${newPathStr}:`, error);
       throw error;
     }
   }
@@ -390,7 +391,7 @@ export class FileService extends EventEmitter implements IFileService {
       // Delete file
       await fs.unlink(platformPath);
     } catch (error) {
-      console.error(`Error deleting file ${pathStr}:`, error);
+      Logger.error(`Error deleting file ${pathStr}:`, error);
       throw error;
     }
   }
@@ -445,7 +446,7 @@ export class FileService extends EventEmitter implements IFileService {
     } catch (error) {
       // Ignore error if directory already exists
       if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
-        console.error(`Error creating directory ${pathStr}:`, error);
+        Logger.error(`Error creating directory ${pathStr}:`, error);
         throw error;
       }
     }
@@ -509,7 +510,7 @@ export class FileService extends EventEmitter implements IFileService {
       
       return filteredEntries;
     } catch (error) {
-      console.error(`Error reading directory ${pathStr}:`, error);
+      Logger.error(`Error reading directory ${pathStr}:`, error);
       throw error;
     }
   }
@@ -614,7 +615,7 @@ export class FileService extends EventEmitter implements IFileService {
       };
 
     } catch (error) {
-      console.error(`Error building file tree for ${dirPath}:`, error);
+      Logger.error(`Error building file tree for ${dirPath}:`, error);
       return null;
     }
   }
@@ -642,10 +643,10 @@ export class FileService extends EventEmitter implements IFileService {
       if (this.watchers.has(watcherKey)) {
         this.watchers.get(watcherKey)?.close();
         this.watchers.delete(watcherKey);
-        console.log(`Closed existing watcher for: ${pathStr}`);
+        Logger.log(`Closed existing watcher for: ${pathStr}`);
       }
-      
-      console.log(`Setting up watcher for: ${pathStr}`);
+
+      Logger.log(`Setting up watcher for: ${pathStr}`);
       
       // Create new watcher
       const watcher = chokidar.watch(platformPath, {
@@ -704,7 +705,7 @@ export class FileService extends EventEmitter implements IFileService {
       
       // Handle errors
       watcher.on('error', (error) => {
-        console.error(`Watcher error for ${pathStr}:`, error);
+        Logger.error(`Watcher error for ${pathStr}:`, error);
       });
       
       // Store watcher
@@ -715,11 +716,11 @@ export class FileService extends EventEmitter implements IFileService {
         if (this.watchers.has(watcherKey)) {
           this.watchers.get(watcherKey)?.close();
           this.watchers.delete(watcherKey);
-          console.log(`Closed watcher for: ${pathStr}`);
+          Logger.log(`Closed watcher for: ${pathStr}`);
         }
       };
     } catch (error) {
-      console.error(`Error setting up watcher for ${pathStr}:`, error);
+      Logger.error(`Error setting up watcher for ${pathStr}:`, error);
       throw error;
     }
   }
@@ -732,7 +733,7 @@ export class FileService extends EventEmitter implements IFileService {
     try {
       await ignoreRulesManager.loadIgnoreRules();
     } catch (error) {
-      console.error('Error reloading ignore rules:', error);
+      Logger.error('Error reloading ignore rules:', error);
       throw error;
     }
   }
@@ -755,7 +756,7 @@ export class FileService extends EventEmitter implements IFileService {
       
       return normalizedForIgnore ? ignoreRulesManager.ignores(normalizedForIgnore) : false;
     } catch (error) {
-      console.error(`Error checking if path is ignored: ${projectRelativePath}`, error);
+      Logger.error(`Error checking if path is ignored: ${projectRelativePath}`, error);
       return false;
     }
   }
@@ -770,7 +771,7 @@ export class FileService extends EventEmitter implements IFileService {
     try {
       return await ignoreRulesManager.addIgnorePattern(itemPath, ignoreAll);
     } catch (error) {
-      console.error(`Error adding path to ignore: ${itemPath}`, error);
+      Logger.error(`Error adding path to ignore: ${itemPath}`, error);
       throw error;
     }
   }
@@ -818,14 +819,14 @@ export class FileService extends EventEmitter implements IFileService {
    * Close all active file watchers
    */
   async cleanupWatchers(): Promise<void> {
-    console.log(`Cleaning up ${this.watchers.size} watchers...`);
-    
+    Logger.log(`Cleaning up ${this.watchers.size} watchers...`);
+
     for (const [key, watcher] of this.watchers.entries()) {
       await watcher.close();
-      console.log(`Closed watcher for key: ${key}`);
+      Logger.log(`Closed watcher for key: ${key}`);
     }
-    
+
     this.watchers.clear();
-    console.log("All watchers cleared.");
+    Logger.log("All watchers cleared.");
   }
 }

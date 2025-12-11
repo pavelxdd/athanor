@@ -33,4 +33,5 @@ export interface IGitService {
   getRecentCommitHashes(maxCount: number): Promise<string[]>;
   getUncommittedChanges(): Promise<GitFileStatus[]>;
   getContentAtHead(filePath: string): Promise<string>;
+  executeGitCommand(command: string): Promise<string>;
 }

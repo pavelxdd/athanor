@@ -1,11 +1,9 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import * as path from 'path';
+import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
 import type { IGitService, CommitLog, GitCommitsForFileOptions, GitFileStatus } from '../../common/types/git-service';
 import { PathUtils } from './PathUtils';
 
-const execAsync = promisify(exec);
+
 
 export class GitService implements IGitService {
   private baseDir: string;
@@ -66,7 +64,7 @@ export class GitService implements IGitService {
       const { maxCount = 50, since } = options;
       
       // Build git log command
-      let command = `log --format="%H|%s|%an|%ai" --follow`;
+      let command = `log --format=%H|%s|%an|%ai --follow`;
       
       if (maxCount > 0) {
         command += ` -n ${maxCount}`;
@@ -75,7 +73,7 @@ export class GitService implements IGitService {
       if (since) {
         command += ` --since="${since}"`;
       }
-      
+
       command += ` -- "${filePath}"`;
       
       const output = await this.executeGitCommand(command);
@@ -245,7 +243,7 @@ export class GitService implements IGitService {
     try {
       // Git pathspecs (rev:path) must use forward slashes, even on Windows.
       // The filePath argument is already in the correct normalized Unix format.
-      const output = await this.executeGitCommand(`show "HEAD:${filePath}"`);
+      const output = await this.executeGitCommand(`show HEAD:${filePath}`);
       return output;
     } catch (error) {
       // This is expected for newly added files. Return empty string.
@@ -253,40 +251,202 @@ export class GitService implements IGitService {
     }
   }
 
+  // Whitelist of allowed git commands for security
+  private readonly ALLOWED_GIT_COMMANDS = new Set([
+    'diff',
+    'show',
+    'log',
+    'status',
+    'rev-parse',
+    'ls-files',
+  ]);
+
+  // Timeout for git command execution (30 seconds)
+  private readonly GIT_COMMAND_TIMEOUT = 30000;
+
   /**
-   * Execute a git command in the base directory
+   * Validate git command for security
+   * - Checks against whitelist of allowed commands
+   * - Prevents shell injection by banning dangerous characters
+   */
+  private isValidGitCommand(command: string): boolean {
+    const trimmedCommand = command.trim();
+    
+    // Extract base command (first word) for whitelist validation
+    const baseCommand = trimmedCommand.split(/\s+/)[0];
+    
+    // Security check: validate against whitelist
+    if (!this.ALLOWED_GIT_COMMANDS.has(baseCommand)) {
+      console.warn(`Git command not allowed: ${baseCommand}`);
+      return false;
+    }
+    
+    // Prevent shell injection by banning dangerous characters
+    // These characters could allow command chaining or redirection when using shell
+    // Note: We use spawn without shell, so most characters are safe, but we still ban
+    // characters that could cause issues or are clearly dangerous
+    // Pipe (|) is allowed as it's used in git log format strings
+    // Backtick (`) and exclamation (!) are not dangerous with spawn without shell
+    const dangerousChars = /[;&$>\n\r]/;
+    if (dangerousChars.test(trimmedCommand)) {
+      console.warn(`Git command contains dangerous characters: ${trimmedCommand}`);
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Parse git command arguments, properly handling quoted strings
+   * @param command The git command string (without 'git' prefix)
+   * @returns Array of command arguments
+   */
+  private parseGitCommandArgs(command: string): string[] {
+    const args: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    let quoteChar = '';
+    let i = 0;
+
+    while (i < command.length) {
+      const char = command[i];
+
+      if ((char === '"' || char === "'") && !inQuotes) {
+        // Start of quoted string - include the quotes
+        inQuotes = true;
+        quoteChar = char;
+        current += char; // Include the opening quote
+        i++;
+      } else if (char === quoteChar && inQuotes) {
+        // End of quoted string - include the quotes
+        inQuotes = false;
+        current += char; // Include the closing quote
+        i++;
+        // Check if next character is a space and we're not at the end
+        if (i < command.length && command[i] === ' ') {
+          // End of quoted argument
+          if (current) {
+            args.push(current);
+            current = '';
+          }
+          i++; // Skip the space
+        }
+      } else if (char === ' ' && !inQuotes) {
+        // Space outside quotes - end of argument
+        if (current) {
+          args.push(current);
+          current = '';
+        }
+        i++; // Skip the space
+      } else {
+        // Regular character or space inside quotes
+        current += char;
+        i++;
+      }
+    }
+
+    // Add the last argument if there is one
+    if (current) {
+      args.push(current);
+    }
+
+    return args;
+  }
+
+  /**
+   * Execute a git command in the base directory.
+   *
+   * ⚠️ SECURITY WARNING: This method executes git commands and is restricted
+   * to a whitelist of safe, read-only git commands. Only call with trusted input.
+   *
+   * Allowed commands: diff, show, log, status, rev-parse, ls-files
+   *
    * @param command Git command to execute (without 'git' prefix)
    * @returns Command output
+   * @throws Error if command is not allowed, execution fails, or times out
+   * @public
    */
-  private async executeGitCommand(command: string): Promise<string> {
-    const fullCommand = `git ${command}`;
+  public async executeGitCommand(command: string): Promise<string> {
+    // Validate command is not empty
+    if (!command || !command.trim()) {
+      throw new Error('Git command cannot be empty');
+    }
+
+    const trimmedCommand = command.trim();
+
+    // Security validation
+    if (!this.isValidGitCommand(trimmedCommand)) {
+      const baseCommand = trimmedCommand.split(/\s+/)[0];
+      throw new Error(
+        `Git command "${baseCommand}" is not allowed or contains dangerous characters. ` +
+        `Allowed commands: ${Array.from(this.ALLOWED_GIT_COMMANDS).join(', ')}`
+      );
+    }
+
     const platformBaseDir = PathUtils.toPlatform(this.baseDir);
-    
-    try {
-      const { stdout, stderr } = await execAsync(fullCommand, {
+
+    return new Promise<string>((resolve, reject) => {
+      // Parse command arguments properly, handling quoted strings
+      const args = this.parseGitCommandArgs(trimmedCommand);
+
+      // Create git process without shell to prevent injection
+      const childProcess = spawn('git', args, {
         cwd: platformBaseDir,
-        encoding: 'utf8',
-        maxBuffer: 1024 * 1024, // 1MB buffer for large outputs
+        stdio: ['ignore', 'pipe', 'pipe'],
+        // Do not use shell to prevent command injection
+        shell: false,
+      });
+
+      // Set up timeout to kill the process if it takes too long
+      const timeoutId = setTimeout(() => {
+        childProcess.kill('SIGTERM');
+        reject(new Error(`Git command timed out after ${this.GIT_COMMAND_TIMEOUT / 1000} seconds: git ${trimmedCommand}`));
+      }, this.GIT_COMMAND_TIMEOUT);
+
+      let stdoutData = '';
+      let stderrData = '';
+
+      childProcess.stdout.on('data', (data) => {
+        const dataStr = data.toString('utf8');
+        stdoutData += dataStr;
+
+        // Safety check: limit output size to 10MB
+        if (stdoutData.length > 10 * 1024 * 1024) {
+          clearTimeout(timeoutId);
+          childProcess.kill('SIGTERM');
+          reject(new Error('Git command output exceeds 10MB limit'));
+        }
       });
       
-      if (stderr && stderr.trim()) {
-        console.warn(`Git command stderr: ${stderr}`);
-      }
+      childProcess.stderr.on('data', (data) => {
+        stderrData += data.toString('utf8');
+      });
       
-      return stdout;
-    } catch (error: any) {
-      // Check if git is not installed
-      if (error.code === 'ENOENT') {
-        throw new Error('Git is not installed or not available in PATH');
-      }
+      childProcess.on('error', (error: NodeJS.ErrnoException) => {
+        clearTimeout(timeoutId);
+        // Check if git is not installed
+        if (error.code === 'ENOENT') {
+          reject(new Error('Git is not installed or not available in PATH'));
+        } else {
+          reject(error);
+        }
+      });
       
-      // Check for git-specific errors
-      if (error.stderr) {
-        throw new Error(`Git command failed: ${error.stderr}`);
-      }
-      
-      throw error;
-    }
+      // Handle close event - only register once
+      childProcess.once('close', (code) => {
+        clearTimeout(timeoutId);
+
+        if (stderrData && stderrData.trim()) {
+          console.warn(`Git command stderr: ${stderrData}`);
+        }
+
+        if (code === 0) {
+          resolve(stdoutData);
+        } else {
+          reject(new Error(`Git command failed with code ${code}: ${stderrData || 'Unknown error'}`));
+        }
+      });
+    });
   }
 
   /**

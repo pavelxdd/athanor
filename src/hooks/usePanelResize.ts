@@ -10,7 +10,7 @@ interface PanelResizeHook {
 export function usePanelResize(
   minWidth = 150,
   maxWidth = 600,
-  defaultWidth = 384
+  defaultWidth = 320
 ): PanelResizeHook {
   const [leftPanelWidth, setLeftPanelWidth] = useState(defaultWidth);
   const [isResizing, setIsResizing] = useState(false);

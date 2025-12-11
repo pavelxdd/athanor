@@ -5,6 +5,44 @@ import { useWorkbenchStore } from '../stores/workbenchStore';
 import { useContextStore } from '../stores/contextStore';
 import { useTaskStore } from '../stores/taskStore';
 
+// Execute git command and replace <git_command> tag with result
+async function processGitCommands(content: string): Promise<string> {
+  const commandRegex = /<git_command>([\s\S]*?)<\/git_command>/gi;
+  const matches = Array.from(content.matchAll(commandRegex));
+  
+  if (matches.length === 0) {
+    return content;
+  }
+
+  // Execute all git commands in parallel
+  const promises = matches.map(async (match) => {
+    const command = match[1].trim();
+
+    try {
+      // Remove "git " prefix if present
+      const gitCommand = command.startsWith('git ') ? command.substring(4) : command;
+      const result = await window.electronBridge.git.executeGitCommand(gitCommand);
+      return `\`\`\`diff\n${result}\n\`\`\``;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Check for common git errors to provide better messages
+      if (errorMessage.includes('not a git repository') || errorMessage.includes('Git is not installed')) {
+        return `\`\`\`\nError: Not a git repository or Git not installed\nGit commands require the project to be in a git repository.\n\`\`\``;
+      }
+      
+      console.error(`Error executing git command "${command}":`, errorMessage);
+      return `\`\`\`\nError executing git command: ${command}\n\n${errorMessage}\n\`\`\``;
+    }
+  });
+
+  const results = await Promise.all(promises);
+  
+  // Replace all tags with results in a single pass
+  let index = 0;
+  return content.replace(commandRegex, () => results[index++]);
+}
+
 export interface BuildTaskActionParams {
   task: TaskData;
   rootItems: FileItem[];
@@ -13,6 +51,7 @@ export interface BuildTaskActionParams {
   setIsLoading: (loading: boolean) => void;
   selectionStart?: number;
   selectionEnd?: number;
+  insertText?: (text: string, start?: number, end?: number) => void;
 }
 
 export async function buildTaskAction(params: BuildTaskActionParams): Promise<void> {
@@ -23,7 +62,8 @@ export async function buildTaskAction(params: BuildTaskActionParams): Promise<vo
     addLog,
     setIsLoading,
     selectionStart,
-    selectionEnd
+    selectionEnd,
+    insertText
   } = params;
 
   
@@ -32,11 +72,12 @@ export async function buildTaskAction(params: BuildTaskActionParams): Promise<vo
     return;
   }
 
-  // Check if task requires file selection
+  // Check if task requirements are met
   if (task.requires === 'selected' && !selectedItems.size) {
-    console.warn('No files selected');
+    console.warn(`Cannot build task "${task.label}": No files selected`);
     return;
   }
+  // Note: git requirement is already checked in UI (ActionPanel), and will be handled in processGitCommands if needed
 
   // Get workbench store methods for state management
   const { tabs, activeTabIndex, setIsGeneratingPrompt, resetGeneratingPrompt, setTabContent } = useWorkbenchStore.getState();
@@ -74,8 +115,16 @@ export async function buildTaskAction(params: BuildTaskActionParams): Promise<vo
       undefined // passedFormatTypeOverride
     );
 
-    // Update task description in workbench
-    setTabContent(activeTabIndex, processedTaskDescription, selectionStart, selectionEnd);
+    // Process any <git_command> tags in the generated content
+    const finalContent = await processGitCommands(processedTaskDescription);
+
+    // Insert text using custom undo support if available
+    if (insertText) {
+      insertText(finalContent, selectionStart, selectionEnd);
+    } else {
+      // Fallback to direct state update
+      setTabContent(activeTabIndex, finalContent, selectionStart, selectionEnd);
+    }
     addLog(`${task.label} task prompt loaded and processed`);
 
     // No longer triggering developer action automatically from here

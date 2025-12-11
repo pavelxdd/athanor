@@ -27,6 +27,8 @@ jest.mock('../stores/taskStore', () => ({
   },
 }));
 
+// The useUndoRedo hook is not used in tests, it's mocked through integration
+
 // Mock the buildPrompt utility
 jest.mock('../utils/buildPrompt', () => ({
   buildDynamicPrompt: jest.fn(),
@@ -207,7 +209,7 @@ describe('buildTaskAction', () => {
 
       await buildTaskAction(params);
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith('No files selected');
+      expect(consoleWarnSpy).toHaveBeenCalledWith('Cannot build task "Test Task": No files selected');
       expect(mockSetIsLoading).not.toHaveBeenCalled();
       expect(mockSetIsGeneratingPrompt).not.toHaveBeenCalled();
       expect(mockBuildDynamicPrompt).not.toHaveBeenCalled();
@@ -273,7 +275,7 @@ describe('buildTaskAction', () => {
       );
 
       // Verify task description is updated
-      expect(mockSetTabContent).toHaveBeenCalledWith(0, mockProcessedPrompt);
+      expect(mockSetTabContent).toHaveBeenCalledWith(0, mockProcessedPrompt, undefined, undefined);
 
       // Verify success log
       expect(mockAddLog).toHaveBeenCalledWith('Test Task task prompt loaded and processed');

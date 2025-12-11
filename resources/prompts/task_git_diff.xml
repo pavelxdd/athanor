@@ -1,0 +1,33 @@
+<ath_task
+    id="git_diff"
+    order="7"
+    label="Git Diff"
+    icon="GitBranch"
+    tooltip="Insert git diff command to show repository changes"
+    requires="git">
+
+<ath_task_variant
+    id="all"
+    label="All Changes"
+    tooltip="Show all uncommitted changes (working directory vs HEAD)">
+
+<git_command>diff HEAD</git_command>
+</ath_task_variant>
+
+<ath_task_variant
+    id="unstaged"
+    label="Unstaged"
+    tooltip="Show unstaged changes (working directory vs index)">
+
+<git_command>diff</git_command>
+</ath_task_variant>
+
+<ath_task_variant
+    id="staged"
+    label="Staged"
+    tooltip="Show staged changes (index vs HEAD)">
+
+<git_command>diff --staged</git_command>
+</ath_task_variant>
+
+</ath_task>

@@ -12,6 +12,12 @@ const config: Config = {
   },
   clearMocks: true,
   collectCoverageFrom: ['src/**/*.{ts,tsx}', 'electron/**/*.{ts,tsx}'],
+  // Setup file to configure test environment
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  // Detect open handles that prevent clean exit
+  detectOpenHandles: false,
+  // Set a reasonable timeout
+  testTimeout: 10000,
 };
 
 export default config;

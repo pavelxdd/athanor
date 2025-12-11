@@ -42,6 +42,7 @@ import { getActionTooltip, getTaskTooltip } from '../actions';
 import { useTaskStore } from '../stores/taskStore';
 import { useContextStore } from '../stores/contextStore';
 import { useFileDrop } from '../hooks/useFileDrop';
+import { useUndoRedo } from '../hooks/useUndoRedo';
 import { useSettingsStore } from '../stores/settingsStore';
 import { DRAG_DROP, DOC_FORMAT, SETTINGS } from '../utils/constants';
 import type { ApplicationSettings } from '../types/global';
@@ -66,8 +67,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  const capturedCursorRef = useRef<{ start: number; end: number; wasLastActive: boolean } | null>(null);
-
+  
   const {
     tabs,
     activeTabIndex,
@@ -117,15 +117,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
         setShowContextDropdown(false);
       }
 
-      // Check if click is outside the textarea
-      const target = event.target as Element;
-      if (contentTextareaRef.current && !contentTextareaRef.current.contains(target)) {
-        // Mark that textarea is no longer the last active element
-        if (capturedCursorRef.current) {
-          capturedCursorRef.current.wasLastActive = false;
-        }
-      }
-    };
+          };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
@@ -170,6 +162,27 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   const { isGraphAnalysisInProgress } = useFileSystemStore();
   const isBusy = isLoading || isGeneratingPrompt || isGraphAnalysisInProgress;
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isGitRepo, setIsGitRepo] = useState<boolean>(false);
+
+  // Track the last active element that was not a task button
+  const lastActiveElementRef = useRef<Element | null>(null);
+
+  // Track the last active element
+  useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as Element;
+      // Update last active element, but not for task buttons
+      if (!target.closest('.icon-btn') && !target.closest('button[data-edge]')) {
+        lastActiveElementRef.current = target;
+      }
+    };
+
+    document.addEventListener('focusin', handleFocusIn, true);
+    return () => document.removeEventListener('focusin', handleFocusIn, true);
+  }, []);
+
+  // Setup custom undo/redo support
+  const { insertText, handleInput, handleBeforeInput } = useUndoRedo(contentTextareaRef, activeTabIndex);
 
   // Use a memoized selector to prevent unnecessary re-renders.
   // This ensures the context-fetching effect only runs when relevant data changes.
@@ -184,12 +197,52 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     })
   );
 
+  // Early calculation of hasNoProject
+  const hasNoProject = !rootItems || rootItems.length === 0 || !rootItems[0];
+
   const { setContext: setContextInStore } = useContextStore();
   // Effect: recalculate context when description or selection *really* changes,
   // but never while a prompt is being generated.
   useEffect(() => {
     setContextInStore(selectedFiles);
   }, [selectedFiles, setContextInStore]);
+
+  // Effect: check if current directory is a git repository
+  // Use rootItems[0]?.name as dependency to check only when project root changes
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkGitRepo = async () => {
+      // Always reset to false first to ensure correct state
+      setIsGitRepo(false);
+
+      if (hasNoProject) {
+        return;
+      }
+
+      try {
+        const isRepo = await window.electronBridge.git.isGitRepository();
+        if (!cancelled) {
+          setIsGitRepo(isRepo);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Error checking git repository:', error);
+          setIsGitRepo(false);
+        }
+      }
+    };
+
+    // Debounce to avoid rapid successive calls
+    const timeoutId = setTimeout(() => {
+      checkGitRepo();
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [hasNoProject, rootItems[0]?.name]); // Only depend on project root name, not entire rootItems array
 
   // Handler for task button clicks
   const handleTaskClick = (task: TaskData) => {
@@ -200,15 +253,19 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     let selectionStart: number | undefined;
     let selectionEnd: number | undefined;
 
-    // Check if textarea was the last active element
-    // This ensures we only insert at cursor if textarea was focused before clicking the button
-    if (capturedCursorRef.current?.wasLastActive) {
-      // Use the last saved cursor position
-      selectionStart = capturedCursorRef.current.start;
-      selectionEnd = capturedCursorRef.current.end;
+    // Simple check: was the last active element the textarea?
+    const wasTextareaActive = lastActiveElementRef.current === contentTextareaRef.current;
+
+    console.log('handleTaskClick - wasTextareaActive:', wasTextareaActive);
+
+    if (wasTextareaActive && contentTextareaRef.current) {
+      // Use current cursor position from textarea
+      selectionStart = contentTextareaRef.current.selectionStart;
+      selectionEnd = contentTextareaRef.current.selectionEnd;
+      console.log('Using cursor position:', selectionStart, selectionEnd);
+    } else {
+      console.log('Replacing all content');
     }
-    // If textarea was not the last active element, replace all content
-    // (selectionStart and selectionEnd remain undefined)
 
     buildTaskAction({
       task,
@@ -218,6 +275,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
       setIsLoading,
       selectionStart,
       selectionEnd,
+      insertText,
     });
   };
 
@@ -261,7 +319,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   const isTaskEmpty =
     !tabs?.[activeTabIndex] || tabs[activeTabIndex].content.trim().length === 0;
   const hasNoSelection = !tabs?.[activeTabIndex]?.selectedFiles.length;
-  const hasNoProject = !rootItems || rootItems.length === 0 || !rootItems[0];
 
   // Show empty state when no project is loaded
   if (hasNoProject) {
@@ -402,50 +459,18 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               className="flex-1 p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded resize-none overflow-auto mb-2 placeholder-gray-500 dark:placeholder-gray-400"
               placeholder="Describe your task or query here - whether it's implementing a feature, asking about the codebase, or discussing code improvements..."
               value={tabs[activeTabIndex].content}
-              onChange={(e) => setTabContent(activeTabIndex, e.target.value)}
-              onFocus={() => {
-                capturedCursorRef.current = {
-                  start: contentTextareaRef.current?.selectionStart ?? 0,
-                  end: contentTextareaRef.current?.selectionEnd ?? 0,
-                  wasLastActive: true,
-                };
+              onChange={(e) => {
+                // Use custom undo handler for input events
+                handleInput(e);
+                setTabContent(activeTabIndex, e.target.value);
               }}
-              onBlur={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                capturedCursorRef.current = {
-                  start: target.selectionStart,
-                  end: target.selectionEnd,
-                  wasLastActive: true, // Still true until we know where focus went
-                };
-              }}
-              onSelect={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                capturedCursorRef.current = {
-                  start: target.selectionStart,
-                  end: target.selectionEnd,
-                  wasLastActive: true,
-                };
-              }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                capturedCursorRef.current = {
-                  start: target.selectionStart,
-                  end: target.selectionEnd,
-                  wasLastActive: true,
-                };
+              onBeforeInput={(e) => {
+                handleBeforeInput(e);
               }}
               {...useFileDrop({
                 onInsert: (value, start, end) => {
-                  const text = tabs[activeTabIndex].content;
-                  const newText =
-                    text.slice(0, start) + value + text.slice(end);
-                  setTabContent(activeTabIndex, newText);
-                  // Update cursor position after insertion
-                  capturedCursorRef.current = {
-                    start: start + value.length,
-                    end: start + value.length,
-                    wasLastActive: true,
-                  };
+                  // Insert text using custom undo support
+                  insertText(value, start, end);
                 },
                 currentValue: tabs[activeTabIndex].content,
               })}
@@ -658,12 +683,15 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                       : null;
                     const isDisabled =
                       isBusy ||
-                      (task.requires === 'selected' && hasNoSelection);
+                      (task.requires === 'selected' && hasNoSelection) ||
+                      (task.requires === 'git' && !isGitRepo);
                     const reason = isBusy
                       ? 'loading'
-                      : hasNoSelection
+                      : task.requires === 'selected' && hasNoSelection
                         ? 'noSelection'
-                        : null;
+                        : task.requires === 'git' && !isGitRepo
+                          ? 'noGit'
+                          : null;
 
                     // Check if this is a user-defined template
                     const isUserDefined =
@@ -775,7 +803,9 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                 if (task) {
                   // Determine if the button would be disabled
                   const isDisabled =
-                    isBusy || (task.requires === 'selected' && hasNoSelection);
+                    isBusy ||
+                    (task.requires === 'selected' && hasNoSelection) ||
+                    (task.requires === 'git' && !isGitRepo);
 
                   // If not disabled, trigger the buildTaskAction immediately
                   if (!isDisabled) {
@@ -786,15 +816,14 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                     let selectionStart: number | undefined;
                     let selectionEnd: number | undefined;
 
-                    // Check if textarea was the last active element
-                    // This ensures we only insert at cursor if textarea was focused before the context menu action
-                    if (capturedCursorRef.current?.wasLastActive) {
-                      // Use the last saved cursor position
-                      selectionStart = capturedCursorRef.current.start;
-                      selectionEnd = capturedCursorRef.current.end;
+                    // Check if textarea was the last active element using our new tracking
+                    const wasTextareaActive = lastActiveElementRef.current === contentTextareaRef.current;
+
+                    if (wasTextareaActive && contentTextareaRef.current) {
+                      // Use current cursor position
+                      selectionStart = contentTextareaRef.current.selectionStart;
+                      selectionEnd = contentTextareaRef.current.selectionEnd;
                     }
-                    // If textarea was not the last active element, replace all content
-                    // (selectionStart and selectionEnd remain undefined)
 
                     buildTaskAction({
                       task,
@@ -804,6 +833,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                       setIsLoading,
                       selectionStart,
                       selectionEnd,
+                      insertText,
                     });
                   }
                 }

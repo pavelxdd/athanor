@@ -11,7 +11,7 @@ export interface TaskData {
   icon?: string;
   tooltip?: string;
   order: number;
-  requires?: 'selected'; // Optional requirement for task activation
+  requires?: 'selected' | 'git'; // Optional requirement for task activation
   variants: TaskVariant[];
   source?: 'default' | 'global' | 'project';
 }

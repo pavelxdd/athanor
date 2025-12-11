@@ -19,6 +19,8 @@ export function getTaskTooltip(
       return `${task.label} - Enter a task description to enable`;
     case 'noSelection':
       return `${task.label} - Select one or more files to enable`;
+    case 'noGit':
+      return `${task.label} - Available only in Git repositories`;
     default:
       return 'Action currently unavailable';
   }

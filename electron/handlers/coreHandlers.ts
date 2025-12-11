@@ -5,6 +5,7 @@ import { FileService } from '../services/FileService';
 import { SettingsService } from '../services/SettingsService';
 import { GitService } from '../services/GitService';
 import { CUSTOM_TEMPLATES } from '../../src/utils/constants';
+import { Logger } from '../../src/utils/logger';
 
 declare const GIT_VERSION: string;
 
@@ -30,7 +31,8 @@ export function setupCoreHandlers(
   _gitService = gitService;
 
   // Pre-check xdg-open availability on Linux (once at startup)
-  if (process.platform === 'linux') {
+  // Skip this check in test environment to avoid side effects
+  if (process.platform === 'linux' && process.env.NODE_ENV !== 'test') {
     try {
       execSync('command -v xdg-open');
       xdgOpenAvailable = true;
@@ -106,7 +108,7 @@ export function setupCoreHandlers(
         const exists = await _fileService.exists(cliPath);
         const isDir = await _fileService.isDirectory(cliPath);
         if (exists && isDir) {
-          console.log(`[Athanor] Opening project from CLI path: ${cliPath}`);
+          Logger.log(`[Athanor] Opening project from CLI path: ${cliPath}`);
           return cliPath;
         }
       }

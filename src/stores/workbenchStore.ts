@@ -88,6 +88,9 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
           newContent = tab.content.slice(0, start) + text + tab.content.slice(end);
         }
 
+        // Only update if content actually changed
+        if (newContent === tab.content) return state;
+
         return {
           tabs: state.tabs.map((t, i) =>
             i === index ? { ...t, content: newContent } : t
