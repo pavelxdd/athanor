@@ -38,6 +38,17 @@ codebase.md
 
 .crush
 .claude
+
 CLAUDE.md
 AGENTS.md
 GEMINI.md
+GROK.md
+QWEN.md
+
+###############################################################################
+# ATHANOR PROJECT FILES
+###############################################################################
+/.ath_materials/**/*
+!/.ath_materials/prompts/
+!/.ath_materials/prompts/**/*
+!/.ath_materials/project_settings.json

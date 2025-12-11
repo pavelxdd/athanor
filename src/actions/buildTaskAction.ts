@@ -11,6 +11,8 @@ export interface BuildTaskActionParams {
   selectedItems: Set<string>;
   addLog: (message: string) => void;
   setIsLoading: (loading: boolean) => void;
+  selectionStart?: number;
+  selectionEnd?: number;
 }
 
 export async function buildTaskAction(params: BuildTaskActionParams): Promise<void> {
@@ -19,9 +21,12 @@ export async function buildTaskAction(params: BuildTaskActionParams): Promise<vo
     rootItems,
     selectedItems,
     addLog,
-    setIsLoading
+    setIsLoading,
+    selectionStart,
+    selectionEnd
   } = params;
 
+  
   if (!rootItems.length) {
     console.warn('No file tree data available');
     return;
@@ -70,7 +75,7 @@ export async function buildTaskAction(params: BuildTaskActionParams): Promise<vo
     );
 
     // Update task description in workbench
-    setTabContent(activeTabIndex, processedTaskDescription);
+    setTabContent(activeTabIndex, processedTaskDescription, selectionStart, selectionEnd);
     addLog(`${task.label} task prompt loaded and processed`);
 
     // No longer triggering developer action automatically from here

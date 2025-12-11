@@ -73,12 +73,27 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
 
     setActiveTab: (index: number) => set({ activeTabIndex: index }),
 
-    setTabContent: (index: number, text: string) =>
-      set((state) => ({
-        tabs: state.tabs.map((tab, i) =>
-          i === index ? { ...tab, content: text } : tab
-        ),
-      })),
+    setTabContent: (index: number, text: string, selectionStart?: number, selectionEnd?: number) =>
+      set((state) => {
+        const tab = state.tabs[index];
+        if (!tab) return state;
+
+        let newContent = text;
+        // If selection range is provided, insert/replace at that position
+        if (selectionStart !== undefined) {
+          const start = Math.max(0, Math.min(selectionStart, tab.content.length));
+          const end = selectionEnd !== undefined
+            ? Math.max(start, Math.min(selectionEnd, tab.content.length))
+            : start;
+          newContent = tab.content.slice(0, start) + text + tab.content.slice(end);
+        }
+
+        return {
+          tabs: state.tabs.map((t, i) =>
+            i === index ? { ...t, content: newContent } : t
+          ),
+        };
+      }),
 
     setTabOutput: (index: number, text: string) =>
       set((state) => ({

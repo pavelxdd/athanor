@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import PromptContextMenu from './action-panel/PromptContextMenu';
 import type { PromptData, PromptVariant } from '../types/promptTypes';
+import type { TaskData } from '../types/taskTypes';
 import { useFileSystemStore } from '../stores/fileSystemStore';
 import { useLogStore } from '../stores/logStore';
 import { useWorkbenchStore } from '../stores/workbenchStore';
@@ -65,6 +66,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const capturedCursorRef = useRef<{ start: number; end: number; wasLastActive: boolean } | null>(null);
 
   const {
     tabs,
@@ -114,6 +116,15 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
       ) {
         setShowContextDropdown(false);
       }
+
+      // Check if click is outside the textarea
+      const target = event.target as Element;
+      if (contentTextareaRef.current && !contentTextareaRef.current.contains(target)) {
+        // Mark that textarea is no longer the last active element
+        if (capturedCursorRef.current) {
+          capturedCursorRef.current.wasLastActive = false;
+        }
+      }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -158,6 +169,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   const { isGeneratingPrompt, setIsGeneratingPrompt } = useWorkbenchStore();
   const { isGraphAnalysisInProgress } = useFileSystemStore();
   const isBusy = isLoading || isGeneratingPrompt || isGraphAnalysisInProgress;
+  const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Use a memoized selector to prevent unnecessary re-renders.
   // This ensures the context-fetching effect only runs when relevant data changes.
@@ -178,6 +190,36 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   useEffect(() => {
     setContextInStore(selectedFiles);
   }, [selectedFiles, setContextInStore]);
+
+  // Handler for task button clicks
+  const handleTaskClick = (task: TaskData) => {
+    const activeTab = tabs[activeTabIndex];
+    const selectedFiles = activeTab?.selectedFiles || [];
+    const selectedItemsSet = new Set(selectedFiles);
+
+    let selectionStart: number | undefined;
+    let selectionEnd: number | undefined;
+
+    // Check if textarea was the last active element
+    // This ensures we only insert at cursor if textarea was focused before clicking the button
+    if (capturedCursorRef.current?.wasLastActive) {
+      // Use the last saved cursor position
+      selectionStart = capturedCursorRef.current.start;
+      selectionEnd = capturedCursorRef.current.end;
+    }
+    // If textarea was not the last active element, replace all content
+    // (selectionStart and selectionEnd remain undefined)
+
+    buildTaskAction({
+      task,
+      rootItems,
+      selectedItems: selectedItemsSet,
+      addLog,
+      setIsLoading,
+      selectionStart,
+      selectionEnd,
+    });
+  };
 
   // Handler for generating prompts
   const generatePrompt = async (prompt: PromptData, variant: PromptVariant) => {
@@ -356,16 +398,54 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             </div>
             {/* Text Area */}
             <textarea
+              ref={contentTextareaRef}
               className="flex-1 p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded resize-none overflow-auto mb-2 placeholder-gray-500 dark:placeholder-gray-400"
               placeholder="Describe your task or query here - whether it's implementing a feature, asking about the codebase, or discussing code improvements..."
               value={tabs[activeTabIndex].content}
               onChange={(e) => setTabContent(activeTabIndex, e.target.value)}
+              onFocus={() => {
+                capturedCursorRef.current = {
+                  start: contentTextareaRef.current?.selectionStart ?? 0,
+                  end: contentTextareaRef.current?.selectionEnd ?? 0,
+                  wasLastActive: true,
+                };
+              }}
+              onBlur={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                capturedCursorRef.current = {
+                  start: target.selectionStart,
+                  end: target.selectionEnd,
+                  wasLastActive: true, // Still true until we know where focus went
+                };
+              }}
+              onSelect={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                capturedCursorRef.current = {
+                  start: target.selectionStart,
+                  end: target.selectionEnd,
+                  wasLastActive: true,
+                };
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                capturedCursorRef.current = {
+                  start: target.selectionStart,
+                  end: target.selectionEnd,
+                  wasLastActive: true,
+                };
+              }}
               {...useFileDrop({
                 onInsert: (value, start, end) => {
                   const text = tabs[activeTabIndex].content;
                   const newText =
                     text.slice(0, start) + value + text.slice(end);
                   setTabContent(activeTabIndex, newText);
+                  // Update cursor position after insertion
+                  capturedCursorRef.current = {
+                    start: start + value.length,
+                    end: start + value.length,
+                    wasLastActive: true,
+                  };
                 },
                 currentValue: tabs[activeTabIndex].content,
               })}
@@ -599,19 +679,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                               getTaskTooltip(task, isDisabled, reason)
                             : getTaskTooltip(task, isDisabled, reason)
                         }
-                        onClick={() => {
-                          const activeTab = tabs[activeTabIndex];
-                          const selectedFiles = activeTab?.selectedFiles || [];
-                          const selectedItemsSet = new Set(selectedFiles); // Convert to Set for buildTaskAction compatibility
-
-                          buildTaskAction({
-                            task,
-                            rootItems,
-                            selectedItems: selectedItemsSet,
-                            addLog,
-                            setIsLoading,
-                          });
-                        }}
+                        onClick={() => handleTaskClick(task)}
                         disabled={isDisabled}
                         onContextMenu={(e) => {
                           e.preventDefault();
@@ -715,12 +783,27 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                     const selectedFiles = activeTab?.selectedFiles || [];
                     const selectedItemsSet = new Set(selectedFiles);
 
+                    let selectionStart: number | undefined;
+                    let selectionEnd: number | undefined;
+
+                    // Check if textarea was the last active element
+                    // This ensures we only insert at cursor if textarea was focused before the context menu action
+                    if (capturedCursorRef.current?.wasLastActive) {
+                      // Use the last saved cursor position
+                      selectionStart = capturedCursorRef.current.start;
+                      selectionEnd = capturedCursorRef.current.end;
+                    }
+                    // If textarea was not the last active element, replace all content
+                    // (selectionStart and selectionEnd remain undefined)
+
                     buildTaskAction({
                       task,
                       rootItems,
                       selectedItems: selectedItemsSet,
                       addLog,
                       setIsLoading,
+                      selectionStart,
+                      selectionEnd,
                     });
                   }
                 }

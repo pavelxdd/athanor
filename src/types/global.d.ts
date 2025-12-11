@@ -63,7 +63,7 @@ export interface WorkbenchState {
   createTab: () => void;
   removeTab: (index: number) => void;
   setActiveTab: (index: number) => void;
-  setTabContent: (index: number, text: string) => void;
+  setTabContent: (index: number, text: string, selectionStart?: number, selectionEnd?: number) => void;
   setTabOutput: (index: number, text: string) => void;
   setTabContext: (index: number, context: string) => void; // Added context setter
 
