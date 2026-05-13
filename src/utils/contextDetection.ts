@@ -48,9 +48,6 @@ export function formatContext(context: DetectedContext): string {
  * @param taskContent - The task content to check against
  * @returns True if the context is relevant to the task content
  */
-export function isContextRelevant(
-  context: DetectedContext,
-  taskContent: string
-): boolean {
+export function isContextRelevant(context: DetectedContext, taskContent: string): boolean {
   return taskContent.toLowerCase().includes(context.source.toLowerCase());
 }

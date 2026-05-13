@@ -8,10 +8,7 @@ interface CustomPromptsHelpModalProps {
   onClose: () => void;
 }
 
-const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
-  isOpen,
-  onClose,
-}) => {
+const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState<{
     tutorial: boolean;
     projectFolder: boolean;
@@ -46,8 +43,7 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
   const handleProjectFolderClick = async () => {
     try {
       setIsLoading((prev) => ({ ...prev, projectFolder: true }));
-      const projectPromptsPath =
-        await window.electronBridge.appShell.getProjectPromptsPath();
+      const projectPromptsPath = await window.electronBridge.appShell.getProjectPromptsPath();
       await window.electronBridge.appShell.openPath(projectPromptsPath);
     } catch (error) {
       console.error('Failed to open project prompts folder:', error);
@@ -59,8 +55,7 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
   const handleGlobalFolderClick = async () => {
     try {
       setIsLoading((prev) => ({ ...prev, globalFolder: true }));
-      const globalPromptsPath =
-        await window.electronBridge.appShell.getGlobalPromptsPath();
+      const globalPromptsPath = await window.electronBridge.appShell.getGlobalPromptsPath();
       await window.electronBridge.appShell.openPath(globalPromptsPath);
     } catch (error) {
       console.error('Failed to open global prompts folder:', error);
@@ -75,8 +70,8 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
       const resourcesPath = await window.fileService.getResourcesPath();
       const promptsPath = await window.pathUtils.join(resourcesPath, 'prompts');
       const filePath = await window.pathUtils.join(promptsPath, 'custom_prompt_designer.md');
-      const content = await window.fileService.read(filePath, { encoding: 'utf8' }) as string;
-      
+      const content = (await window.fileService.read(filePath, { encoding: 'utf8' })) as string;
+
       await copyToClipboard({
         content,
         addLog,
@@ -97,7 +92,7 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
       const resourcesPath = await window.fileService.getResourcesPath();
       const promptsPath = await window.pathUtils.join(resourcesPath, 'prompts');
       const filePath = await window.pathUtils.join(promptsPath, 'custom_task_designer.md');
-      const content = await window.fileService.read(filePath, { encoding: 'utf8' }) as string;
+      const content = (await window.fileService.read(filePath, { encoding: 'utf8' })) as string;
 
       await copyToClipboard({
         content,
@@ -147,14 +142,13 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
               Create Your Own Templates
             </h3>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              You can add your own custom prompt and task templates to Athanor.
-              These XML files allow you to tailor AI interactions to your
-              specific needs and workflows, supplementing or overriding the
-              default templates.
+              You can add your own custom prompt and task templates to Athanor. These XML files
+              allow you to tailor AI interactions to your specific needs and workflows,
+              supplementing or overriding the default templates.
             </p>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              Custom templates can be stored globally (available across all
-              projects) or project-specifically (only for the current project).
+              Custom templates can be stored globally (available across all projects) or
+              project-specifically (only for the current project).
             </p>
           </div>
 
@@ -165,9 +159,8 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
               Detailed Instructions
             </h4>
             <p className="text-blue-800 dark:text-blue-200 text-sm">
-              For comprehensive guidance on template structure, XML format,
-              available variables, and examples, please refer to the official
-              tutorial.
+              For comprehensive guidance on template structure, XML format, available variables, and
+              examples, please refer to the official tutorial.
             </p>
             <button
               onClick={handleTutorialClick}
@@ -195,9 +188,8 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
                       Project-Specific Templates
                     </h5>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Templates stored here are only available in the current
-                      project. Perfect for project-specific workflows or team
-                      standards.
+                      Templates stored here are only available in the current project. Perfect for
+                      project-specific workflows or team standards.
                     </p>
                     <button
                       onClick={handleProjectFolderClick}
@@ -205,9 +197,7 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
                       className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-medium rounded transition-colors"
                     >
                       <Folder className="w-4 h-4" />
-                      {isLoading.projectFolder
-                        ? 'Opening...'
-                        : 'Open Project Prompts Folder'}
+                      {isLoading.projectFolder ? 'Opening...' : 'Open Project Prompts Folder'}
                     </button>
                   </div>
                 </div>
@@ -222,9 +212,8 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
                       Global User Templates
                     </h5>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Templates stored here are available across all your
-                      Athanor projects. Ideal for personal workflows and
-                      commonly used patterns.
+                      Templates stored here are available across all your Athanor projects. Ideal
+                      for personal workflows and commonly used patterns.
                     </p>
                     <button
                       onClick={handleGlobalFolderClick}
@@ -232,9 +221,7 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
                       className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white text-sm font-medium rounded transition-colors"
                     >
                       <Globe className="w-4 h-4" />
-                      {isLoading.globalFolder
-                        ? 'Opening...'
-                        : 'Open Global Prompts Folder'}
+                      {isLoading.globalFolder ? 'Opening...' : 'Open Global Prompts Folder'}
                     </button>
                   </div>
                 </div>
@@ -248,14 +235,16 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
               AI-Assisted Design
             </h3>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              To help you design complex custom prompt or task templates, Athanor provides 'designer' prompts. You can copy these instructions and paste them into a capable AI chat assistant (like ChatGPT, Claude, Gemini). The AI will then guide you through the process of creating your template. Once the AI generates the XML, you'll need to manually save it as a{' '}
+              To help you design complex custom prompt or task templates, Athanor provides designer
+              prompts. You can copy these instructions and paste them into a capable AI chat
+              assistant (like ChatGPT, Claude, Gemini). The AI will then guide you through the
+              process of creating your template. Once the AI generates the XML, you will need to
+              manually save it as a{' '}
               <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">
                 prompt_*.xml
               </code>{' '}
               or{' '}
-              <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">
-                task_*.xml
-              </code>{' '}
+              <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">task_*.xml</code>{' '}
               file in the appropriate project-specific or global user prompts folder.
             </p>
 
@@ -302,9 +291,7 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
                   className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-medium rounded transition-colors"
                 >
                   <Copy className="w-4 h-4" />
-                  {isLoading.copyTaskDesigner
-                    ? 'Copying...'
-                    : 'Copy Task Designer Instructions'}
+                  {isLoading.copyTaskDesigner ? 'Copying...' : 'Copy Task Designer Instructions'}
                 </button>
               </div>
             </div>
@@ -312,27 +299,16 @@ const CustomPromptsHelpModal: React.FC<CustomPromptsHelpModalProps> = ({
 
           {/* Quick Tips */}
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3">
-            <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">
-              Quick Tips
-            </h4>
+            <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">Quick Tips</h4>
             <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
               <li>
                 • Templates with the same{' '}
-                <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">
-                  order
-                </code>{' '}
+                <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">order</code>{' '}
                 value will override defaults
               </li>
-              <li>
-                • Project-specific templates take priority over global ones
-              </li>
-              <li>
-                • Use descriptive IDs and clear tooltips for better usability
-              </li>
-              <li>
-                • Refresh the file manager after adding new templates to see
-                them in the UI
-              </li>
+              <li>• Project-specific templates take priority over global ones</li>
+              <li>• Use descriptive IDs and clear tooltips for better usability</li>
+              <li>• Refresh the file manager after adding new templates to see them in the UI</li>
             </ul>
           </div>
         </div>

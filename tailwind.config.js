@@ -20,14 +20,5 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    // Add custom tooltip plugin
-    function({ addUtilities }) {
-      addUtilities({
-        '[title]': {
-          '@apply before:transition-opacity before:delay-tooltip': {},
-        },
-      });
-    },
-  ],
+  plugins: [],
 };

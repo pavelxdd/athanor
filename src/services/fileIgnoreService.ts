@@ -26,11 +26,11 @@ export async function initializeProjectFiles(
       defaultAthignorePath,
       'files/default_athignore'
     );
-    
-    const defaultContent = await window.fileService.read(
+
+    const defaultContent = (await window.fileService.read(
       await window.pathUtils.relative(defaultContentPath),
       { encoding: 'utf8' }
-    ) as string;
+    )) as string;
 
     let finalContent = '';
 
@@ -46,8 +46,7 @@ export async function initializeProjectFiles(
     finalContent +=
       '\n###############################################################################\n';
     finalContent += '# PROJECT FILES\n';
-    finalContent +=
-      '# Add below specific files and folders you want to ignore.\n';
+    finalContent += '# Add below specific files and folders you want to ignore.\n';
     finalContent +=
       '###############################################################################\n';
 
@@ -62,34 +61,35 @@ export async function initializeProjectFiles(
           defaultAthignorePath,
           'files/default_gitignore_extras'
         );
-        
+
         // Read the gitignore extras content
-        const gitignoreExtrasContent = await window.fileService.read(
+        const gitignoreExtrasContent = (await window.fileService.read(
           await window.pathUtils.relative(gitignoreExtrasPath),
           { encoding: 'utf8' }
-        ) as string;
+        )) as string;
 
         // Check if .gitignore already exists
         const gitignoreExists = await window.fileService.exists('.gitignore');
-        
+
         let gitignoreContent = '';
-        
+
         if (gitignoreExists) {
           // Read existing .gitignore content
-          const existingContent = await window.fileService.read('.gitignore', { encoding: 'utf8' }) as string;
+          const existingContent = (await window.fileService.read('.gitignore', {
+            encoding: 'utf8',
+          })) as string;
           // Append new rules with proper spacing
           gitignoreContent = existingContent + '\n\n' + gitignoreExtrasContent;
         } else {
           // Create new .gitignore with just the extras content
           gitignoreContent = gitignoreExtrasContent;
         }
-        
+
         // Write the final .gitignore content
         await window.fileService.write('.gitignore', gitignoreContent);
-        
       } catch (gitignoreError) {
         console.error('Error handling .gitignore:', gitignoreError);
-        throw new Error(`Failed to create/update .gitignore: ${gitignoreError}`);
+        throw new Error(`Failed to create/update .gitignore: ${String(gitignoreError)}`);
       }
     }
   } catch (error) {
@@ -108,10 +108,7 @@ export async function initializeProjectFiles(
  * @param itemPath - Path to be ignored
  * @param ignoreAll - Whether to ignore all items by that name
  */
-export async function addToIgnore(
-  itemPath: string,
-  ignoreAll: boolean = false
-): Promise<boolean> {
+export async function addToIgnore(itemPath: string, ignoreAll: boolean = false): Promise<boolean> {
   try {
     return await window.fileService.addToIgnore(itemPath, ignoreAll);
   } catch (error) {

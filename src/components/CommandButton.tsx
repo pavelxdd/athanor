@@ -2,9 +2,10 @@ import React from 'react';
 import { Hammer } from 'lucide-react';
 import { processAiResponseContent } from '../actions/ApplyAiOutputAction';
 import { useLogStore } from '../stores/logStore';
+import type { FileOperation } from '../types/global';
 
 interface CommandButtonProps {
-  setOperations: (ops: any[]) => void;
+  setOperations: (ops: FileOperation[]) => void;
   clearOperations: () => void;
   setActiveTab?: (tab: 'workbench' | 'viewer' | 'review') => void;
 }
@@ -31,8 +32,7 @@ const CommandButton: React.FC<CommandButtonProps> = ({
         setActiveTab,
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Failed to read or process clipboard content:', error);
       addLog(`Error: ${errorMessage}`);
     }

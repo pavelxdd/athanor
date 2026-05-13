@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPatch } from 'diff';
+import type { FileOperation } from '../types/global';
 import {
   AlertTriangle,
-  ArrowUp,
   Bot,
-  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -12,7 +11,6 @@ import {
   ChevronsDownUp,
   ChevronsUp,
   ChevronsUpDown,
-  ChevronUp,
   Pen,
   GitCompare,
   Wrench,
@@ -20,10 +18,10 @@ import {
 } from 'lucide-react';
 import { useApplyChangesStore } from '../stores/applyChangesStore';
 import { useFileSystemStore } from '../stores/fileSystemStore';
-import { useWorkbenchStore } from '../stores/workbenchStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useLogStore } from '../stores/logStore';
 import { SETTINGS } from '../utils/constants';
+import { processFileUpdate } from '../utils/fileOperations';
 
 const DIFF_MERGE_THRESHOLD = 2; // Diffs separated by 2 or fewer context lines are merged
 const CONTEXT_LINES_COMPACT = 5; // Lines of context for compact diff view
@@ -47,7 +45,7 @@ const DiffLine: React.FC<DiffLineProps> = ({ content, type, oldLineNum, newLineN
 
   const oldNumStr = oldLineNum?.toString().padStart(4, ' ') || '    ';
   const newNumStr = newLineNum?.toString().padStart(4, ' ') || '    ';
-  
+
   const numClass = 'select-none inline-block w-10 text-right opacity-50 pr-2';
   const contentClass = 'pl-1 flex-1'; // Use flex-1 to fill remaining space
 
@@ -61,11 +59,14 @@ const DiffLine: React.FC<DiffLineProps> = ({ content, type, oldLineNum, newLineN
       prefix = '-';
       break;
     case 'header':
-      lineClass += ' bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 font-semibold';
+      lineClass +=
+        ' bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 font-semibold';
       return (
         <div className={lineClass}>
           <span className={`${numClass} opacity-100`}>...</span>
-          <span className={`${numClass} opacity-100 border-l border-blue-300 dark:border-blue-700`}>...</span>
+          <span className={`${numClass} opacity-100 border-l border-blue-300 dark:border-blue-700`}>
+            ...
+          </span>
           {/* content now holds the full "@@ ... @@" string, so we don't need a separate prefix */}
           <span className={`${contentClass} opacity-70 pl-5`}>{content}</span>
         </div>
@@ -149,144 +150,166 @@ const DiffView: React.FC<{
   isCompact: boolean;
   onDiffBlocksCalculated?: (blocks: DiffBlock[]) => void;
   diffViewRef?: React.RefObject<HTMLDivElement>;
-}> = React.memo(({
-  oldText,
-  newText,
-  filePath,
-  isCompact,
-  onDiffBlocksCalculated,
-  diffViewRef,
-}) => {
-  const [lines, setLines] = useState<string[]>([]);
-  const [isCalculating, setIsCalculating] = useState(true);
-  const onDiffBlocksCalculatedRef = useRef(onDiffBlocksCalculated);
+}> = React.memo(
+  ({ oldText, newText, filePath, isCompact, onDiffBlocksCalculated, diffViewRef }) => {
+    const [lines, setLines] = useState<string[]>([]);
+    const [isCalculating, setIsCalculating] = useState(true);
+    const onDiffBlocksCalculatedRef = useRef(onDiffBlocksCalculated);
 
-  useEffect(() => {
-    onDiffBlocksCalculatedRef.current = onDiffBlocksCalculated;
-  }, [onDiffBlocksCalculated]);
+    useEffect(() => {
+      onDiffBlocksCalculatedRef.current = onDiffBlocksCalculated;
+    }, [onDiffBlocksCalculated]);
 
-  // Only normalize line endings for comparison
-  const normalizeForComparison = (text: string) => {
-    if (!text) return '';
-    let content = text
-      .replace(/\r\n/g, '\n') // Normalize Windows line endings
-      .replace(/\r/g, '\n'); // Normalize old Mac line endings
+    // Only normalize line endings for comparison
+    const normalizeForComparison = (text: string) => {
+      if (!text) return '';
+      let content = text
+        .replace(/\r\n/g, '\n') // Normalize Windows line endings
+        .replace(/\r/g, '\n'); // Normalize old Mac line endings
 
-    // Match FileService.ts write logic: ensure a final newline if content exists
-    if (content.length > 0 && !content.endsWith('\n')) {
-      content += '\n';
+      // Match FileService.ts write logic: ensure a final newline if content exists
+      if (content.length > 0 && !content.endsWith('\n')) {
+        content += '\n';
+      }
+      return content;
+    };
+
+    useEffect(() => {
+      setIsCalculating(true);
+
+      // Use setTimeout to unblock the main thread and allow UI to update (show loading state)
+      // before the heavy synchronous createPatch operation runs.
+      const timer = setTimeout(() => {
+        const normalizedOld = normalizeForComparison(oldText);
+        const normalizedNew = normalizeForComparison(newText);
+
+        if (normalizedOld === normalizedNew) {
+          setLines([]);
+          setIsCalculating(false);
+          return;
+        }
+
+        try {
+          // Heavy operation
+          const patch = createPatch(filePath, normalizedOld, normalizedNew, '', '', {
+            context: isCompact ? CONTEXT_LINES_COMPACT : 999999,
+          });
+          const newLines = patch.split('\n').slice(2); // Skip the diff header
+          setLines(newLines);
+        } catch (error) {
+          console.error('Error calculating diff:', error);
+          setLines([]);
+        } finally {
+          setIsCalculating(false);
+        }
+      }, 10); // Small delay to ensure render cycle completes
+
+      return () => clearTimeout(timer);
+    }, [oldText, newText, filePath, isCompact]);
+
+    // Calculate diff blocks (consecutive sequences of +/- lines)
+    useEffect(() => {
+      if (lines.length > 0) {
+        const mergedBlocks = calculateMergedDiffBlocks(lines);
+        if (onDiffBlocksCalculatedRef.current) {
+          onDiffBlocksCalculatedRef.current(mergedBlocks);
+        }
+      }
+    }, [lines]);
+
+    if (isCalculating) {
+      return (
+        <div className="p-4 text-gray-500 dark:text-gray-400 italic text-sm animate-pulse">
+          Calculating diff...
+        </div>
+      );
     }
-    return content;
-  };
 
-  useEffect(() => {
-    setIsCalculating(true);
-    
-    // Use setTimeout to unblock the main thread and allow UI to update (show loading state)
-    // before the heavy synchronous createPatch operation runs.
-    const timer = setTimeout(() => {
-      const normalizedOld = normalizeForComparison(oldText);
-      const normalizedNew = normalizeForComparison(newText);
-
-      if (normalizedOld === normalizedNew) {
-        setLines([]);
-        setIsCalculating(false);
-        return;
-      }
-
-      try {
-        // Heavy operation
-        const patch = createPatch(filePath, normalizedOld, normalizedNew, '', '', {
-          context: isCompact ? CONTEXT_LINES_COMPACT : 999999,
-        });
-        const newLines = patch.split('\n').slice(2); // Skip the diff header
-        setLines(newLines);
-      } catch (error) {
-        console.error('Error calculating diff:', error);
-        setLines([]);
-      } finally {
-        setIsCalculating(false);
-      }
-    }, 10); // Small delay to ensure render cycle completes
-
-    return () => clearTimeout(timer);
-  }, [oldText, newText, filePath, isCompact]);
-
-  // Calculate diff blocks (consecutive sequences of +/- lines)
-  useEffect(() => {
-    if (lines.length > 0) {
-      const mergedBlocks = calculateMergedDiffBlocks(lines);
-      if (onDiffBlocksCalculatedRef.current) {
-        onDiffBlocksCalculatedRef.current(mergedBlocks);
-      }
+    if (lines.length === 0) {
+      return (
+        <div className="p-4 text-gray-500 dark:text-gray-400 italic">
+          No changes (files are identical after normalizing line endings)
+        </div>
+      );
     }
-  }, [lines]);
 
-  if (isCalculating) {
+    // Let's reconstruct the rendering logic properly
+    let currentOldLineNum = 0;
+    let currentNewLineNum = 0;
+    const hunkRegex = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)$/;
+
+    const lineNodes = lines
+      .map((line, index) => {
+        // Skip final empty line if it exists
+        if (!line && index === lines.length - 1) return null;
+
+        const hunkMatch = line.match(hunkRegex);
+
+        if (hunkMatch) {
+          currentOldLineNum = parseInt(hunkMatch[1], 10);
+          currentNewLineNum = parseInt(hunkMatch[2], 10);
+          return <DiffLine key={index} content={line} type="header" />;
+        } else if (line.startsWith('+')) {
+          const node = (
+            <DiffLine
+              key={index}
+              content={line.slice(1)}
+              type="add"
+              newLineNum={currentNewLineNum}
+            />
+          );
+          currentNewLineNum++;
+          return node;
+        } else if (line.startsWith('-')) {
+          const node = (
+            <DiffLine
+              key={index}
+              content={line.slice(1)}
+              type="remove"
+              oldLineNum={currentOldLineNum}
+            />
+          );
+          currentOldLineNum++;
+          return node;
+        } else {
+          // Context line
+          const node = (
+            <DiffLine
+              key={index}
+              content={line.slice(1)}
+              type="context"
+              oldLineNum={currentOldLineNum}
+              newLineNum={currentNewLineNum}
+            />
+          );
+          currentOldLineNum++;
+          currentNewLineNum++;
+          return node;
+        }
+      })
+      .filter(Boolean);
+
     return (
-      <div className="p-4 text-gray-500 dark:text-gray-400 italic text-sm animate-pulse">
-        Calculating diff...
+      <div
+        ref={diffViewRef}
+        className="overflow-x-auto bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 p-2 min-w-0"
+      >
+        <div className="space-y-0 min-w-max">
+          {lineNodes.map((lineNode, index) => (
+            <div key={index} data-line-index={index}>
+              {lineNode}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
+);
 
-  if (lines.length === 0) {
-    return (
-      <div className="p-4 text-gray-500 dark:text-gray-400 italic">
-        No changes (files are identical after normalizing line endings)
-      </div>
-    );
-  }
-
-  // Let's reconstruct the rendering logic properly
-  let currentOldLineNum = 0;
-  let currentNewLineNum = 0;
-  const hunkRegex = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)$/;
-
-  const lineNodes = lines.map((line, index) => {
-      // Skip final empty line if it exists
-      if (!line && index === lines.length - 1) return null;
-
-      const hunkMatch = line.match(hunkRegex);
-
-      if (hunkMatch) {
-        currentOldLineNum = parseInt(hunkMatch[1], 10);
-        currentNewLineNum = parseInt(hunkMatch[2], 10);
-        return <DiffLine key={index} content={line} type="header" />;
-      } else if (line.startsWith('+')) {
-        const node = <DiffLine key={index} content={line.slice(1)} type="add" newLineNum={currentNewLineNum} />;
-        currentNewLineNum++;
-        return node;
-      } else if (line.startsWith('-')) {
-        const node = <DiffLine key={index} content={line.slice(1)} type="remove" oldLineNum={currentOldLineNum} />;
-        currentOldLineNum++;
-        return node;
-      } else { // Context line
-        const node = <DiffLine key={index} content={line.slice(1)} type="context" oldLineNum={currentOldLineNum} newLineNum={currentNewLineNum} />;
-        currentOldLineNum++;
-        currentNewLineNum++;
-        return node;
-      }
-  }).filter(Boolean);
-
-  return (
-    <div
-      ref={diffViewRef}
-      className="overflow-x-auto bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 p-2 min-w-0"
-    >
-      <div className="space-y-0 min-w-max">
-        {lineNodes.map((lineNode, index) => (
-          <div key={index} data-line-index={index}>
-            {lineNode}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-});
+DiffView.displayName = 'DiffView';
 
 interface FileOperationItemProps {
-  operation: any;
+  operation: FileOperation;
   index: number;
   mode: 'ai' | 'git';
   onAccept: (idx: number) => void;
@@ -298,10 +321,7 @@ interface FileOperationItemProps {
   onToggleCompact: () => void;
 }
 
-const FileOperationItem = React.forwardRef<
-  HTMLDivElement,
-  FileOperationItemProps
->(
+const FileOperationItem = React.forwardRef<HTMLDivElement, FileOperationItemProps>(
   (
     {
       operation: op,
@@ -319,8 +339,6 @@ const FileOperationItem = React.forwardRef<
   ) => {
     const [previewError, setPreviewError] = useState<string | null>(null);
     const [previewContent, setPreviewContent] = useState<string | null>(null);
-    const { tabs, activeTabIndex } = useWorkbenchStore();
-    const { applicationSettings } = useSettingsStore();
     const { addLog } = useLogStore();
     const { setOperationError } = useApplyChangesStore();
 
@@ -340,7 +358,6 @@ const FileOperationItem = React.forwardRef<
           op.diff_blocks &&
           op.diff_blocks.length > 0
         ) {
-          const { processFileUpdate } = require('../utils/fileOperations');
           newPreviewContent = processFileUpdate(
             'UPDATE_DIFF',
             op.file_path,
@@ -414,8 +431,7 @@ const FileOperationItem = React.forwardRef<
                   ? 'bg-green-600'
                   : op.file_operation === 'DELETE'
                     ? 'bg-red-600'
-                    : op.file_operation === 'APPEND' ||
-                        op.file_operation === 'PREPEND'
+                    : op.file_operation === 'APPEND' || op.file_operation === 'PREPEND'
                       ? 'bg-purple-600'
                       : 'bg-blue-600'
               }`}
@@ -469,11 +485,7 @@ const FileOperationItem = React.forwardRef<
                 className="px-3 py-1 bg-red-500 dark:bg-red-600 text-white rounded hover:bg-red-600 dark:hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
                 disabled={op.accepted || op.rejected || !!previewError}
                 onClick={() => onReject(index)}
-                title={
-                  mode === 'git'
-                    ? 'Revert change to the last commit'
-                    : 'Reject change'
-                }
+                title={mode === 'git' ? 'Revert change to the last commit' : 'Reject change'}
               >
                 {mode === 'git' ? 'Revert Change' : 'Reject'}
               </button>
@@ -503,9 +515,7 @@ const ReviewPanel: React.FC = () => {
   const { applicationSettings } = useSettingsStore();
   const defaultViewMode =
     applicationSettings?.diffViewMode || SETTINGS.defaults.application.diffViewMode;
-  const [globalViewMode, setGlobalViewMode] = useState<'compact' | 'full'>(
-    defaultViewMode
-  );
+  const [globalViewMode, setGlobalViewMode] = useState<'compact' | 'full'>(defaultViewMode);
   const [expandedFiles, setExpandedFiles] = useState(new Set<number>()); // Files user wants to see fully
   const [collapsedFiles, setCollapsedFiles] = useState(new Set<number>()); // Files user wants to see compactly
 
@@ -549,9 +559,7 @@ const ReviewPanel: React.FC = () => {
 
     // AI mode: check for pending operations
     if (hasPendingOperations) {
-      const pendingCount = activeOperations.filter(
-        (op) => !op.accepted && !op.rejected
-      ).length;
+      const pendingCount = activeOperations.filter((op) => !op.accepted && !op.rejected).length;
 
       const confirmed = window.confirm(
         `There are ${pendingCount} pending change${pendingCount === 1 ? '' : 's'} that haven't been accepted or rejected.\n\nAre you sure you want to clear all changes? This action cannot be undone.`
@@ -594,8 +602,7 @@ const ReviewPanel: React.FC = () => {
         // Calculate the target scroll position
         // We want the top of the element to be NAVIGATION_PADDING_ABOVE pixels below the sticky header
         const elementTop = element.offsetTop;
-        const targetScrollTop =
-          elementTop - headerHeight - NAVIGATION_PADDING_ABOVE;
+        const targetScrollTop = elementTop - headerHeight - NAVIGATION_PADDING_ABOVE;
         const currentScrollTop = containerRef.current.scrollTop;
 
         // Update the current index immediately
@@ -672,8 +679,7 @@ const ReviewPanel: React.FC = () => {
         // Calculate the target scroll position
         // We want the top of the element to be NAVIGATION_PADDING_ABOVE pixels below the sticky header
         const elementTop = element.offsetTop;
-        const targetScrollTop =
-          elementTop - headerHeight - NAVIGATION_PADDING_ABOVE;
+        const targetScrollTop = elementTop - headerHeight - NAVIGATION_PADDING_ABOVE;
         const currentScrollTop = containerRef.current.scrollTop;
 
         // Update the current index immediately
@@ -735,10 +741,7 @@ const ReviewPanel: React.FC = () => {
       const element = itemRefs.current[currentIdx];
       if (element && containerRef.current) {
         const elementBottom =
-          element.offsetTop +
-          element.offsetHeight -
-          containerRef.current.clientHeight +
-          100; // 100px padding
+          element.offsetTop + element.offsetHeight - containerRef.current.clientHeight + 100; // 100px padding
         containerRef.current.scrollTo({
           top: elementBottom,
           behavior: 'smooth',
@@ -775,9 +778,7 @@ const ReviewPanel: React.FC = () => {
     for (let i = 0; i < lineElements.length; i++) {
       const lineRect = lineElements[i].getBoundingClientRect();
       if (lineRect.top >= containerRect.top) {
-        topLineIndex = parseInt(
-          lineElements[i].getAttribute('data-line-index') || '-1'
-        );
+        topLineIndex = parseInt(lineElements[i].getAttribute('data-line-index') || '-1');
         break;
       }
     }
@@ -793,9 +794,7 @@ const ReviewPanel: React.FC = () => {
 
     // Scroll to the target block if found
     if (targetBlock) {
-      const targetElement = diffView.querySelector(
-        `[data-line-index="${targetBlock.start}"]`
-      );
+      const targetElement = diffView.querySelector(`[data-line-index="${targetBlock.start}"]`);
       if (targetElement) {
         isManualNavigationRef.current = true;
         if (manualNavigationTimeoutRef.current) {
@@ -813,8 +812,7 @@ const ReviewPanel: React.FC = () => {
         container.addEventListener('scroll', onScroll, { passive: true });
 
         const targetRect = targetElement.getBoundingClientRect();
-        const scrollTop =
-          container.scrollTop + targetRect.top - containerRect.top - 50; // 50px offset for better visibility;
+        const scrollTop = container.scrollTop + targetRect.top - containerRect.top - 50; // 50px offset for better visibility;
         container.scrollTo({ top: scrollTop, behavior: 'smooth' });
 
         manualNavigationTimeoutRef.current = setTimeout(() => {
@@ -843,9 +841,7 @@ const ReviewPanel: React.FC = () => {
     for (let i = 0; i < lineElements.length; i++) {
       const lineRect = lineElements[i].getBoundingClientRect();
       if (lineRect.top >= containerRect.top) {
-        topLineIndex = parseInt(
-          lineElements[i].getAttribute('data-line-index') || '-1'
-        );
+        topLineIndex = parseInt(lineElements[i].getAttribute('data-line-index') || '-1');
         break;
       }
     }
@@ -855,24 +851,17 @@ const ReviewPanel: React.FC = () => {
     // the block so that pressing “Next Diff” while they are visible still jumps
     // forward.  Adjust `DIFF_NAV_CONTEXT_LINES` if needed.
     const DIFF_NAV_CONTEXT_LINES = 3;
-    let searchRefLine: number;
     const currentBlock = currentDiffBlocks.find(
-      (b) =>
-        topLineIndex >= b.start - DIFF_NAV_CONTEXT_LINES &&
-        topLineIndex <= b.end
+      (b) => topLineIndex >= b.start - DIFF_NAV_CONTEXT_LINES && topLineIndex <= b.end
     );
-    searchRefLine = currentBlock ? currentBlock.end : topLineIndex;
+    const searchRefLine = currentBlock ? currentBlock.end : topLineIndex;
 
     // Find the first diff block that starts AFTER the reference line
-    const targetBlock = currentDiffBlocks.find(
-      (block) => block.start > searchRefLine
-    );
+    const targetBlock = currentDiffBlocks.find((block) => block.start > searchRefLine);
 
     // Scroll to the target block if found
     if (targetBlock) {
-      const targetElement = diffView.querySelector(
-        `[data-line-index="${targetBlock.start}"]`
-      );
+      const targetElement = diffView.querySelector(`[data-line-index="${targetBlock.start}"]`);
       if (targetElement) {
         isManualNavigationRef.current = true;
         if (manualNavigationTimeoutRef.current) {
@@ -890,8 +879,7 @@ const ReviewPanel: React.FC = () => {
         container.addEventListener('scroll', onScroll, { passive: true });
 
         const targetRect = targetElement.getBoundingClientRect();
-        const scrollTop =
-          container.scrollTop + targetRect.top - containerRect.top - 50; // 50px offset for better visibility;
+        const scrollTop = container.scrollTop + targetRect.top - containerRect.top - 50; // 50px offset for better visibility;
         container.scrollTo({ top: scrollTop, behavior: 'smooth' });
 
         manualNavigationTimeoutRef.current = setTimeout(() => {
@@ -908,9 +896,7 @@ const ReviewPanel: React.FC = () => {
     // Create refs for diff views
     diffViewRefs.current = Array(activeOperations.length)
       .fill(null)
-      .map(
-        (_, i) => diffViewRefs.current[i] || React.createRef<HTMLDivElement>()
-      );
+      .map((_, i) => diffViewRefs.current[i] || React.createRef<HTMLDivElement>());
   }, [activeOperations.length]);
 
   // Update global view mode when settings change
@@ -949,11 +935,7 @@ const ReviewPanel: React.FC = () => {
       const diffViewRef = diffViewRefs.current[currentIdx];
       const diffView = diffViewRef?.current;
 
-      if (
-        !diffView ||
-        !containerRef.current ||
-        currentDiffBlocks.length === 0
-      ) {
+      if (!diffView || !containerRef.current || currentDiffBlocks.length === 0) {
         setIsPrevDiffDisabled(true);
         setIsNextDiffDisabled(true);
         return;
@@ -966,40 +948,28 @@ const ReviewPanel: React.FC = () => {
       for (let i = 0; i < lineElements.length; i++) {
         const lineRect = lineElements[i].getBoundingClientRect();
         if (lineRect.top >= containerRect.top) {
-          topLineIndex = parseInt(
-            lineElements[i].getAttribute('data-line-index') || '-1'
-          );
+          topLineIndex = parseInt(lineElements[i].getAttribute('data-line-index') || '-1');
           break;
         }
       }
 
       if (topLineIndex === -1 && lineElements.length > 0) {
         topLineIndex =
-          parseInt(
-            lineElements[lineElements.length - 1].getAttribute(
-              'data-line-index'
-            ) || '-1'
-          ) + 1;
+          parseInt(lineElements[lineElements.length - 1].getAttribute('data-line-index') || '-1') +
+          1;
       }
 
-      const hasPrev = currentDiffBlocks.some(
-        (block) => block.start < topLineIndex
-      );
+      const hasPrev = currentDiffBlocks.some((block) => block.start < topLineIndex);
 
       // For “next”, mirror goNextDiff’s logic so the enabled/disabled state is
       // accurate even when the viewport is on pre-hunk context lines.
       const DIFF_NAV_CONTEXT_LINES = 3;
-      let searchRefLine: number;
       const currentBlock = currentDiffBlocks.find(
-        (b) =>
-          topLineIndex >= b.start - DIFF_NAV_CONTEXT_LINES &&
-          topLineIndex <= b.end
+        (b) => topLineIndex >= b.start - DIFF_NAV_CONTEXT_LINES && topLineIndex <= b.end
       );
-      searchRefLine = currentBlock ? currentBlock.end : topLineIndex;
+      const searchRefLine = currentBlock ? currentBlock.end : topLineIndex;
 
-      const hasNext = currentDiffBlocks.some(
-        (block) => block.start > searchRefLine
-      );
+      const hasNext = currentDiffBlocks.some((block) => block.start > searchRefLine);
 
       setIsPrevDiffDisabled(!hasPrev);
       setIsNextDiffDisabled(!hasNext);
@@ -1033,11 +1003,7 @@ const ReviewPanel: React.FC = () => {
     let rafId: number | undefined;
 
     const handleScroll = () => {
-      if (
-        !containerRef.current ||
-        !stickyHeaderRef.current ||
-        itemRefs.current.length === 0
-      ) {
+      if (!containerRef.current || !stickyHeaderRef.current || itemRefs.current.length === 0) {
         return;
       }
 
@@ -1071,11 +1037,7 @@ const ReviewPanel: React.FC = () => {
       }
 
       // Only update if we're not in manual navigation mode
-      if (
-        !isManualNavigationRef.current &&
-        newCurrentIdx !== -1 &&
-        newCurrentIdx !== currentIdx
-      ) {
+      if (!isManualNavigationRef.current && newCurrentIdx !== -1 && newCurrentIdx !== currentIdx) {
         setCurrentIdx(newCurrentIdx);
       }
     };
@@ -1118,9 +1080,8 @@ const ReviewPanel: React.FC = () => {
             Apply AI Changes
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            When you get code suggestions from AI assistants, paste them into
-            the workbench. Athanor will parse the changes and show them here for
-            review before applying to your files.
+            When you get code suggestions from AI assistants, paste them into the workbench. Athanor
+            will parse the changes and show them here for review before applying to your files.
           </p>
           <button
             onClick={() => window.fileService.openFolder()}
@@ -1146,15 +1107,12 @@ const ReviewPanel: React.FC = () => {
           </p>
           <div className="mt-6 text-sm text-left space-y-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg">
             <p className="flex items-start gap-2">
-              <Bot
-                size={18}
-                className="text-gray-500 dark:text-gray-400 flex-shrink-0 mt-0.5"
-              />
+              <Bot size={18} className="text-gray-500 dark:text-gray-400 flex-shrink-0 mt-0.5" />
               <span>
-                <strong>AI changes</strong> appear here after you use the "Apply
-                AI Output" action. This processes responses from prompts like
-                Coder <Wrench size={16} className="inline-block -mt-0.5" /> or
-                Writer <Pen size={16} className="inline-block -mt-0.5" />.
+                <strong>AI changes</strong> appear here after you use the Apply AI Output action.
+                This processes responses from prompts like Coder{' '}
+                <Wrench size={16} className="inline-block -mt-0.5" /> or Writer{' '}
+                <Pen size={16} className="inline-block -mt-0.5" />.
               </span>
             </p>
             <p className="flex items-start gap-2">
@@ -1164,8 +1122,8 @@ const ReviewPanel: React.FC = () => {
               />
               <span>
                 For <strong>Git changes</strong>, click the{' '}
-                <GitCompare size={16} className="inline-block -mt-0.5" /> button
-                above the file explorer.
+                <GitCompare size={16} className="inline-block -mt-0.5" /> button above the file
+                explorer.
               </span>
             </p>
           </div>
@@ -1198,10 +1156,7 @@ const ReviewPanel: React.FC = () => {
           </button>
           <button
             onClick={goNext}
-            disabled={
-              currentIdx >= activeOperations.length - 1 ||
-              activeOperations.length <= 1
-            }
+            disabled={currentIdx >= activeOperations.length - 1 || activeOperations.length <= 1}
             title="Next file"
             className="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-100 dark:disabled:hover:bg-gray-700 flex items-center gap-1"
           >
@@ -1230,9 +1185,7 @@ const ReviewPanel: React.FC = () => {
               setCollapsedFiles(new Set());
             }}
             disabled={
-              globalViewMode === 'compact' &&
-              expandedFiles.size === 0 &&
-              collapsedFiles.size === 0
+              globalViewMode === 'compact' && expandedFiles.size === 0 && collapsedFiles.size === 0
             }
             title="Collapse all diffs to compact view"
             className="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1246,9 +1199,7 @@ const ReviewPanel: React.FC = () => {
               setCollapsedFiles(new Set());
             }}
             disabled={
-              globalViewMode === 'full' &&
-              expandedFiles.size === 0 &&
-              collapsedFiles.size === 0
+              globalViewMode === 'full' && expandedFiles.size === 0 && collapsedFiles.size === 0
             }
             title="Expand all diffs to show full files"
             className="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1279,9 +1230,7 @@ const ReviewPanel: React.FC = () => {
               onClick={applyAllChanges}
               disabled={!hasPendingOperations}
               title={
-                hasPendingOperations
-                  ? 'Accept all pending changes'
-                  : 'No pending changes to accept'
+                hasPendingOperations ? 'Accept all pending changes' : 'No pending changes to accept'
               }
               className="ml-auto px-3 py-1 bg-green-500 dark:bg-green-600 text-white rounded hover:bg-green-600 dark:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -1320,8 +1269,7 @@ const ReviewPanel: React.FC = () => {
             Clear
           </button>
           <span className="text-xs text-gray-500 dark:text-gray-400 ml-4">
-            {activeOperations.length > 0 ? currentIdx + 1 : 0} /{' '}
-            {activeOperations.length}
+            {activeOperations.length > 0 ? currentIdx + 1 : 0} / {activeOperations.length}
           </span>
         </div>
       )}

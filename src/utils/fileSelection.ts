@@ -19,10 +19,7 @@ export function getSelectableDescendants(item: FileItem): string[] {
 }
 
 // Check if all descendants are selected
-export function areAllDescendantsSelected(
-  item: FileItem,
-  selectedItems: Set<string>
-): boolean {
+export function areAllDescendantsSelected(item: FileItem, selectedItems: Set<string>): boolean {
   if (item.type === 'file') {
     return selectedItems.has(item.id);
   }
@@ -33,16 +30,12 @@ export function areAllDescendantsSelected(
 
   const selectableDescendants = getSelectableDescendants(item);
   return (
-    selectableDescendants.length > 0 &&
-    selectableDescendants.every((id) => selectedItems.has(id))
+    selectableDescendants.length > 0 && selectableDescendants.every((id) => selectedItems.has(id))
   );
 }
 
 // Check if any descendants are selected
-export function areSomeDescendantsSelected(
-  item: FileItem,
-  selectedItems: Set<string>
-): boolean {
+export function areSomeDescendantsSelected(item: FileItem, selectedItems: Set<string>): boolean {
   if (item.type === 'file') {
     return selectedItems.has(item.id);
   }
@@ -56,7 +49,10 @@ export function areSomeDescendantsSelected(
 }
 
 // Calculate total lines across selected files
-export async function calculateSelectionTotals(selectedItems: Set<string> | string[], fileTree: FileItem[]): Promise<number> {
+export async function calculateSelectionTotals(
+  selectedItems: Set<string> | string[],
+  fileTree: FileItem[]
+): Promise<number> {
   if (!fileTree || fileTree.length === 0) return 0;
   let total = 0;
 
@@ -76,13 +72,14 @@ export async function calculateSelectionTotals(selectedItems: Set<string> | stri
           const content = await window.fileService.read(item.path, { encoding: 'utf8' });
           // Count lines after normalizing line endings
           const contentStr = content as string;
-          const normalizedContent = contentStr
-            .replace(/\r\n/g, '\n') // Convert Windows line endings to Unix
-            .replace(/\r/g, '\n') // Convert old Mac line endings to Unix
-            .split('\n')
-            .map((line) => line.trimEnd()) // Remove trailing whitespace from each line
-            .join('\n')
-            .trim() + '\n'; // Ensure single trailing newline
+          const normalizedContent =
+            contentStr
+              .replace(/\r\n/g, '\n') // Convert Windows line endings to Unix
+              .replace(/\r/g, '\n') // Convert old Mac line endings to Unix
+              .split('\n')
+              .map((line) => line.trimEnd()) // Remove trailing whitespace from each line
+              .join('\n')
+              .trim() + '\n'; // Ensure single trailing newline
           const lineCount = normalizedContent.split('\n').length;
           total += lineCount;
         } catch (error) {

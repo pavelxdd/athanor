@@ -25,10 +25,7 @@ export function useLogPanelResize(
     const handleResize = (e: MouseEvent) => {
       if (isResizing) {
         // Calculate new height based on window height and mouse position
-        const newHeight = Math.max(
-          minHeight,
-          Math.min(maxHeight, window.innerHeight - e.clientY)
-        );
+        const newHeight = Math.max(minHeight, Math.min(maxHeight, window.innerHeight - e.clientY));
         setLogPanelHeight(newHeight);
       }
     };

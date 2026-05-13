@@ -2,14 +2,13 @@ import { FileItem } from '../utils/fileTree';
 import { buildDynamicPrompt } from '../utils/buildPrompt';
 import { TaskData } from '../types/taskTypes';
 import { useWorkbenchStore } from '../stores/workbenchStore';
-import { useContextStore } from '../stores/contextStore';
 import { useTaskStore } from '../stores/taskStore';
 
 // Execute git command and replace <git_command> tag with result
 async function processGitCommands(content: string): Promise<string> {
   const commandRegex = /<git_command>([\s\S]*?)<\/git_command>/gi;
   const matches = Array.from(content.matchAll(commandRegex));
-  
+
   if (matches.length === 0) {
     return content;
   }
@@ -25,19 +24,22 @@ async function processGitCommands(content: string): Promise<string> {
       return `\`\`\`diff\n${result}\n\`\`\``;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       // Check for common git errors to provide better messages
-      if (errorMessage.includes('not a git repository') || errorMessage.includes('Git is not installed')) {
+      if (
+        errorMessage.includes('not a git repository') ||
+        errorMessage.includes('Git is not installed')
+      ) {
         return `\`\`\`\nError: Not a git repository or Git not installed\nGit commands require the project to be in a git repository.\n\`\`\``;
       }
-      
+
       console.error(`Error executing git command "${command}":`, errorMessage);
       return `\`\`\`\nError executing git command: ${command}\n\n${errorMessage}\n\`\`\``;
     }
   });
 
   const results = await Promise.all(promises);
-  
+
   // Replace all tags with results in a single pass
   let index = 0;
   return content.replace(commandRegex, () => results[index++]);
@@ -63,10 +65,9 @@ export async function buildTaskAction(params: BuildTaskActionParams): Promise<vo
     setIsLoading,
     selectionStart,
     selectionEnd,
-    insertText
+    insertText,
   } = params;
 
-  
   if (!rootItems.length) {
     console.warn('No file tree data available');
     return;
@@ -80,7 +81,8 @@ export async function buildTaskAction(params: BuildTaskActionParams): Promise<vo
   // Note: git requirement is already checked in UI (ActionPanel), and will be handled in processGitCommands if needed
 
   // Get workbench store methods for state management
-  const { tabs, activeTabIndex, setIsGeneratingPrompt, resetGeneratingPrompt, setTabContent } = useWorkbenchStore.getState();
+  const { tabs, activeTabIndex, setIsGeneratingPrompt, resetGeneratingPrompt, setTabContent } =
+    useWorkbenchStore.getState();
 
   setIsLoading(true);
   setIsGeneratingPrompt(true); // Set global loading state

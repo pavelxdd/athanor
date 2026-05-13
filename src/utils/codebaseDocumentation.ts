@@ -1,8 +1,6 @@
-import { FileItem, sortItems, isEmptyFolder, getBaseName } from './fileTree';
-import { AthanorConfig } from '../types/global';
-import { areAllDescendantsSelected } from './fileSelection';
-import { FILE_SYSTEM, DOC_FORMAT } from './constants';
-import { isTextFile, isTextFileExtension, KNOWN_TEXT_EXTENSIONS, FILE_DETECTION, isBufferText } from './fileTextDetection';
+import { FileItem, sortItems, getBaseName } from './fileTree';
+import { DOC_FORMAT } from './constants';
+import { isTextFileExtension, isBufferText } from './fileTextDetection';
 
 // Get the appropriate language for code block formatting
 export function getFileLanguage(filename: string): string {
@@ -76,16 +74,16 @@ function generateFileTree(
 export function sanitizeForXmlTag(filePath: string): string {
   // Extract just the filename without path
   const baseName = getBaseName(filePath);
-  
+
   // Replace non-alphanumeric characters (except underscores) with underscores
   // Keep file extension but replace the dot with underscore
   let sanitized = baseName.replace(/[^a-zA-Z0-9_]/g, '_');
-  
+
   // Ensure the tag starts with a letter (XML requirement)
   if (!/^[a-zA-Z]/.test(sanitized)) {
     sanitized = 'file_' + sanitized;
   }
-  
+
   return sanitized;
 }
 
@@ -94,13 +92,11 @@ export function formatSingleFile(
   filePath: string,
   content: string,
   rootPath: string = '',
-  isSelected: boolean = false,
+  _isSelected: boolean = false,
   formatType: string = DOC_FORMAT.MARKDOWN
 ): string {
-  const relativePath = rootPath
-    ? filePath.replace(rootPath, '').replace(/^[/\\]/, '')
-    : filePath;
-  
+  const relativePath = rootPath ? filePath.replace(rootPath, '').replace(/^[/\\]/, '') : filePath;
+
   if (formatType === DOC_FORMAT.XML) {
     const tagName = sanitizeForXmlTag(relativePath);
     return `# ${relativePath}\n\n<file_${tagName}>\n${content}\n</file_${tagName}>\n`;
@@ -151,11 +147,12 @@ async function generateFileContentString(
           const relativePath = rootPath
             ? item.path.replace(rootPath, '').replace(/^[/\\]/, '')
             : item.path;
-          
+
           // Add placeholder message instead of duplicating content
-          const placeholderContent = `# ${relativePath}${isSelected ? ' *' : ''}\n\n` +
+          const placeholderContent =
+            `# ${relativePath}${isSelected ? ' *' : ''}\n\n` +
             `The content of this file is fully reported above inside \`<project_info>\` tags.\n`;
-          
+
           if (isSupplementary) {
             supplementaryFileContents.push(placeholderContent);
           } else {
@@ -187,7 +184,7 @@ async function generateFileContentString(
   }
 
   // Batch read all files as binary buffers
-  const paths = filesToProcess.map(f => f.path);
+  const paths = filesToProcess.map((f) => f.path);
   const results = await window.fileSystem.readMultiple(paths, { encoding: null });
 
   // Process each file
@@ -236,13 +233,7 @@ async function generateFileContentString(
       continue;
     }
 
-    const formattedContent = formatSingleFile(
-      path,
-      contentString,
-      rootPath,
-      false,
-      format
-    );
+    const formattedContent = formatSingleFile(path, contentString, rootPath, false, format);
 
     if (isSupplementary) {
       supplementaryFileContents.push(formattedContent);

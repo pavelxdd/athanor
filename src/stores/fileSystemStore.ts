@@ -19,11 +19,11 @@ interface FileSystemState {
   // File tree inclusion setting
   includeFileTree: boolean;
   toggleFileTree: () => void;
-  
+
   // Format type setting
   formatType: string;
   toggleFormatType: () => void;
-  
+
   // Project info inclusion setting
   includeProjectInfo: boolean;
   toggleProjectInfo: () => void;
@@ -36,16 +36,16 @@ interface FileSystemState {
   setIsGraphAnalysisInProgress: (inProgress: boolean) => void;
 }
 
-export const useFileSystemStore = create<FileSystemState>((set, get) => ({
+export const useFileSystemStore = create<FileSystemState>((set) => ({
   isRefreshing: false,
   setIsRefreshing: (refreshing: boolean) => set({ isRefreshing: refreshing }),
-  
+
   fileTree: [],
   setFileTree: (tree: FileItem[]) => set({ fileTree: tree }),
-  
+
   effectiveConfig: null,
   setEffectiveConfig: (config: AthanorConfig | null) => set({ effectiveConfig: config }),
-  
+
   resetState: () => {
     return set({
       // Clear UI state
@@ -77,10 +77,7 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
   formatType: DOC_FORMAT.MARKDOWN,
   toggleFormatType: () =>
     set((state) => ({
-      formatType:
-        state.formatType === DOC_FORMAT.XML
-          ? DOC_FORMAT.MARKDOWN
-          : DOC_FORMAT.XML,
+      formatType: state.formatType === DOC_FORMAT.XML ? DOC_FORMAT.MARKDOWN : DOC_FORMAT.XML,
     })),
 
   // Project info inclusion setting (true = include project info in generated prompt)
@@ -91,8 +88,7 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
     })),
 
   previewedFilePath: null,
-  setPreviewedFilePath: (path: string | null) =>
-    set({ previewedFilePath: path }),
+  setPreviewedFilePath: (path: string | null) => set({ previewedFilePath: path }),
   isGraphAnalysisInProgress: false,
   setIsGraphAnalysisInProgress: (inProgress: boolean) =>
     set({ isGraphAnalysisInProgress: inProgress }),

@@ -1,5 +1,3 @@
-import { FILE_SYSTEM } from './constants';
-
 // File detection configuration
 export const FILE_DETECTION = {
   // Maximum buffer size for MIME type detection (256KB)
@@ -54,17 +52,6 @@ export const KNOWN_TEXT_EXTENSIONS = new Set([
   'srt',
 ]);
 
-// Text MIME types for verification
-const TEXT_MIME_PATTERNS = [
-  /^text\//,
-  /^application\/json/,
-  /^application\/xml/,
-  /^application\/x-yaml/,
-  /^application\/javascript/,
-  /^application\/typescript/,
-  /^application\/x-httpd-php/,
-];
-
 /**
  * Checks if a file extension indicates a text file
  * @param filePath Path to the file
@@ -107,26 +94,23 @@ export async function isTextFile(filePath: string): Promise<boolean> {
     // Analyze only the first portion of the file
     const analysisBuffer = uint8Array.slice(0, FILE_DETECTION.maxBufferSize);
     const length = analysisBuffer.length;
-    
+
     // If buffer is empty, treat as text (empty file)
     if (length === 0) {
       return true;
     }
-    
+
     const { asciiPrintableMin, asciiPrintableMax, whitespaceChars, textThreshold } = FILE_DETECTION;
     let printableChars = 0;
-    
+
     // Manual iteration avoids filter allocation
     for (let i = 0; i < length; i++) {
       const byte = analysisBuffer[i];
-      if (
-        (byte >= asciiPrintableMin && byte <= asciiPrintableMax) ||
-        whitespaceChars.has(byte)
-      ) {
+      if ((byte >= asciiPrintableMin && byte <= asciiPrintableMax) || whitespaceChars.has(byte)) {
         printableChars++;
       }
     }
-    
+
     return printableChars / length >= textThreshold;
   } catch (error) {
     if (error instanceof Error) {
@@ -141,25 +125,22 @@ export function isBufferText(buffer: ArrayBuffer): boolean {
   const uint8Array = new Uint8Array(buffer);
   const maxBytes = FILE_DETECTION.maxBufferSize;
   const length = Math.min(uint8Array.length, maxBytes);
-  
+
   // If buffer is empty, treat as text (empty file)
   if (length === 0) {
     return true;
   }
-  
+
   const { asciiPrintableMin, asciiPrintableMax, whitespaceChars } = FILE_DETECTION;
   let printableChars = 0;
-  
+
   // Manual iteration avoids filter allocation
   for (let i = 0; i < length; i++) {
     const byte = uint8Array[i];
-    if (
-      (byte >= asciiPrintableMin && byte <= asciiPrintableMax) ||
-      whitespaceChars.has(byte)
-    ) {
+    if ((byte >= asciiPrintableMin && byte <= asciiPrintableMax) || whitespaceChars.has(byte)) {
       printableChars++;
     }
   }
-  
+
   return printableChars / length >= FILE_DETECTION.textThreshold;
 }

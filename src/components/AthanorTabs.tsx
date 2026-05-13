@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { GitCompare } from 'lucide-react';
 import CommandButton from './CommandButton';
 import { useApplyChangesStore } from '../stores/applyChangesStore';
-import { useSettingsStore } from '../stores/settingsStore';
 
 export type TabType = 'workbench' | 'viewer' | 'review' | 'settings';
 
@@ -11,13 +10,8 @@ interface AthanorTabsProps {
   onTabChange: (tab: TabType) => void;
 }
 
-const AthanorTabs: React.FC<AthanorTabsProps> = ({
-  activeTab,
-  onTabChange,
-}) => {
-  const { setOperations, clearOperations } =
-    useApplyChangesStore();
-  const { applicationSettings } = useSettingsStore();
+const AthanorTabs: React.FC<AthanorTabsProps> = ({ activeTab, onTabChange }) => {
+  const { setOperations, clearOperations } = useApplyChangesStore();
 
   return (
     <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-2 flex items-center justify-between">

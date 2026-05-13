@@ -22,10 +22,7 @@ export interface PromptStore {
   prompts: PromptData[];
   activeVariants: ActiveVariants;
   getPromptById: (id: string) => PromptData | undefined;
-  getVariantById: (
-    promptId: string,
-    variantId: string
-  ) => PromptVariant | undefined;
+  getVariantById: (promptId: string, variantId: string) => PromptVariant | undefined;
   getDefaultVariant: (promptId: string) => PromptVariant | undefined;
   getActiveVariant: (promptId: string) => PromptVariant | undefined;
   setActiveVariant: (promptId: string, variantId: string) => void;

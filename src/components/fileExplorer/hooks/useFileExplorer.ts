@@ -26,7 +26,7 @@ export function useFileExplorer(items: FileItem[], onRefresh: () => void) {
       const dir = await window.fileSystem.getCurrentDirectory();
       setCurrentDirectory(dir);
     };
-    loadCurrentDirectory();
+    void loadCurrentDirectory();
   }, []);
 
   const handleCloseContextMenu = useCallback(() => {
@@ -82,9 +82,7 @@ export function useFileExplorer(items: FileItem[], onRefresh: () => void) {
     if (item.type !== 'folder') return;
     const descendantIds = getAllDescendantFolderIds(item);
     const idsToRemove = new Set([item.id, ...descendantIds]);
-    setExpandedFolders(
-      (prev) => new Set([...prev].filter((id) => !idsToRemove.has(id)))
-    );
+    setExpandedFolders((prev) => new Set([...prev].filter((id) => !idsToRemove.has(id))));
   }, []);
 
   // Handle context menu
@@ -101,10 +99,7 @@ export function useFileExplorer(items: FileItem[], onRefresh: () => void) {
   // Add document-level click handler
   useEffect(() => {
     const handleDocumentClick = (e: MouseEvent) => {
-      if (
-        explorerRef.current &&
-        !explorerRef.current.contains(e.target as Node)
-      ) {
+      if (explorerRef.current && !explorerRef.current.contains(e.target as Node)) {
         handleCloseContextMenu();
       }
     };

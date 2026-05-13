@@ -1,22 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import TaskContextMenu from './action-panel/TaskContextMenu';
-import {
-  detectContexts,
-  formatContext,
-  isContextRelevant,
-} from '../utils/contextDetection';
+import { detectContexts, formatContext, isContextRelevant } from '../utils/contextDetection';
 import * as Icons from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { WorkbenchState } from '../types/global';
 import {
   Copy,
-  FileText,
-  Scissors,
   Eraser,
   ChevronDown,
   ChevronUp,
-  Eye,
-  EyeOff,
   Folder,
   FolderX,
   Code,
@@ -38,14 +30,12 @@ import { buildDynamicPrompt } from '../utils/buildPrompt';
 import { FileItem } from '../utils/fileTree';
 import { copyToClipboard } from '../actions/ManualCopyAction';
 import { buildTaskAction } from '../actions';
-import { getActionTooltip, getTaskTooltip } from '../actions';
+import { getTaskTooltip } from '../actions';
 import { useTaskStore } from '../stores/taskStore';
 import { useContextStore } from '../stores/contextStore';
 import { useFileDrop } from '../hooks/useFileDrop';
 import { useUndoRedo } from '../hooks/useUndoRedo';
-import { useSettingsStore } from '../stores/settingsStore';
-import { DRAG_DROP, DOC_FORMAT, SETTINGS } from '../utils/constants';
-import type { ApplicationSettings } from '../types/global';
+import { DOC_FORMAT } from '../utils/constants';
 import CustomPromptsHelpModal from './action-panel/CustomPromptsHelpModal';
 import SelectedFilesDisplay from './action-panel/SelectedFilesDisplay';
 import { executeAgentTaskCommand } from '../commands/agentTaskCommand';
@@ -57,17 +47,21 @@ interface ActionPanelProps {
 }
 
 // Stable default values to prevent reference equality issues
-const EMPTY_STRING = '';
 const EMPTY_ARRAY: string[] = [];
 
-const ActionPanel: React.FC<ActionPanelProps> = ({
-  rootItems,
-  setActivePanelTab,
-  isActive,
-}) => {
+function getIconComponent(iconName?: string): LucideIcon | null {
+  if (!iconName) {
+    return null;
+  }
+
+  const icon = Icons[iconName as keyof typeof Icons];
+  return typeof icon === 'function' ? (icon as LucideIcon) : null;
+}
+
+const ActionPanel: React.FC<ActionPanelProps> = ({ rootItems }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  
+
   const {
     tabs,
     activeTabIndex,
@@ -110,23 +104,17 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       setContextMenu(null);
       setTaskContextMenu(null);
-      if (
-        contextFieldRef.current &&
-        !contextFieldRef.current.contains(event.target as Node)
-      ) {
+      if (contextFieldRef.current && !contextFieldRef.current.contains(event.target as Node)) {
         setShowContextDropdown(false);
       }
-
-          };
+    };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   // Function to determine floating label position based on button position
   const getFloatingLabelPosition = (promptId: string) => {
-    const buttonElement = document.querySelector(
-      `button[data-prompt-id="${promptId}"]`
-    );
+    const buttonElement = document.querySelector(`button[data-prompt-id="${promptId}"]`);
     if (!buttonElement) return '';
 
     const rect = buttonElement.getBoundingClientRect();
@@ -154,10 +142,8 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     toggleProjectInfo,
   } = useFileSystemStore();
   const { addLog } = useLogStore();
-  const { prompts, getDefaultVariant, setActiveVariant, getActiveVariant } =
-    usePromptStore();
-  const { setContext } = useContextStore();
-  const { applicationSettings, saveApplicationSettings } = useSettingsStore();
+  const { prompts, getDefaultVariant, setActiveVariant, getActiveVariant } = usePromptStore();
+  const tasks = useTaskStore((state) => state.tasks);
   const { isGeneratingPrompt, setIsGeneratingPrompt } = useWorkbenchStore();
   const { isGraphAnalysisInProgress } = useFileSystemStore();
   const isBusy = isLoading || isGeneratingPrompt || isGraphAnalysisInProgress;
@@ -182,23 +168,52 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
   }, []);
 
   // Setup custom undo/redo support
-  const { insertText, handleInput, handleBeforeInput } = useUndoRedo(contentTextareaRef, activeTabIndex);
+  const { insertText, handleInput, handleBeforeInput } = useUndoRedo(
+    contentTextareaRef,
+    activeTabIndex
+  );
 
   // Use a memoized selector to prevent unnecessary re-renders.
   // This ensures the context-fetching effect only runs when relevant data changes.
-  const { content, selectedFiles } = useWorkbenchStore(
+  const selectedFiles = useWorkbenchStore(
     useShallow((state: WorkbenchState) => {
       const tab = state.tabs[state.activeTabIndex];
-      // Use stable default values to prevent reference equality issues
-      return {
-        content: tab?.content ?? EMPTY_STRING,
-        selectedFiles: tab?.selectedFiles ?? EMPTY_ARRAY,
-      };
+      // Use stable default value to prevent reference equality issues
+      return tab?.selectedFiles ?? EMPTY_ARRAY;
     })
   );
 
   // Early calculation of hasNoProject
   const hasNoProject = !rootItems || rootItems.length === 0 || !rootItems[0];
+  const activeTab = tabs[activeTabIndex];
+  const rootItemName = rootItems[0]?.name;
+  const currentContent = activeTab?.content ?? '';
+  const currentContext = activeTab?.context ?? '';
+  const currentOutput = activeTab?.output ?? '';
+
+  const contentDropProps = useFileDrop({
+    onInsert: (value, start, end) => {
+      // Insert text using custom undo support
+      insertText(value, start, end);
+    },
+    currentValue: currentContent,
+  });
+
+  const contextDropProps = useFileDrop({
+    onInsert: (value, start, end) => {
+      const newText = currentContext.slice(0, start) + value + currentContext.slice(end);
+      setTabContext(activeTabIndex, newText);
+    },
+    currentValue: currentContext,
+  });
+
+  const outputDropProps = useFileDrop({
+    onInsert: (value, start, end) => {
+      const newText = currentOutput.slice(0, start) + value + currentOutput.slice(end);
+      setTabOutput(activeTabIndex, newText);
+    },
+    currentValue: currentOutput,
+  });
 
   const { setContext: setContextInStore } = useContextStore();
   // Effect: recalculate context when description or selection *really* changes,
@@ -235,14 +250,14 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
 
     // Debounce to avoid rapid successive calls
     const timeoutId = setTimeout(() => {
-      checkGitRepo();
+      void checkGitRepo();
     }, 300);
 
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [hasNoProject, rootItems[0]?.name]); // Only depend on project root name, not entire rootItems array
+  }, [hasNoProject, rootItemName]); // Only depend on project root name, not entire rootItems array
 
   // Handler for task button clicks
   const handleTaskClick = (task: TaskData) => {
@@ -267,7 +282,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
       console.log('Replacing all content');
     }
 
-    buildTaskAction({
+    void buildTaskAction({
       task,
       rootItems,
       selectedItems: selectedItemsSet,
@@ -305,7 +320,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
       addLog(`Generated ${prompt.label} prompt`);
       await copyToClipboard({ content: result, addLog });
     } catch (error) {
-      addLog(`Error generating prompt: ${error}`);
+      addLog(`Error generating prompt: ${String(error)}`);
     } finally {
       setIsGeneratingPrompt(false);
       setIsLoading(false);
@@ -316,8 +331,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
     void copyToClipboard({ content, addLog });
   };
 
-  const isTaskEmpty =
-    !tabs?.[activeTabIndex] || tabs[activeTabIndex].content.trim().length === 0;
+  const isTaskEmpty = !tabs?.[activeTabIndex] || tabs[activeTabIndex].content.trim().length === 0;
   const hasNoSelection = !tabs?.[activeTabIndex]?.selectedFiles.length;
 
   // Show empty state when no project is loaded
@@ -330,9 +344,8 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             Ready to Work with AI
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Open a project folder to start generating prompts and working with
-            AI assistants. Select files, describe your tasks, and let Athanor
-            help you communicate effectively with AI.
+            Open a project folder to start generating prompts and working with AI assistants. Select
+            files, describe your tasks, and let Athanor help you communicate effectively with AI.
           </p>
           <button
             onClick={() => window.fileService.openFolder()}
@@ -369,9 +382,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                             : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
                         }`}
                       >
-                        <span className="truncate max-w-[120px]">
-                          {tab.name}
-                        </span>
+                        <span className="truncate max-w-[120px]">{tab.name}</span>
                         <div
                           role="button"
                           tabIndex={0}
@@ -418,7 +429,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                       addLog('No task description to create agent task');
                       return;
                     }
-                    
+
                     // Generate filename from tab name using same logic as buildPrompt.ts
                     const tabName = tabs[activeTabIndex].name;
                     const formattedTabName = tabName
@@ -426,12 +437,12 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                       .replace(/\s+/g, '_') // Replace whitespace with underscores
                       .replace(/[^A-Z0-9_]/g, ''); // Remove any remaining non-alphanumeric characters except underscore
                     const fileName = `${formattedTabName}.md`;
-                    
+
                     // Create the XML content for the agent task command
                     const xmlContent = `<athanor_command>agent task</athanor_command>
 <file_name>${fileName}</file_name>
 <task_content>${taskContent}</task_content>`;
-                    
+
                     await executeAgentTaskCommand({
                       content: xmlContent,
                       addLog,
@@ -467,13 +478,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               onBeforeInput={(e) => {
                 handleBeforeInput(e);
               }}
-              {...useFileDrop({
-                onInsert: (value, start, end) => {
-                  // Insert text using custom undo support
-                  insertText(value, start, end);
-                },
-                currentValue: tabs[activeTabIndex].content,
-              })}
+              {...contentDropProps}
             />
 
             {/* Context Field */}
@@ -484,20 +489,10 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                   type="text"
                   placeholder="Add task context - leave empty in most cases"
                   value={tabs[activeTabIndex].context}
-                  onChange={(e) =>
-                    setTabContext(activeTabIndex, e.target.value)
-                  }
+                  onChange={(e) => setTabContext(activeTabIndex, e.target.value)}
                   className="flex-1"
                   aria-label="Task context"
-                  {...useFileDrop({
-                    onInsert: (value, start, end) => {
-                      const text = tabs[activeTabIndex].context;
-                      const newText =
-                        text.slice(0, start) + value + text.slice(end);
-                      setTabContext(activeTabIndex, newText);
-                    },
-                    currentValue: tabs[activeTabIndex].context,
-                  })}
+                  {...contextDropProps}
                 />
                 {tabs[activeTabIndex].context && (
                   <button
@@ -515,11 +510,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                       setShowContextDropdown(!showContextDropdown);
                     }}
                     className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-                    aria-label={
-                      showContextDropdown
-                        ? 'Hide suggestions'
-                        : 'Show suggestions'
-                    }
+                    aria-label={showContextDropdown ? 'Hide suggestions' : 'Show suggestions'}
                   >
                     {showContextDropdown ? (
                       <ChevronUp className="w-4 h-4" />
@@ -556,9 +547,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               <div className="space-y-3">
                 <div className="pb-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold">
-                      Preset Prompts and Tasks
-                    </h2>
+                    <h2 className="text-lg font-semibold">Preset Prompts and Tasks</h2>
                     <button
                       onClick={() => setIsHelpModalOpen(true)}
                       className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -624,13 +613,10 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                     const variant = getDefaultVariant(prompt.id);
                     if (!variant) return null;
 
-                    const IconComponent = prompt.icon
-                      ? (Icons as any)[prompt.icon]
-                      : null;
+                    const IconComponent = getIconComponent(prompt.icon);
 
                     // Check if this is a user-defined template
-                    const isUserDefined =
-                      prompt.source && prompt.source !== 'default';
+                    const isUserDefined = prompt.source && prompt.source !== 'default';
 
                     return (
                       <button
@@ -647,7 +633,6 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                         }}
                         onContextMenu={(e) => {
                           e.preventDefault();
-                          const rect = e.currentTarget.getBoundingClientRect();
                           setContextMenu({
                             promptId: prompt.id,
                             x: e.clientX,
@@ -659,16 +644,12 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                         data-prompt-id={prompt.id}
                         aria-label={prompt.label}
                         aria-haspopup="true"
-                        aria-expanded={
-                          contextMenu?.promptId === prompt.id ? 'true' : 'false'
-                        }
+                        aria-expanded={contextMenu?.promptId === prompt.id ? 'true' : 'false'}
                       >
                         {IconComponent && (
                           <>
                             <IconComponent className="w-5 h-5 icon-btn-icon" />
-                            <span className="floating-label">
-                              {prompt.label}
-                            </span>
+                            <span className="floating-label">{prompt.label}</span>
                           </>
                         )}
                         {isUserDefined && (
@@ -677,10 +658,8 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                       </button>
                     );
                   })}
-                  {useTaskStore((state) => state.tasks).map((task) => {
-                    const IconComponent = task.icon
-                      ? (Icons as any)[task.icon]
-                      : null;
+                  {tasks.map((task) => {
+                    const IconComponent = getIconComponent(task.icon);
                     const isDisabled =
                       isBusy ||
                       (task.requires === 'selected' && hasNoSelection) ||
@@ -694,8 +673,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                           : null;
 
                     // Check if this is a user-defined template
-                    const isUserDefined =
-                      task.source && task.source !== 'default';
+                    const isUserDefined = task.source && task.source !== 'default';
 
                     return (
                       <button
@@ -703,15 +681,13 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                         className="icon-btn relative bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-500"
                         title={
                           isUserDefined
-                            ? 'Custom: ' +
-                              getTaskTooltip(task, isDisabled, reason)
+                            ? 'Custom: ' + getTaskTooltip(task, isDisabled, reason)
                             : getTaskTooltip(task, isDisabled, reason)
                         }
                         onClick={() => handleTaskClick(task)}
                         disabled={isDisabled}
                         onContextMenu={(e) => {
                           e.preventDefault();
-                          const rect = e.currentTarget.getBoundingClientRect();
                           setTaskContextMenu({
                             taskId: task.id,
                             x: e.clientX,
@@ -721,9 +697,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                         data-edge="left"
                         aria-label={task.label}
                         aria-haspopup="true"
-                        aria-expanded={
-                          taskContextMenu?.taskId === task.id ? 'true' : 'false'
-                        }
+                        aria-expanded={taskContextMenu?.taskId === task.id ? 'true' : 'false'}
                       >
                         {IconComponent && (
                           <>
@@ -752,12 +726,8 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             onClose={() => setContextMenu(null)}
             onSelectVariant={async (variantId: string) => {
               if (contextMenu?.promptId) {
-                const prompt = prompts.find(
-                  (p) => p.id === contextMenu.promptId
-                );
-                const variant = prompt?.variants.find(
-                  (v) => v.id === variantId
-                );
+                const prompt = prompts.find((p) => p.id === contextMenu.promptId);
+                const variant = prompt?.variants.find((v) => v.id === variantId);
 
                 if (prompt && variant) {
                   setActiveVariant(contextMenu.promptId, variantId);
@@ -771,9 +741,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
               setContextMenu(null);
             }}
             activeVariantId={
-              contextMenu?.promptId
-                ? getActiveVariant(contextMenu.promptId)?.id
-                : undefined
+              contextMenu?.promptId ? getActiveVariant(contextMenu.promptId)?.id : undefined
             }
           />
         )}
@@ -781,19 +749,13 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
         {/* Task Context Menu */}
         {taskContextMenu && (
           <TaskContextMenu
-            task={
-              useTaskStore
-                .getState()
-                .tasks.find((t) => t.id === taskContextMenu.taskId)!
-            }
+            task={useTaskStore.getState().tasks.find((t) => t.id === taskContextMenu.taskId)!}
             x={taskContextMenu.x}
             y={taskContextMenu.y}
             onClose={() => setTaskContextMenu(null)}
             onSelectVariant={(variantId: string) => {
               if (taskContextMenu?.taskId) {
-                useTaskStore
-                  .getState()
-                  .setActiveVariant(taskContextMenu.taskId, variantId);
+                useTaskStore.getState().setActiveVariant(taskContextMenu.taskId, variantId);
 
                 // Find the full task data object
                 const task = useTaskStore
@@ -817,7 +779,8 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                     let selectionEnd: number | undefined;
 
                     // Check if textarea was the last active element using our new tracking
-                    const wasTextareaActive = lastActiveElementRef.current === contentTextareaRef.current;
+                    const wasTextareaActive =
+                      lastActiveElementRef.current === contentTextareaRef.current;
 
                     if (wasTextareaActive && contentTextareaRef.current) {
                       // Use current cursor position
@@ -825,7 +788,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                       selectionEnd = contentTextareaRef.current.selectionEnd;
                     }
 
-                    buildTaskAction({
+                    void buildTaskAction({
                       task,
                       rootItems,
                       selectedItems: selectedItemsSet,
@@ -842,9 +805,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             }}
             activeVariantId={
               taskContextMenu?.taskId
-                ? useTaskStore
-                    .getState()
-                    .getActiveVariant(taskContextMenu.taskId)?.id
+                ? useTaskStore.getState().getActiveVariant(taskContextMenu.taskId)?.id
                 : undefined
             }
           />
@@ -868,14 +829,7 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
             onChange={(e) => setTabOutput(activeTabIndex, e.target.value)}
             className="flex-1 p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded font-mono text-sm resize-none overflow-auto whitespace-pre placeholder-gray-500 dark:placeholder-gray-400"
             placeholder="Generated prompt to be pasted into an AI assistant will appear here..."
-            {...useFileDrop({
-              onInsert: (value, start, end) => {
-                const text = tabs[activeTabIndex].output;
-                const newText = text.slice(0, start) + value + text.slice(end);
-                setTabOutput(activeTabIndex, newText);
-              },
-              currentValue: tabs[activeTabIndex].output,
-            })}
+            {...outputDropProps}
           />
 
           {/* Custom Prompts Help Modal */}

@@ -79,9 +79,7 @@ const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
   const handleIgnoreThis = async () => {
     const relativePath = await getProjectRelativePath();
-    const logPath = relativePath.endsWith('/')
-      ? relativePath.slice(0, -1)
-      : relativePath;
+    const logPath = relativePath.endsWith('/') ? relativePath.slice(0, -1) : relativePath;
     addLog(`Adding ${type} '${logPath}' to .athignore`);
     // Single-file/folder ignore => ignoreAll = false
     onIgnoreItem(relativePath, false);
@@ -92,9 +90,7 @@ const FileContextMenu: React.FC<FileContextMenuProps> = ({
     const baseName = name.replace(/^\/+/, '');
     // For ignoring all folders with this name, we pass the bare name plus slash if folder
     const ignorePath = type === 'folder' ? baseName + '/' : baseName;
-    const logPath = ignorePath.endsWith('/')
-      ? ignorePath.slice(0, -1)
-      : ignorePath;
+    const logPath = ignorePath.endsWith('/') ? ignorePath.slice(0, -1) : ignorePath;
     addLog(`Adding all ${type}s named '${logPath}' to .athignore`);
     // Wildcard pattern => ignoreAll = true
     onIgnoreItem(ignorePath, true);
@@ -134,9 +130,7 @@ const FileContextMenu: React.FC<FileContextMenuProps> = ({
           </button>
         </div>
       )}
-      {type === 'folder' && (
-        <div className="border-t border-gray-100 dark:border-gray-700" />
-      )}
+      {type === 'folder' && <div className="border-t border-gray-100 dark:border-gray-700" />}
       <div className="py-1">
         <button
           className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none dark:text-gray-200"

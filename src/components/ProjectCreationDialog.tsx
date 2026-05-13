@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { HelpCircle } from 'lucide-react';
 
 interface ProjectCreationDialogProps {
@@ -35,10 +35,10 @@ const ProjectCreationDialog: React.FC<ProjectCreationDialogProps> = ({
   };
 
   // Dynamic text based on .gitignore existence
-  const gitignoreLabel = gitignoreExists 
+  const gitignoreLabel = gitignoreExists
     ? 'Append Athanor rules to existing .gitignore'
     : 'Create .gitignore with Athanor rules';
-  
+
   const gitignoreTooltip = gitignoreExists
     ? 'Add Athanor-specific ignore rules to your existing .gitignore file'
     : 'Create a new .gitignore file with Athanor-specific ignore rules';
@@ -49,11 +49,12 @@ const ProjectCreationDialog: React.FC<ProjectCreationDialogProps> = ({
         <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
           Create Athanor Project in &quot;{folderName}&quot;
         </h2>
-        
+
         <div className="bg-blue-50 dark:bg-blue-900/40 border-l-4 border-blue-500 dark:border-blue-500/70 p-4 mb-4">
           <div className="font-medium text-gray-900 dark:text-blue-200">Project Configuration</div>
           <div className="text-sm text-gray-600 dark:text-blue-300/80">
-            Athanor will automatically use .gitignore rules if present. You can customize ignore behavior with .athignore for project-specific rules.
+            Athanor will automatically use .gitignore rules if present. You can customize ignore
+            behavior with .athignore for project-specific rules.
           </div>
         </div>
 
@@ -74,13 +75,11 @@ const ProjectCreationDialog: React.FC<ProjectCreationDialogProps> = ({
                 Include default .athignore
               </label>
               <span title="Include a default set of ignore rules for common files and directories like node_modules, .git, etc.">
-                <HelpCircle 
-                  className="h-4 w-4 ml-1 text-gray-400 dark:text-gray-500 cursor-help"
-                />
+                <HelpCircle className="h-4 w-4 ml-1 text-gray-400 dark:text-gray-500 cursor-help" />
               </span>
             </div>
           </div>
-          
+
           <div className="flex items-start space-x-2">
             <input
               type="checkbox"
@@ -97,9 +96,7 @@ const ProjectCreationDialog: React.FC<ProjectCreationDialogProps> = ({
                 {gitignoreLabel}
               </label>
               <span title={gitignoreTooltip}>
-                <HelpCircle 
-                  className="h-4 w-4 ml-1 text-gray-400 dark:text-gray-500 cursor-help"
-                />
+                <HelpCircle className="h-4 w-4 ml-1 text-gray-400 dark:text-gray-500 cursor-help" />
               </span>
             </div>
           </div>

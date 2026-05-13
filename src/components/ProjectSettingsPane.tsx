@@ -69,9 +69,7 @@ const ProjectSettingsPane: React.FC<ProjectSettingsPaneProps> = ({
         await saveProjectSettings(updatedSettings);
       } catch (error) {
         const errorMessage =
-          error instanceof Error
-            ? error.message
-            : 'Failed to save project settings';
+          error instanceof Error ? error.message : 'Failed to save project settings';
         setProjectSaveError(errorMessage);
         console.error('Error saving project settings:', error);
       } finally {
@@ -100,8 +98,6 @@ const ProjectSettingsPane: React.FC<ProjectSettingsPaneProps> = ({
     setProjectInfoFilePath(value);
   };
 
-
-
   const handleUseGitignoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUseGitignore(e.target.checked);
   };
@@ -117,8 +113,7 @@ const ProjectSettingsPane: React.FC<ProjectSettingsPaneProps> = ({
       }
     } catch (error) {
       console.error('Error selecting project info file:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to select file.';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to select file.';
       setBrowseError(errorMessage);
     }
   };
@@ -131,7 +126,7 @@ const ProjectSettingsPane: React.FC<ProjectSettingsPaneProps> = ({
 
   // Project save button handler
   const handleSaveProjectSettings = () => {
-    saveProjectSettingsCallback({
+    void saveProjectSettingsCallback({
       projectNameOverride: projectNameOverride.trim(),
       projectInfoFilePath: projectInfoFilePath.trim(),
       useGitignore: useGitignore,
@@ -173,9 +168,7 @@ const ProjectSettingsPane: React.FC<ProjectSettingsPaneProps> = ({
         <div className="space-y-6">
           {isLoadingProjectSettings ? (
             <div className="flex items-center justify-center py-4">
-              <div className="text-gray-500 dark:text-gray-400">
-                Loading project settings...
-              </div>
+              <div className="text-gray-500 dark:text-gray-400">Loading project settings...</div>
             </div>
           ) : (
             <>
@@ -249,9 +242,7 @@ const ProjectSettingsPane: React.FC<ProjectSettingsPaneProps> = ({
                   <button
                     type="button"
                     onClick={handleBrowseProjectInfoFile}
-                    disabled={
-                      !hasProject || isLoadingProjectSettings || isSavingProject
-                    }
+                    disabled={!hasProject || isLoadingProjectSettings || isSavingProject}
                     className="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Browse for project info file"
                   >
@@ -273,9 +264,7 @@ const ProjectSettingsPane: React.FC<ProjectSettingsPaneProps> = ({
                   </button>
                 </div>
                 {browseError && (
-                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-                    {browseError}
-                  </p>
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">{browseError}</p>
                 )}
               </div>
 
@@ -338,8 +327,7 @@ const ProjectSettingsPane: React.FC<ProjectSettingsPaneProps> = ({
                           projectSettings
                             ? JSON.stringify(projectSettings, null, 2)
                             : 'No project settings file found or loaded.\n(Using default values or awaiting load)'
-                        }\n\n` +
-                        `Settings are stored in .ath_materials/project_settings.json`
+                        }\n\n` + `Settings are stored in .ath_materials/project_settings.json`
                       }
                     >
                       <Info className="w-5 h-5 text-gray-500 dark:text-gray-400 cursor-help hover:text-gray-700 dark:hover:text-gray-300" />

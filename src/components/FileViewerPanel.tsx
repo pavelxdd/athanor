@@ -96,7 +96,7 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
   useEffect(() => {
     const loadFile = async () => {
       setForceHighlight(false);
-      
+
       if (!previewedFilePath) {
         setFileContent('');
         setError('');
@@ -112,10 +112,10 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
 
       try {
         const [dir, resolvedPath, isDirectory, isTextFileResult] = await Promise.all([
-           window.fileService.getCurrentDirectory(),
-           window.fileService.resolve(previewedFilePath),
-           window.fileService.isDirectory(previewedFilePath),
-           isTextFile(previewedFilePath)
+          window.fileService.getCurrentDirectory(),
+          window.fileService.resolve(previewedFilePath),
+          window.fileService.isDirectory(previewedFilePath),
+          isTextFile(previewedFilePath),
         ]);
 
         setCurrentDir(dir);
@@ -182,9 +182,7 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
                   </button>
                 )}
                 <button
-                  className={`px-2 py-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 rounded flex items-center gap-1 ${
-                    'hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                  className={`px-2 py-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 rounded flex items-center gap-1 ${'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                   onClick={async () => {
                     if (applicationSettings) {
                       await saveApplicationSettings({
@@ -238,10 +236,8 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
                   className="px-2 py-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-1"
                   onClick={async () => {
                     const { addLog: log } = useLogStore.getState(); // Renamed to avoid conflict
-                    const { setOperations, clearOperations } =
-                      useApplyChangesStore.getState();
-                    const clipboardContent =
-                      await navigator.clipboard.readText();
+                    const { setOperations, clearOperations } = useApplyChangesStore.getState();
+                    const clipboardContent = await navigator.clipboard.readText();
 
                     // Use osPath for relativization; ensure it's available.
                     // previewedFilePath is the primary key from the store, osPath is its absolute representation.
@@ -259,12 +255,9 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
                     }
 
                     try {
-                      const relativePathForOperation =
-                        await window.fileService.relativize(osPath);
+                      const relativePathForOperation = await window.fileService.relativize(osPath);
                       if (!relativePathForOperation) {
-                        log(
-                          `Replace failed: Could not determine relative path for ${osPath}.`
-                        );
+                        log(`Replace failed: Could not determine relative path for ${osPath}.`);
                         return;
                       }
 
@@ -288,16 +281,11 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
                       if (onTabChange) {
                         onTabChange('review');
                       } else {
-                        console.error(
-                          'onTabChange callback is not available in FileViewerPanel.'
-                        );
+                        console.error('onTabChange callback is not available in FileViewerPanel.');
                         log('Error: Could not navigate to Apply Changes tab.');
                       }
                     } catch (error) {
-                      console.error(
-                        'Error during replace with clipboard action:',
-                        error
-                      );
+                      console.error('Error during replace with clipboard action:', error);
                       log(
                         `Error preparing replacement for ${osPath}: ${error instanceof Error ? error.message : String(error)}`
                       );
@@ -320,16 +308,12 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
         </>
       ) : (
         <div className="text-sm text-gray-400 dark:text-gray-500 mb-2">
-          {!previewedFilePath
-            ? 'No file selected for preview'
-            : 'Loading file...'}
+          {!previewedFilePath ? 'No file selected for preview' : 'Loading file...'}
         </div>
       )}
       {isText && !error && fileContent && (
         <div
-          className={`w-full h-full rounded font-mono text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 scrollbar-thin file-viewer-syntax-highlighter-wrapper relative ${
-            'overflow-hidden'
-          }`}
+          className={`w-full h-full rounded font-mono text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 scrollbar-thin file-viewer-syntax-highlighter-wrapper relative ${'overflow-hidden'}`}
         >
           {shouldHighlight ? (
             <SyntaxHighlighter
@@ -373,7 +357,7 @@ const FileViewerPanel: React.FC<FileViewerPanelProps> = ({ onTabChange }) => {
                   lineHeight: 'inherit',
                 },
               }}
-              lineProps={(lineNumber) => ({
+              lineProps={() => ({
                 style: {
                   display: 'block',
                   width: '100%',

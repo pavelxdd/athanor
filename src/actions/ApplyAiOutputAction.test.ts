@@ -3,7 +3,6 @@
  */
 import { processAiResponseContent } from './ApplyAiOutputAction';
 import * as commands from '../commands';
-import { useApplyChangesStore } from '../stores/applyChangesStore';
 import { FileOperation } from '../types/global';
 
 // Mock the commands module
@@ -37,9 +36,7 @@ Object.defineProperty(navigator, 'clipboard', {
 });
 
 // Mock console.error to avoid noise in test output
-const consoleErrorSpy = jest
-  .spyOn(console, 'error')
-  .mockImplementation(() => {});
+const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
 describe('ApplyAiOutputAction', () => {
   let mockAddLog: jest.Mock;
@@ -95,9 +92,7 @@ describe('ApplyAiOutputAction', () => {
 
       await processAiResponseContent('some content', mockParams);
 
-      expect(mockAddLog).toHaveBeenCalledWith(
-        'No valid commands found in AI response'
-      );
+      expect(mockAddLog).toHaveBeenCalledWith('No valid commands found in AI response');
       expect(commands.executeSelectCommand).not.toHaveBeenCalled();
       expect(commands.executeTaskCommand).not.toHaveBeenCalled();
       expect(commands.executeApplyChangesCommand).not.toHaveBeenCalled();
@@ -108,9 +103,7 @@ describe('ApplyAiOutputAction', () => {
 
       await processAiResponseContent('some content', mockParams);
 
-      expect(mockAddLog).toHaveBeenCalledWith(
-        'No valid commands found in AI response'
-      );
+      expect(mockAddLog).toHaveBeenCalledWith('No valid commands found in AI response');
     });
 
     it('should execute SELECT command successfully', async () => {
@@ -127,9 +120,7 @@ describe('ApplyAiOutputAction', () => {
         content: 'file1.ts file2.ts',
         addLog: mockAddLog,
       });
-      expect(mockAddLog).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to execute')
-      );
+      expect(mockAddLog).not.toHaveBeenCalledWith(expect.stringContaining('Failed to execute'));
     });
 
     it('should handle SELECT command failure', async () => {
@@ -143,9 +134,7 @@ describe('ApplyAiOutputAction', () => {
       await processAiResponseContent('ai content', mockParams);
 
       expect(commands.executeSelectCommand).toHaveBeenCalled();
-      expect(mockAddLog).toHaveBeenCalledWith(
-        'Failed to execute select command'
-      );
+      expect(mockAddLog).toHaveBeenCalledWith('Failed to execute select command');
     });
 
     it('should execute TASK command successfully', async () => {
@@ -162,9 +151,7 @@ describe('ApplyAiOutputAction', () => {
         content: 'Update the documentation',
         addLog: mockAddLog,
       });
-      expect(mockAddLog).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to execute')
-      );
+      expect(mockAddLog).not.toHaveBeenCalledWith(expect.stringContaining('Failed to execute'));
     });
 
     it('should handle TASK command failure', async () => {
@@ -187,9 +174,7 @@ describe('ApplyAiOutputAction', () => {
         content: [mockOperation],
       };
       (commands.parseCommand as jest.Mock).mockResolvedValue([mockCommand]);
-      (commands.executeApplyChangesCommand as jest.Mock).mockResolvedValue(
-        true
-      );
+      (commands.executeApplyChangesCommand as jest.Mock).mockResolvedValue(true);
 
       await processAiResponseContent('ai content', mockParams);
 
@@ -200,9 +185,7 @@ describe('ApplyAiOutputAction', () => {
         clearOperations: mockClearOperations,
         setActiveTab: mockSetActiveTab,
       });
-      expect(mockAddLog).not.toHaveBeenCalledWith(
-        expect.stringContaining('Failed to execute')
-      );
+      expect(mockAddLog).not.toHaveBeenCalledWith(expect.stringContaining('Failed to execute'));
     });
 
     it('should aggregate multiple APPLY_CHANGES commands into a single execution', async () => {
@@ -281,16 +264,12 @@ describe('ApplyAiOutputAction', () => {
         content: [mockOperation],
       };
       (commands.parseCommand as jest.Mock).mockResolvedValue([mockCommand]);
-      (commands.executeApplyChangesCommand as jest.Mock).mockResolvedValue(
-        false
-      );
+      (commands.executeApplyChangesCommand as jest.Mock).mockResolvedValue(false);
 
       await processAiResponseContent('ai content', mockParams);
 
       expect(commands.executeApplyChangesCommand).toHaveBeenCalled();
-      expect(mockAddLog).toHaveBeenCalledWith(
-        'Failed to execute combined APPLY_CHANGES command'
-      );
+      expect(mockAddLog).toHaveBeenCalledWith('Failed to execute combined APPLY_CHANGES command');
     });
 
     it('should handle unknown command type', async () => {
@@ -302,9 +281,7 @@ describe('ApplyAiOutputAction', () => {
 
       await processAiResponseContent('ai content', mockParams);
 
-      expect(mockAddLog).toHaveBeenCalledWith(
-        'Unknown command type: UNKNOWN_COMMAND'
-      );
+      expect(mockAddLog).toHaveBeenCalledWith('Unknown command type: UNKNOWN_COMMAND');
       expect(commands.executeSelectCommand).not.toHaveBeenCalled();
       expect(commands.executeTaskCommand).not.toHaveBeenCalled();
       expect(commands.executeApplyChangesCommand).not.toHaveBeenCalled();
@@ -316,13 +293,8 @@ describe('ApplyAiOutputAction', () => {
 
       await processAiResponseContent('ai content', mockParams);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Failed to process AI content:',
-        parseError
-      );
-      expect(mockAddLog).toHaveBeenCalledWith(
-        'Failed to process AI content: Parse error'
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to process AI content:', parseError);
+      expect(mockAddLog).toHaveBeenCalledWith('Failed to process AI content: Parse error');
     });
 
     it('should handle error thrown by command execution', async () => {
@@ -338,13 +310,8 @@ describe('ApplyAiOutputAction', () => {
 
       await processAiResponseContent('ai content', mockParams);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Failed to process AI content:',
-        executionError
-      );
-      expect(mockAddLog).toHaveBeenCalledWith(
-        'Failed to process AI content: Execution error'
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to process AI content:', executionError);
+      expect(mockAddLog).toHaveBeenCalledWith('Failed to process AI content: Execution error');
     });
 
     it('should handle params without setActiveTab', async () => {
@@ -376,19 +343,12 @@ describe('ApplyAiOutputAction', () => {
         content: 'select content',
       };
       (commands.parseCommand as jest.Mock).mockReturnValue([mockCommand]);
-      (commands.executeSelectCommand as jest.Mock).mockImplementation(() => {
-        throw 'String error';
-      });
+      (commands.executeSelectCommand as jest.Mock).mockRejectedValue('String error');
 
       await processAiResponseContent('ai content', mockParams);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Failed to process AI content:',
-        'String error'
-      );
-      expect(mockAddLog).toHaveBeenCalledWith(
-        'Failed to process AI content: String error'
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to process AI content:', 'String error');
+      expect(mockAddLog).toHaveBeenCalledWith('Failed to process AI content: String error');
     });
   });
 });

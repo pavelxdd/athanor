@@ -6,26 +6,22 @@ import { useFileSystemLifecycle } from '../hooks/useFileSystemLifecycle';
 import { useLogStore, LogEntry } from '../stores/logStore';
 import { useApplyChangesStore } from '../stores/applyChangesStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { useWorkbenchStore } from '../stores/workbenchStore';
 import { useContextStore } from '../stores/contextStore';
 import { TabType } from './AthanorTabs';
 
 const AthanorApp: React.FC = () => {
   // UI State
   const [activeTab, setActiveTab] = React.useState<TabType>('workbench');
-  const [lastTabChangeTime, setLastTabChangeTime] = React.useState<number>(0);
 
   // Refs
   const logsRef = useRef<HTMLDivElement | null>(null);
 
   // Store Hooks
-  const { logs, addLog } = useLogStore() as {
+  const { logs } = useLogStore() as {
     logs: LogEntry[];
-    addLog: (message: string | Omit<LogEntry, 'id' | 'timestamp'>) => void;
   };
   const { setChangeAppliedCallback } = useApplyChangesStore();
   const { applicationSettings, loadApplicationSettings } = useSettingsStore();
-  const { tabs, activeTabIndex } = useWorkbenchStore();
   const { clearContext } = useContextStore();
 
   // File System Lifecycle
@@ -61,7 +57,7 @@ const AthanorApp: React.FC = () => {
 
   // Load application settings on mount
   useEffect(() => {
-    loadApplicationSettings();
+    void loadApplicationSettings();
   }, [loadApplicationSettings]);
 
   // Theme switching logic
@@ -76,8 +72,7 @@ const AthanorApp: React.FC = () => {
       } else if (uiTheme === 'Auto') {
         try {
           // Get initial system theme
-          const shouldUseDarkColors =
-            await window.nativeThemeBridge.getInitialDarkMode();
+          const shouldUseDarkColors = await window.nativeThemeBridge.getInitialDarkMode();
           if (shouldUseDarkColors) {
             document.documentElement.classList.add('dark');
           } else {
@@ -91,7 +86,7 @@ const AthanorApp: React.FC = () => {
       }
     };
 
-    applyTheme();
+    void applyTheme();
   }, [applicationSettings?.uiTheme]);
 
   // Listen for system theme changes when in Auto mode
@@ -102,15 +97,13 @@ const AthanorApp: React.FC = () => {
       let cleanup: (() => void) | undefined;
 
       try {
-        cleanup = window.nativeThemeBridge.onNativeThemeUpdated(
-          (shouldUseDarkColors: boolean) => {
-            if (shouldUseDarkColors) {
-              document.documentElement.classList.add('dark');
-            } else {
-              document.documentElement.classList.remove('dark');
-            }
+        cleanup = window.nativeThemeBridge.onNativeThemeUpdated((shouldUseDarkColors: boolean) => {
+          if (shouldUseDarkColors) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
           }
-        );
+        });
       } catch (error) {
         console.error('Failed to listen for native theme updates:', error);
       }
@@ -126,9 +119,7 @@ const AthanorApp: React.FC = () => {
   // Register refresh callback
   useEffect(() => {
     setChangeAppliedCallback((newlyCreatedPath?: string) =>
-      newlyCreatedPath
-        ? refreshFileSystem(newlyCreatedPath)
-        : refreshFileSystem(true)
+      newlyCreatedPath ? refreshFileSystem(newlyCreatedPath) : refreshFileSystem(true)
     );
     return () => setChangeAppliedCallback(null);
   }, [refreshFileSystem, setChangeAppliedCallback]);
@@ -136,7 +127,6 @@ const AthanorApp: React.FC = () => {
   // Handle tab changes
   const handleTabChange = (newTab: TabType) => {
     setActiveTab(newTab);
-    setLastTabChangeTime(Date.now());
   };
 
   // Show welcome screen when no project is loaded
@@ -149,9 +139,8 @@ const AthanorApp: React.FC = () => {
             Welcome to Athanor ⚗️
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mb-8">
-            Get started by opening a project folder. Athanor will help you work
-            with AI assistants to understand and modify your project files or
-            codebase.
+            Get started by opening a project folder. Athanor will help you work with AI assistants
+            to understand and modify your project files or codebase.
           </p>
           <button
             onClick={handleOpenFolder}
@@ -168,9 +157,7 @@ const AthanorApp: React.FC = () => {
   if (currentDirectory && !filesData && !showProjectDialog) {
     return (
       <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-900">
-        <div className="text-xl text-gray-900 dark:text-gray-100">
-          Loading project structure...
-        </div>
+        <div className="text-xl text-gray-900 dark:text-gray-100">Loading project structure...</div>
       </div>
     );
   }

@@ -1,10 +1,4 @@
-import {
-  FileItem,
-  sortItems,
-  isEmptyFolder,
-  getFileItemById,
-} from '../utils/fileTree';
-import { FILE_SYSTEM } from '../utils/constants';
+import { FileItem } from '../utils/fileTree';
 
 // Function to normalize content with consistent line endings
 function normalizeContent(content: string): string {
@@ -19,56 +13,42 @@ function normalizeContent(content: string): string {
   ); // Ensure single trailing newline
 }
 
-// Function to count lines in a file
-async function countFileLines(path: string): Promise<number> {
-  try {
-    const content = await window.fileService.read(path, {
-      encoding: 'utf8',
-    });
-    // Count lines after normalizing line endings
-    return normalizeContent(content as string).split('\n').length;
-  } catch (error) {
-    console.error(`Error counting lines in file ${path}:`, error);
-    return 0;
-  }
-}
-
 export async function buildFileTree(
   basePath: string,
   currentPath: string = '',
   isMaterialsTree: boolean = false,
-  applyIgnores: boolean = true
+  _applyIgnores: boolean = true
 ): Promise<FileItem> {
-  // For materials tree, we might still want to do it manually if it's special, 
+  // For materials tree, we might still want to do it manually if it's special,
   // but let's try to use the optimized path for everything.
   // The main process `getFileTree` handles recursion.
-  
+
   // Construct the full path
   const fullPath = await window.pathUtils.join(basePath, currentPath);
-  
+
   try {
     // Use the optimized IPC call
     const tree = await window.fileService.getFileTree(fullPath);
-    
+
     if (!tree) {
       throw new Error('Failed to get file tree');
     }
 
-    // Post-process the tree to match exact FileItem structure if needed, 
+    // Post-process the tree to match exact FileItem structure if needed,
     // and handle specific logic like "Supplementary Materials" name
     if (isMaterialsTree && !currentPath) {
       tree.name = 'Supplementary Materials';
       tree.id = `materials:${currentPath}`;
       // We might need to fix IDs recursively for materials tree to match 'materials:...' convention
       // But for now let's assume standard IDs are fine or we fix them here.
-      
+
       // Helper to prefix IDs
-      const prefixIds = (item: any) => {
+      const prefixIds = (item: FileItem) => {
         if (item.id !== '/') {
-           // If id is relative path, prepend materials:
-           item.id = `materials:${item.id}`;
+          // If id is relative path, prepend materials:
+          item.id = `materials:${item.id}`;
         } else {
-           item.id = 'materials:';
+          item.id = 'materials:';
         }
         if (item.children) {
           item.children.forEach(prefixIds);
@@ -77,7 +57,7 @@ export async function buildFileTree(
       prefixIds(tree);
     }
 
-    // Note: The main process getFileTree skips lineCount for performance. 
+    // Note: The main process getFileTree skips lineCount for performance.
     // If lineCount is strictly required for the UI (e.g. stats), we would need to fetch it.
     // For now, we accept 0/undefined to keep it fast.
 
@@ -110,9 +90,6 @@ export async function readFileContent(path: string): Promise<string> {
 // Read file content by relative path within project
 export async function readFileByPath(relativePath: string): Promise<string> {
   try {
-    // Convert to OS-specific format if needed
-    const fullPath = await window.fileService.resolve(relativePath);
-
     // Read and return the file content
     const content = await window.fileService.read(relativePath, {
       encoding: 'utf8',
@@ -128,17 +105,19 @@ export async function readFileByPath(relativePath: string): Promise<string> {
 export function getAllFiles(tree: FileItem, maxDepth: number = 100): string[] {
   function collectFiles(node: FileItem, depth: number): string[] {
     if (depth <= 0) {
-      console.warn(`Maximum depth (${maxDepth}) reached while collecting files from path: ${node.path}`);
+      console.warn(
+        `Maximum depth (${maxDepth}) reached while collecting files from path: ${node.path}`
+      );
       return [];
     }
-    
+
     if (node.type === 'file') {
       return [node.path];
     }
 
-    return (node.children || []).flatMap(child => collectFiles(child, depth - 1));
+    return (node.children || []).flatMap((child) => collectFiles(child, depth - 1));
   }
-  
+
   return collectFiles(tree, maxDepth);
 }
 
@@ -146,18 +125,22 @@ export function getAllFiles(tree: FileItem, maxDepth: number = 100): string[] {
 export function getAllFolders(tree: FileItem, maxDepth: number = 100): string[] {
   function collectFolders(node: FileItem, depth: number): string[] {
     if (depth <= 0) {
-      console.warn(`Maximum depth (${maxDepth}) reached while collecting folders from path: ${node.path}`);
+      console.warn(
+        `Maximum depth (${maxDepth}) reached while collecting folders from path: ${node.path}`
+      );
       return [];
     }
-    
+
     if (node.type === 'file') {
       return [];
     }
 
     const folders = [node.path];
-    return folders.concat((node.children || []).flatMap(child => collectFolders(child, depth - 1)));
+    return folders.concat(
+      (node.children || []).flatMap((child) => collectFolders(child, depth - 1))
+    );
   }
-  
+
   return collectFolders(tree, maxDepth);
 }
 
@@ -172,7 +155,7 @@ export function findItemByPath(
       console.warn(`Maximum depth (${maxDepth}) reached while searching for path: ${targetPath}`);
       return null;
     }
-    
+
     if (node.path === targetPath) {
       return node;
     }
@@ -188,7 +171,7 @@ export function findItemByPath(
 
     return null;
   }
-  
+
   return search(tree, maxDepth);
 }
 
@@ -205,9 +188,7 @@ export function updateItemInTree(
   if (tree.type === 'folder' && tree.children) {
     return {
       ...tree,
-      children: tree.children.map((child) =>
-        updateItemInTree(child, targetPath, updates)
-      ),
+      children: tree.children.map((child) => updateItemInTree(child, targetPath, updates)),
     };
   }
 

@@ -7,8 +7,7 @@ import { CUSTOM_TEMPLATES } from '../utils/constants';
 
 // Regular expressions for parsing XML files
 const XML_TAG_REGEX = /<ath_(\w+)\s+([^>]+)>/;
-const VARIANT_TAG_REGEX =
-  /<ath_\w+_variant\s+([^>]+)>([\s\S]*?)<\/ath_\w+_variant>/g;
+const VARIANT_TAG_REGEX = /<ath_\w+_variant\s+([^>]+)>([\s\S]*?)<\/ath_\w+_variant>/g;
 const ATTRIBUTES_REGEX = /(\w+)="([^"]*?)"/g;
 
 // Parse attributes from an XML tag string
@@ -47,8 +46,8 @@ async function parseXmlFile<T extends PromptData | TaskData>(
     const order = attrs.order
       ? parseInt(attrs.order, 10)
       : type === 'prompt'
-      ? DEFAULT_PROMPT_ORDER
-      : DEFAULT_TASK_ORDER;
+        ? DEFAULT_PROMPT_ORDER
+        : DEFAULT_TASK_ORDER;
 
     // Validate order is a valid number
     if (isNaN(order)) {
@@ -114,8 +113,8 @@ export async function loadPrompts(): Promise<void> {
     // Parse default prompt files (starting with 'prompt_' and ending with '.xml') in parallel
     defaultPromptsData = await Promise.all(
       files
-        .filter(file => file.startsWith('prompt_') && file.endsWith('.xml'))
-        .map(async file => {
+        .filter((file) => file.startsWith('prompt_') && file.endsWith('.xml'))
+        .map(async (file) => {
           const filePath = await window.fileSystem.joinPaths(promptsDir, file);
           return parseXmlFile<PromptData>(filePath, 'prompt', 'default');
         })
@@ -124,17 +123,20 @@ export async function loadPrompts(): Promise<void> {
     // Load global user prompts
     try {
       const userDataPath = await window.app.getUserDataPath();
-      const globalTemplatesDir = await window.fileSystem.joinPaths(userDataPath, CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME);
-      
+      const globalTemplatesDir = await window.fileSystem.joinPaths(
+        userDataPath,
+        CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME
+      );
+
       await window.fileService.ensureDirectory(globalTemplatesDir);
-      
+
       const globalFiles = await window.fileSystem.readDirectory(globalTemplatesDir, false);
 
       // Parse global prompt files in parallel
       globalPromptsData = await Promise.all(
         globalFiles
-          .filter(file => file.startsWith('prompt_') && file.endsWith('.xml'))
-          .map(async file => {
+          .filter((file) => file.startsWith('prompt_') && file.endsWith('.xml'))
+          .map(async (file) => {
             const filePath = await window.fileSystem.joinPaths(globalTemplatesDir, file);
             return parseXmlFile<PromptData>(filePath, 'prompt', 'global');
           })
@@ -146,17 +148,20 @@ export async function loadPrompts(): Promise<void> {
     // Load project-specific prompts
     try {
       const materialsDir = await window.fileService.getMaterialsDir();
-      const projectTemplatesDir = await window.fileSystem.joinPaths(materialsDir, CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME);
-      
+      const projectTemplatesDir = await window.fileSystem.joinPaths(
+        materialsDir,
+        CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME
+      );
+
       await window.fileService.ensureDirectory(projectTemplatesDir);
-      
+
       const projectFiles = await window.fileSystem.readDirectory(projectTemplatesDir, false);
 
       // Parse project prompt files in parallel
       projectPromptsData = await Promise.all(
         projectFiles
-          .filter(file => file.startsWith('prompt_') && file.endsWith('.xml'))
-          .map(async file => {
+          .filter((file) => file.startsWith('prompt_') && file.endsWith('.xml'))
+          .map(async (file) => {
             const filePath = await window.fileSystem.joinPaths(projectTemplatesDir, file);
             return parseXmlFile<PromptData>(filePath, 'prompt', 'project');
           })
@@ -179,7 +184,9 @@ export async function loadPrompts(): Promise<void> {
 
     const finalMergedPrompts = Array.from(mergedPromptsMap.values());
 
-    console.log(`Loaded ${validDefaultPrompts.length} default, ${validGlobalPrompts.length} global, ${validProjectPrompts.length} project prompts`);
+    console.log(
+      `Loaded ${validDefaultPrompts.length} default, ${validGlobalPrompts.length} global, ${validProjectPrompts.length} project prompts`
+    );
     console.log(`Final merged prompts count: ${finalMergedPrompts.length}`);
 
     usePromptStore.getState().setPrompts(finalMergedPrompts);
@@ -202,8 +209,8 @@ export async function loadTasks(): Promise<void> {
 
     defaultTasksData = await Promise.all(
       files
-        .filter(file => file.startsWith('task_') && file.endsWith('.xml'))
-        .map(async file => {
+        .filter((file) => file.startsWith('task_') && file.endsWith('.xml'))
+        .map(async (file) => {
           const filePath = await window.fileSystem.joinPaths(promptsDir, file);
           return parseXmlFile<TaskData>(filePath, 'task', 'default');
         })
@@ -211,16 +218,19 @@ export async function loadTasks(): Promise<void> {
 
     try {
       const userDataPath = await window.app.getUserDataPath();
-      const globalTemplatesDir = await window.fileSystem.joinPaths(userDataPath, CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME);
-      
+      const globalTemplatesDir = await window.fileSystem.joinPaths(
+        userDataPath,
+        CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME
+      );
+
       await window.fileService.ensureDirectory(globalTemplatesDir);
-      
+
       const globalFiles = await window.fileSystem.readDirectory(globalTemplatesDir, false);
 
       globalTasksData = await Promise.all(
         globalFiles
-          .filter(file => file.startsWith('task_') && file.endsWith('.xml'))
-          .map(async file => {
+          .filter((file) => file.startsWith('task_') && file.endsWith('.xml'))
+          .map(async (file) => {
             const filePath = await window.fileSystem.joinPaths(globalTemplatesDir, file);
             return parseXmlFile<TaskData>(filePath, 'task', 'global');
           })
@@ -231,16 +241,19 @@ export async function loadTasks(): Promise<void> {
 
     try {
       const materialsDir = await window.fileService.getMaterialsDir();
-      const projectTemplatesDir = await window.fileSystem.joinPaths(materialsDir, CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME);
-      
+      const projectTemplatesDir = await window.fileSystem.joinPaths(
+        materialsDir,
+        CUSTOM_TEMPLATES.USER_PROMPTS_DIR_NAME
+      );
+
       await window.fileService.ensureDirectory(projectTemplatesDir);
-      
+
       const projectFiles = await window.fileSystem.readDirectory(projectTemplatesDir, false);
 
       projectTasksData = await Promise.all(
         projectFiles
-          .filter(file => file.startsWith('task_') && file.endsWith('.xml'))
-          .map(async file => {
+          .filter((file) => file.startsWith('task_') && file.endsWith('.xml'))
+          .map(async (file) => {
             const filePath = await window.fileSystem.joinPaths(projectTemplatesDir, file);
             return parseXmlFile<TaskData>(filePath, 'task', 'project');
           })
@@ -248,7 +261,7 @@ export async function loadTasks(): Promise<void> {
     } catch (error) {
       console.warn('Error accessing project tasks directory:', error);
     }
-    
+
     const validDefaultTasks = defaultTasksData.filter((t): t is TaskData => t !== null);
     const validGlobalTasks = globalTasksData.filter((t): t is TaskData => t !== null);
     const validProjectTasks = projectTasksData.filter((t): t is TaskData => t !== null);
@@ -261,7 +274,9 @@ export async function loadTasks(): Promise<void> {
 
     const finalMergedTasks = Array.from(mergedTasksMap.values());
 
-    console.log(`Loaded ${validDefaultTasks.length} default, ${validGlobalTasks.length} global, ${validProjectTasks.length} project tasks`);
+    console.log(
+      `Loaded ${validDefaultTasks.length} default, ${validGlobalTasks.length} global, ${validProjectTasks.length} project tasks`
+    );
     console.log(`Final merged tasks count: ${finalMergedTasks.length}`);
 
     useTaskStore.getState().setTasks(finalMergedTasks);

@@ -8,20 +8,20 @@ interface SettingsState {
   isLoadingProjectSettings: boolean;
   projectSettingsError: string | null;
   currentProjectPath: string | null;
-  
+
   // Application settings state
   applicationSettings: ApplicationSettings | null;
   isLoadingApplicationSettings: boolean;
   applicationSettingsError: string | null;
-  
+
   // Project settings actions
   loadProjectSettings: (projectPath: string | null) => Promise<void>;
   saveProjectSettings: (settings: ProjectSettings) => Promise<void>;
-  
+
   // Application settings actions
   loadApplicationSettings: () => Promise<void>;
   saveApplicationSettings: (settings: ApplicationSettings) => Promise<void>;
-  
+
   // Utility actions
   clearProjectSettings: () => void;
   resetErrors: () => void;
@@ -33,11 +33,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   isLoadingProjectSettings: false,
   projectSettingsError: null,
   currentProjectPath: null,
-  
+
   applicationSettings: null,
   isLoadingApplicationSettings: false,
   applicationSettingsError: null,
-  
+
   // Project settings actions
   loadProjectSettings: async (projectPath: string | null) => {
     // Clear project settings if no path provided
@@ -50,28 +50,29 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       });
       return;
     }
-    
+
     // Don't reload if same project path
     if (get().currentProjectPath === projectPath && get().projectSettings !== null) {
       return;
     }
-    
-    set({ 
-      isLoadingProjectSettings: true, 
+
+    set({
+      isLoadingProjectSettings: true,
       projectSettingsError: null,
       currentProjectPath: projectPath,
     });
-    
+
     try {
       const settings = await window.settingsService.getProjectSettings(projectPath);
-      set({ 
+      set({
         projectSettings: settings,
         isLoadingProjectSettings: false,
       });
       console.log('Loaded project settings:', settings);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error loading project settings';
-      set({ 
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error loading project settings';
+      set({
         projectSettingsError: errorMessage,
         isLoadingProjectSettings: false,
         projectSettings: null,
@@ -79,19 +80,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       console.error('Error loading project settings:', error);
     }
   },
-  
+
   saveProjectSettings: async (settings: ProjectSettings) => {
     const { currentProjectPath } = get();
     if (!currentProjectPath) {
       throw new Error('No project loaded - cannot save project settings');
     }
-    
+
     set({ projectSettingsError: null });
-    
+
     try {
       await window.settingsService.saveProjectSettings(currentProjectPath, settings);
       set({ projectSettings: settings });
-      
+
       // Trigger ignore rules reload in main process to reflect useGitignore changes
       try {
         await window.fileService.reloadIgnoreRules();
@@ -100,28 +101,32 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         console.warn('Failed to reload ignore rules after saving project settings:', reloadError);
         // Don't throw here as the settings were saved successfully
       }
-      
+
       console.log('Saved project settings:', settings);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error saving project settings';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error saving project settings';
       set({ projectSettingsError: errorMessage });
       console.error('Error saving project settings:', error);
       throw error;
     }
   },
-  
+
   // Application settings actions
   loadApplicationSettings: async () => {
     // Don't reload if already loading or already loaded and not in error state
-    if (get().isLoadingApplicationSettings || (get().applicationSettings !== null && !get().applicationSettingsError)) {
+    if (
+      get().isLoadingApplicationSettings ||
+      (get().applicationSettings !== null && !get().applicationSettingsError)
+    ) {
       return;
     }
-    
-    set({ 
-      isLoadingApplicationSettings: true, 
+
+    set({
+      isLoadingApplicationSettings: true,
       applicationSettingsError: null,
     });
-    
+
     try {
       const settings = await window.settingsService.getApplicationSettings();
       // If no settings file exists, use defaults and ensure all keys are present
@@ -129,14 +134,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         ...SETTINGS.defaults.application,
         ...(settings || {}),
       };
-      set({ 
+      set({
         applicationSettings,
         isLoadingApplicationSettings: false,
       });
       console.log('Loaded application settings:', applicationSettings);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error loading application settings';
-      set({ 
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error loading application settings';
+      set({
         applicationSettingsError: errorMessage,
         isLoadingApplicationSettings: false,
         applicationSettings: null,
@@ -144,22 +150,23 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       console.error('Error loading application settings:', error);
     }
   },
-  
+
   saveApplicationSettings: async (settings: ApplicationSettings) => {
     set({ applicationSettingsError: null });
-    
+
     try {
       await window.settingsService.saveApplicationSettings(settings);
       set({ applicationSettings: settings });
       console.log('Saved application settings:', settings);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error saving application settings';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error saving application settings';
       set({ applicationSettingsError: errorMessage });
       console.error('Error saving application settings:', error);
       throw error;
     }
   },
-  
+
   // Utility actions
   clearProjectSettings: () => {
     set({
@@ -169,7 +176,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       isLoadingProjectSettings: false,
     });
   },
-  
+
   resetErrors: () => {
     set({
       projectSettingsError: null,

@@ -4,12 +4,9 @@ interface LinkifiedTextProps {
   text: string;
 }
 
-const handleLinkClick = (
-  e: React.MouseEvent<HTMLAnchorElement>,
-  url: string
-) => {
+const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
   e.preventDefault();
-  window.electronBridge.appShell.openExternalURL(url);
+  void window.electronBridge.appShell.openExternalURL(url);
 };
 
 const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text }) => {

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 interface PanelResizeHook {
   leftPanelWidth: number;
   isResizing: boolean;
-  resizeRef: React.RefObject<HTMLDivElement | null>;  // Update type to match useRef
+  resizeRef: React.RefObject<HTMLDivElement | null>; // Update type to match useRef
   startResize: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 

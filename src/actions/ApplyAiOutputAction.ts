@@ -1,6 +1,5 @@
 import type { FileOperation } from '../types/global';
 import * as commands from '../commands';
-import { useApplyChangesStore } from '../stores/applyChangesStore';
 
 /**
  * Process AI response content for commands, independent of clipboard
@@ -11,9 +10,7 @@ import { useApplyChangesStore } from '../stores/applyChangesStore';
 export async function processAiResponseContent(
   aiContent: string,
   params: {
-    addLog: (
-      message: string | { message: string; onClick: () => Promise<void> }
-    ) => void;
+    addLog: (message: string | { message: string; onClick: () => Promise<void> }) => void;
     setOperations: (ops: FileOperation[]) => void;
     clearOperations: () => void;
     setActiveTab?: (tab: 'workbench' | 'viewer' | 'review') => void;
@@ -34,10 +31,7 @@ export async function processAiResponseContent(
     const otherCommands = [];
 
     for (const cmd of parsedCommands) {
-      if (
-        cmd.type === commands.COMMAND_TYPES.APPLY_CHANGES &&
-        Array.isArray(cmd.content)
-      ) {
+      if (cmd.type === commands.COMMAND_TYPES.APPLY_CHANGES && Array.isArray(cmd.content)) {
         allOperations.push(...cmd.content);
       } else {
         otherCommands.push(cmd);
@@ -96,7 +90,7 @@ export async function processAiResponseContent(
           break;
 
         default:
-          addLog(`Unknown command type: ${command.type}`);
+          addLog(`Unknown command type: ${String(command.type)}`);
           continue;
       }
 
@@ -106,10 +100,6 @@ export async function processAiResponseContent(
     }
   } catch (err) {
     console.error('Failed to process AI content:', err);
-    addLog(
-      `Failed to process AI content: ${
-        err instanceof Error ? err.message : String(err)
-      }`
-    );
+    addLog(`Failed to process AI content: ${err instanceof Error ? err.message : String(err)}`);
   }
 }

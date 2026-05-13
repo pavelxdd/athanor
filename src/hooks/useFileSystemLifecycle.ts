@@ -62,8 +62,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
 
   const { addLog } = useLogStore();
   const { clearFileSelection } = useWorkbenchStore();
-  const { loadProjectSettings, loadApplicationSettings, projectSettings } =
-    useSettingsStore();
+  const { loadProjectSettings, loadApplicationSettings, projectSettings } = useSettingsStore();
   const { setIsGraphAnalysisInProgress } = useFileSystemStore();
   const { clearContext } = useContextStore();
 
@@ -71,10 +70,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
   const prevProjectSettingsRef = useRef<typeof projectSettings>(undefined);
 
   const refreshFileSystem = useCallback(
-    async (
-      silentOrNewPath: boolean | string = false,
-      newlyCreatedPath?: string
-    ) => {
+    async (silentOrNewPath: boolean | string = false, newlyCreatedPath?: string) => {
       // Handle both function signatures:
       // refreshFileSystem(silent = false) and
       // refreshFileSystem(newlyCreatedPath?: string)
@@ -86,15 +82,14 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
         newlyCreatedPath = silentOrNewPath;
         silent = true;
       }
-      
+
       const dir = currentDirectoryRef.current;
       if (isRefreshing || !dir) return;
 
       setIsRefreshing(true);
       try {
         await window.fileService.reloadIgnoreRules();
-        const { mainTree, materialsTree } =
-          await loadAndSetTrees(dir);
+        const { mainTree, materialsTree } = await loadAndSetTrees(dir);
         setFilesData(mainTree);
         setResourcesData(materialsTree);
 
@@ -130,12 +125,12 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
         // Clean up any existing watcher
         watcherUnsubscribeRef.current();
 
-        const unsubscribe = await window.fileService.watch(dir, async () => {
+        const unsubscribe = await window.fileService.watch(dir, () => {
           if (refreshTimeoutRef.current) {
             clearTimeout(refreshTimeoutRef.current);
           }
           refreshTimeoutRef.current = setTimeout(() => {
-            refreshFileSystem(true);
+            void refreshFileSystem(true);
           }, 300);
         });
 
@@ -178,8 +173,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
       // Save the successfully loaded project path and update recent projects list
       try {
         // Get the save action and current settings from the Zustand store
-        const { saveApplicationSettings, applicationSettings } =
-          useSettingsStore.getState();
+        const { saveApplicationSettings, applicationSettings } = useSettingsStore.getState();
         const currentSettings = applicationSettings || {
           ...SETTINGS.defaults.application,
         };
@@ -213,13 +207,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
       setShowProjectDialog(false);
       setPendingDirectory(null);
     },
-    [
-      addLog,
-      setupWatcher,
-      loadProjectSettings,
-      clearFileSelection,
-      clearContext,
-    ]
+    [addLog, setupWatcher, loadProjectSettings, clearFileSelection, clearContext]
   );
 
   // Centralized function to process a directory - handles both UI and CLI flows
@@ -236,7 +224,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
 
       // Check if .athignore exists to determine if this is an existing project
       const athignoreExists = await window.fileService.exists('.athignore');
-      
+
       if (athignoreExists) {
         // Existing project - proceed with loading
         await initializeProject(normalizedDir);
@@ -248,7 +236,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
         setShowProjectDialog(true);
       }
     },
-    [initializeProject, addLog, currentDirectory]
+    [initializeProject, currentDirectory]
   );
 
   const handleCreateProject = useCallback(
@@ -293,7 +281,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
       try {
         // Load application settings first, as they are independent of any project.
         await loadApplicationSettings();
-        
+
         // Then, in the background, check for an initial path to load.
         // The UI will show the "Welcome" screen immediately while this runs.
         const initialPath = await window.app.getInitialPath();
@@ -310,7 +298,7 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
       }
     };
 
-    initializeApp();
+    void initializeApp();
 
     return () => {
       watcherUnsubscribeRef.current();
@@ -320,7 +308,6 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
     };
   }, [loadApplicationSettings, processDirectory, addLog]);
 
-
   // Effect to update effective config when project settings change
   useEffect(() => {
     const prevSettings = prevProjectSettingsRef.current;
@@ -328,15 +315,11 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
     if (currentDirectory && projectSettings !== undefined) {
       // Check if useGitignore setting has changed
       const useGitignoreChanged =
-        prevSettings !== undefined &&
-        prevSettings?.useGitignore !== projectSettings?.useGitignore;
+        prevSettings !== undefined && prevSettings?.useGitignore !== projectSettings?.useGitignore;
 
       // Reload effective configuration when project settings change
       loadAndSetEffectiveConfig(currentDirectory).catch((error) => {
-        console.error(
-          'Error updating effective configuration after settings change:',
-          error
-        );
+        console.error('Error updating effective configuration after settings change:', error);
         addLog('Failed to update configuration after settings change');
       });
 
@@ -346,13 +329,8 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
           `Gitignore usage changed to: ${projectSettings?.useGitignore ? 'enabled' : 'disabled'}`
         );
         refreshFileSystem(true).catch((error) => {
-          console.error(
-            'Error refreshing file system after gitignore setting change:',
-            error
-          );
-          addLog(
-            'Failed to refresh file system after gitignore setting change'
-          );
+          console.error('Error refreshing file system after gitignore setting change:', error);
+          addLog('Failed to refresh file system after gitignore setting change');
         });
       }
     }
@@ -374,27 +352,20 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
 
   // Set up listeners for menu commands from main process
   useEffect(() => {
-    const cleanupOpenFolder = window.electron.receive('menu:open-folder', () =>
-      handleOpenFolder()
-    );
-    const cleanupOpenPath = window.electron.receive(
-      'menu:open-path',
-      (path: string) => processDirectory(path)
-    );
-    const cleanupGraphStarted = window.electron.receive(
-      'graph-analysis:started',
-      () => {
-        addLog('Starting project graph analysis...');
-        setIsGraphAnalysisInProgress(true);
-      }
-    );
-    const cleanupGraphFinished = window.electron.receive(
-      'graph-analysis:finished',
-      () => {
-        addLog('Project graph analysis finished.');
-        setIsGraphAnalysisInProgress(false);
-      }
-    );
+    const cleanupOpenFolder = window.electron.receive('menu:open-folder', () => {
+      void handleOpenFolder();
+    });
+    const cleanupOpenPath = window.electron.receive('menu:open-path', (path: string) => {
+      void processDirectory(path);
+    });
+    const cleanupGraphStarted = window.electron.receive('graph-analysis:started', () => {
+      addLog('Starting project graph analysis...');
+      setIsGraphAnalysisInProgress(true);
+    });
+    const cleanupGraphFinished = window.electron.receive('graph-analysis:finished', () => {
+      addLog('Project graph analysis finished.');
+      setIsGraphAnalysisInProgress(false);
+    });
 
     // Return a cleanup function that will be called when the component unmounts
     return () => {
@@ -423,5 +394,5 @@ export function useFileSystemLifecycle(): FileSystemLifecycle {
     pendingGitignoreExists,
     handleCreateProject,
     handleProjectDialogClose,
-  } as FileSystemLifecycle;
+  };
 }

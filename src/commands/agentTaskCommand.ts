@@ -4,9 +4,7 @@ import { useWorkbenchStore } from '../stores/workbenchStore';
 
 export interface AgentTaskCommandParams {
   content: string;
-  addLog: (
-    message: string | { message: string; onClick: () => Promise<void> }
-  ) => void;
+  addLog: (message: string | { message: string; onClick: () => Promise<void> }) => void;
 }
 
 export async function executeAgentTaskCommand({

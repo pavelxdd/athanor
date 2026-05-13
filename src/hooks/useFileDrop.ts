@@ -1,5 +1,4 @@
 import { DragEvent } from 'react';
-import { DRAG_DROP } from '../utils/constants';
 import { useLogStore } from '../stores/logStore';
 
 // Helper function to get text position from coordinates in a textarea
@@ -11,18 +10,29 @@ function getTextareaPositionFromCoords(
   // Create a copy of the textarea to measure text positions
   const mirror = document.createElement('div');
   const style = window.getComputedStyle(textarea);
-  
+
   // Copy all styles that affect text layout
   const stylesToCopy = [
-    'box-sizing', 'width', 'height', 'padding', 'border', 'font-family',
-    'font-size', 'font-weight', 'line-height', 'white-space', 'word-break',
-    'overflow-wrap', 'tab-size', 'text-indent'
+    'box-sizing',
+    'width',
+    'height',
+    'padding',
+    'border',
+    'font-family',
+    'font-size',
+    'font-weight',
+    'line-height',
+    'white-space',
+    'word-break',
+    'overflow-wrap',
+    'tab-size',
+    'text-indent',
   ];
-  
-  stylesToCopy.forEach(key => {
+
+  stylesToCopy.forEach((key) => {
     mirror.style.setProperty(key, style.getPropertyValue(key));
   });
-  
+
   // Set specific styles needed for measurement
   mirror.style.position = 'absolute';
   mirror.style.top = '0';
@@ -30,37 +40,36 @@ function getTextareaPositionFromCoords(
   mirror.style.visibility = 'hidden';
   mirror.style.whiteSpace = 'pre-wrap';
   mirror.style.overflow = 'auto';
-  
+
   // Get text content and current scroll position
   const content = textarea.value;
   const scrollTop = textarea.scrollTop;
-  
+
   // Create text nodes for measurement
   const text = document.createTextNode(content);
   mirror.appendChild(text);
   document.body.appendChild(mirror);
-  
+
   try {
-    const range = document.createRange();
     let pos = 0;
     const lineHeight = parseFloat(style.lineHeight);
     const paddingTop = parseFloat(style.paddingTop);
-    
+
     // Adjust y coordinate for scroll position
     const adjustedY = y + scrollTop - paddingTop;
     const lineIndex = Math.floor(adjustedY / lineHeight);
-    
+
     // Find the line where the drop occurred
     const lines = content.split('\n');
-    
+
     // Handle drops below last line or empty content
     if (lineIndex >= lines.length || content.trim() === '') {
       return content.length;
     }
-    
+
     let currentLine = 0;
     let currentPos = 0;
-    
+
     for (let i = 0; i < lines.length; i++) {
       if (currentLine >= lineIndex) {
         // Create a range for each character in the line to find the closest one
@@ -71,7 +80,7 @@ function getTextareaPositionFromCoords(
           tempRange.setStart(textNode, currentPos + j);
           tempRange.setEnd(textNode, currentPos + j);
           const rect = tempRange.getBoundingClientRect();
-          
+
           if (rect.left >= x) {
             pos = currentPos + j;
             break;
@@ -85,7 +94,7 @@ function getTextareaPositionFromCoords(
       currentLine++;
       currentPos += lines[i].length + 1; // +1 for the newline
     }
-    
+
     return pos;
   } finally {
     document.body.removeChild(mirror);
@@ -97,7 +106,7 @@ interface UseFileDropParams {
   currentValue: string;
 }
 
-export function useFileDrop({ onInsert, currentValue }: UseFileDropParams) {
+export function useFileDrop({ onInsert }: UseFileDropParams) {
   const { addLog } = useLogStore();
 
   const handleDragEnter = (e: DragEvent<HTMLElement>) => {
@@ -126,29 +135,29 @@ export function useFileDrop({ onInsert, currentValue }: UseFileDropParams) {
 
     try {
       const element = e.currentTarget;
-      
+
       // Get position from drop coordinates
       const rect = element.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       let insertPosition: number;
       const textLength = element.value.length;
-      
+
       // Calculate insert position based on element type
       if (element instanceof HTMLTextAreaElement) {
         // For textareas, handle positioning
         const position = getTextareaPositionFromCoords(element, x, y);
-        insertPosition = (position !== null && position <= textLength) ? position : textLength;
+        insertPosition = position !== null && position <= textLength ? position : textLength;
       } else {
         // For inputs, use current cursor position or end if out of bounds
         const cursorPos = element.selectionStart ?? 0;
         insertPosition = cursorPos > textLength ? textLength : cursorPos;
       }
-      
+
       // Insert the path at calculated position
       onInsert(relativePath, insertPosition, insertPosition);
-      
+
       // Restore cursor position after the inserted path
       setTimeout(() => {
         element.focus();
@@ -170,6 +179,6 @@ export function useFileDrop({ onInsert, currentValue }: UseFileDropParams) {
     onDragEnter: handleDragEnter,
     onDragOver: handleDragOver,
     onDragLeave: handleDragLeave,
-    onDrop: handleDrop
+    onDrop: handleDrop,
   };
 }

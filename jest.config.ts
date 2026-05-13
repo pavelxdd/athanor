@@ -7,8 +7,9 @@ const config: Config = {
   transform: { '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.json' }] },
   testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
   moduleNameMapper: {
-    // Stub out Electron at unit‑test level
+    // Stub out Electron and ESM-only native adapters at unit-test level
     '^electron$': '<rootDir>/tests/__mocks__/electron.ts',
+    '^chokidar$': '<rootDir>/tests/__mocks__/chokidar.ts',
   },
   clearMocks: true,
   collectCoverageFrom: ['src/**/*.{ts,tsx}', 'electron/**/*.{ts,tsx}'],

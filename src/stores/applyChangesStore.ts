@@ -1,20 +1,14 @@
 import { create } from 'zustand';
 import { useLogStore } from './logStore';
-import { FileOperation, FileOperationType } from '../types/global';
+import { FileOperation } from '../types/global';
 
 interface ApplyChangesState {
   activeOperations: FileOperation[];
   mode: 'ai' | 'git';
   setOperations: (ops: FileOperation[], mode?: 'ai' | 'git') => void;
   clearOperations: () => void;
-  applyChange: (
-    index: number,
-    options?: { skipRefresh?: boolean }
-  ) => Promise<void>;
-  rejectChange: (
-    index: number,
-    options?: { skipRefresh?: boolean }
-  ) => Promise<void>;
+  applyChange: (index: number, options?: { skipRefresh?: boolean }) => Promise<void>;
+  rejectChange: (index: number, options?: { skipRefresh?: boolean }) => Promise<void>;
   applyAllChanges: () => Promise<void>;
   rejectAllChanges: () => Promise<void>;
   setChangeAppliedCallback: (
@@ -24,9 +18,7 @@ interface ApplyChangesState {
 }
 
 export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
-  let onChangeApplied:
-    | ((newlyCreatedPath?: string) => Promise<void>)
-    | null = null;
+  let onChangeApplied: ((newlyCreatedPath?: string) => Promise<void>) | null = null;
 
   return {
     activeOperations: [],
@@ -40,9 +32,7 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
       set({ activeOperations: [] });
     },
 
-    setChangeAppliedCallback: (
-      callback: ((newlyCreatedPath?: string) => Promise<void>) | null
-    ) => {
+    setChangeAppliedCallback: (callback: ((newlyCreatedPath?: string) => Promise<void>) | null) => {
       onChangeApplied = callback;
     },
 
@@ -92,9 +82,7 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
 
           case 'UPDATE_DIFF':
             {
-              const { processFileUpdate } = await import(
-                '../utils/fileOperations'
-              );
+              const { processFileUpdate } = await import('../utils/fileOperations');
               const finalContent = processFileUpdate(
                 'UPDATE_DIFF',
                 relativePath,
@@ -117,7 +105,7 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
               throw error;
             }
             break;
-          
+
           case 'RENAME':
             if (!op.new_file_path) {
               throw new Error('New file path is missing for RENAME operation');
@@ -154,12 +142,14 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
             }
             break;
 
-          default:
-            addLog(`Unknown operation: ${op.file_operation}`);
+          default: {
+            const unsupportedOperation = String(op.file_operation);
+            addLog(`Unknown operation: ${unsupportedOperation}`);
             // Mark operation as not accepted for unknown types
             newOps[index] = { ...op, accepted: false };
             set({ activeOperations: newOps });
-            throw new Error(`Unsupported operation type: ${op.file_operation}`);
+            throw new Error(`Unsupported operation type: ${unsupportedOperation}`);
+          }
         }
 
         // Call the refresh callback after successful operation
@@ -179,18 +169,13 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
       } catch (error) {
         console.error(`Error applying change to ${op.file_path}:`, error);
         addLog(
-          `Failed to ${op.file_operation.toLowerCase()} file ${
-            op.file_path
-          }: ${error}`
+          `Failed to ${op.file_operation.toLowerCase()} file ${op.file_path}: ${String(error)}`
         );
         throw error; // Re-throw to let UI handle the error
       }
     },
 
-    rejectChange: async (
-      index: number,
-      options?: { skipRefresh?: boolean }
-    ) => {
+    rejectChange: async (index: number, options?: { skipRefresh?: boolean }) => {
       const { activeOperations, mode } = get();
       if (index < 0 || index >= activeOperations.length) return;
 
@@ -227,11 +212,7 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
           if (error instanceof Error) {
             addLog(`Failed to revert ${op.file_path}: ${error.message}`);
           } else {
-            addLog(
-              `An unknown error occurred while reverting ${op.file_path}: ${String(
-                error
-              )}`
-            );
+            addLog(`An unknown error occurred while reverting ${op.file_path}: ${String(error)}`);
           }
         }
       } else {
@@ -278,10 +259,8 @@ export const useApplyChangesStore = create<ApplyChangesState>((set, get) => {
             // Await each change to process them one by one, skipping refresh
             await applyChange(i, { skipRefresh: true });
             changesMade = true;
-          } catch (error) {
-            addLog(
-              `Error applying all changes. Process stopped at file: ${op.file_path}.`
-            );
+          } catch {
+            addLog(`Error applying all changes. Process stopped at file: ${op.file_path}.`);
             // If some changes were made before the error, refresh the file system
             if (changesMade && onChangeApplied) {
               await onChangeApplied();

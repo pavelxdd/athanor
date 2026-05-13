@@ -1,17 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, GripVertical, Trash2, Files } from 'lucide-react';
+import type { FileItem } from '../../utils/fileTree';
 
 interface SelectedFilesDisplayProps {
   selectedFiles: string[];
   removeFileFromSelection: (itemId: string) => void;
   clearFileSelection: () => void;
   reorderFileSelection: (sourceIndex: number, destinationIndex: number) => void;
-  toggleFileSelection: (
-    itemId: string,
-    isFolder: boolean,
-    fileTree: any[]
-  ) => void;
-  rootItems: any[];
+  toggleFileSelection: (itemId: string, isFolder: boolean, fileTree: FileItem[]) => void;
+  rootItems: FileItem[];
 }
 
 const SelectedFilesDisplay: React.FC<SelectedFilesDisplayProps> = ({
@@ -41,8 +38,7 @@ const SelectedFilesDisplay: React.FC<SelectedFilesDisplayProps> = ({
 
     if (isPopoverOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () =>
-        document.removeEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isPopoverOpen]);
 
@@ -63,11 +59,7 @@ const SelectedFilesDisplay: React.FC<SelectedFilesDisplayProps> = ({
 
   // Handle drag end
   const handleDragEnd = () => {
-    if (
-      draggedIndex !== null &&
-      dragOverIndex !== null &&
-      draggedIndex !== dragOverIndex
-    ) {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
       reorderFileSelection(draggedIndex, dragOverIndex);
     }
     setDraggedIndex(null);
@@ -96,9 +88,7 @@ const SelectedFilesDisplay: React.FC<SelectedFilesDisplayProps> = ({
         title={`${selectedFiles.length} files selected for this task`}
       >
         <Files className="w-4 h-4 flex-shrink-0" />
-        <span className="font-medium min-w-[1.5rem] text-center">
-          {selectedFiles.length}
-        </span>
+        <span className="font-medium min-w-[1.5rem] text-center">{selectedFiles.length}</span>
         {selectedFiles.length > 0 && (
           <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></div>
         )}

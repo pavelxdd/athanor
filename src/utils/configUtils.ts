@@ -1,6 +1,6 @@
 import { AthanorConfig, ProjectSettings } from '../types/global';
 import { getBaseName } from './fileTree';
-import { readProjectInfo, readProjectInfoFromPath, normalizeContent } from './projectInfoUtils';
+import { readProjectInfo, readProjectInfoFromPath } from './projectInfoUtils';
 
 // Get fallback config values based on the base directory
 export function getFallbackConfig(basePath: string): AthanorConfig {
@@ -33,40 +33,46 @@ export async function readAthanorConfig(
   try {
     // Start with fallback values
     const fallbackConfig = getFallbackConfig(basePath);
-    let config = { ...fallbackConfig };
-    
+    const config = { ...fallbackConfig };
+
     // Apply project name from settings (highest priority for project_name)
     if (projectSettings?.projectNameOverride?.trim()) {
       config.project_name = projectSettings.projectNameOverride.trim();
       console.log('Applied project name override from settings:', config.project_name);
     }
-    
 
-    
     // Handle project info with settings precedence
     let projectInfoHandledBySettings = false;
-    
+
     // First priority: ProjectSettings.projectInfoFilePath
     if (projectSettings?.projectInfoFilePath?.trim()) {
       try {
         const projectInfoResult = await readProjectInfoFromPath(
-          basePath, 
+          basePath,
           projectSettings.projectInfoFilePath.trim()
         );
-        
+
         if (projectInfoResult !== null) {
           config.project_info = projectInfoResult.content;
           config.project_info_path = projectInfoResult.path;
           projectInfoHandledBySettings = true;
-          console.log('Applied project info from settings path:', projectSettings.projectInfoFilePath);
+          console.log(
+            'Applied project info from settings path:',
+            projectSettings.projectInfoFilePath
+          );
         } else {
-          console.warn(`Project info file specified in settings not found or invalid: ${projectSettings.projectInfoFilePath}`);
+          console.warn(
+            `Project info file specified in settings not found or invalid: ${projectSettings.projectInfoFilePath}`
+          );
         }
       } catch (error) {
-        console.error(`Error reading project info from settings path: ${projectSettings.projectInfoFilePath}`, error);
+        console.error(
+          `Error reading project info from settings path: ${projectSettings.projectInfoFilePath}`,
+          error
+        );
       }
     }
-    
+
     // If project info wasn't handled by settings, try auto-discovery
     if (!projectInfoHandledBySettings) {
       const projectInfoResult = await readProjectInfo(basePath);
@@ -77,14 +83,15 @@ export async function readAthanorConfig(
       } else {
         // config.project_info is already '' and project_info_path is undefined from fallbackConfig.
         // This log confirms that neither settings nor auto-discovery provided project info.
-        console.log('No project info found from settings or auto-discovery. Project info will be empty.');
+        console.log(
+          'No project info found from settings or auto-discovery. Project info will be empty.'
+        );
       }
     }
-    
+
     return config;
   } catch (error) {
     console.error('Error reading Athanor configuration:', error);
     return getFallbackConfig(basePath); // Fallback in case of unexpected errors during the process
   }
 }
-

@@ -30,9 +30,7 @@ function normalizeContent(content: string): string {
   return content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
-export async function copySelectedFilesContent(
-  params: CopySelectedParams
-): Promise<void> {
+export async function copySelectedFilesContent(params: CopySelectedParams): Promise<void> {
   const { addLog, rootPath } = params;
   const { fileTree, formatType } = useFileSystemStore.getState();
   const { tabs, activeTabIndex } = useWorkbenchStore.getState();
@@ -41,7 +39,7 @@ export async function copySelectedFilesContent(
     // Get selected files from active tab
     const activeTab = tabs[activeTabIndex];
     const selectedFiles = activeTab?.selectedFiles || [];
-    
+
     if (selectedFiles.length === 0) {
       addLog('No files selected to copy');
       return;
@@ -67,14 +65,12 @@ export async function copySelectedFilesContent(
     await navigator.clipboard.writeText(file_contents);
     const tokenCount = formatTokenCount(countTokens(file_contents));
     addLog(`Copied ${selectedFiles.length} files to clipboard (${tokenCount})`);
-  } catch (err) {
+  } catch {
     addLog('Failed to copy selected files');
   }
 }
 
-export async function copyFailedDiffContent(
-  params: CopyFailedDiffParams
-): Promise<void> {
+export async function copyFailedDiffContent(params: CopyFailedDiffParams): Promise<void> {
   const { filePaths, addLog, rootPath } = params;
   const { formatType } = useFileSystemStore.getState();
 
@@ -93,9 +89,7 @@ export async function copyFailedDiffContent(
         addLog(`Failed to read file: ${filePath}`);
         return;
       }
-      fileContents.push(
-        formatSingleFile(filePath, content, rootPath, false, formatType)
-      );
+      fileContents.push(formatSingleFile(filePath, content, rootPath, false, formatType));
     }
 
     // Create final content block with message

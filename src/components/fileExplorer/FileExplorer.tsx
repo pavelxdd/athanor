@@ -1,5 +1,4 @@
 import React from 'react';
-import { useFileSystemStore } from '../../stores/fileSystemStore';
 import { FileItem } from '../../utils/fileTree';
 import FileContextMenu from '../FileContextMenu';
 import FileExplorerItem from './FileExplorerItem';
@@ -61,9 +60,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
           onClose={handleCloseContextMenu}
           onIgnoreItem={handleIgnoreItem}
           onExpandRecursively={() => handleExpandRecursively(contextMenu.item)}
-          onCollapseRecursively={() =>
-            handleCollapseRecursively(contextMenu.item)
-          }
+          onCollapseRecursively={() => handleCollapseRecursively(contextMenu.item)}
         />
       )}
     </div>

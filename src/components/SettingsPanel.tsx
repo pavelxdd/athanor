@@ -24,7 +24,7 @@ const SettingsPanel: React.FC = () => {
 
   // Load application settings on mount
   useEffect(() => {
-    loadApplicationSettings();
+    void loadApplicationSettings();
   }, [loadApplicationSettings]);
 
   // Clear errors when component mounts

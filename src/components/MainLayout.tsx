@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   File,
   FileText,
@@ -19,12 +19,13 @@ import { useFileSystemStore } from '../stores/fileSystemStore';
 import { useApplyChangesStore } from '../stores/applyChangesStore';
 import { useWorkbenchStore } from '../stores/workbenchStore';
 import { type FileOperationType } from '../types/global';
-import { useContextStore } from '../stores/contextStore';
 import { FileItem } from '../utils/fileTree';
 import { usePanelResize } from '../hooks/usePanelResize';
 import { useLogPanelResize } from '../hooks/useLogPanelResize';
 import { copySelectedFilesContent } from '../actions/ManualCopyAction';
 import { calculateSelectionTotals } from '../utils/fileSelection';
+
+const EMPTY_SELECTED_FILES: string[] = [];
 
 interface MainLayoutProps {
   filesData: FileItem;
@@ -53,11 +54,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   logsRef,
   logs,
 }) => {
-  const { leftPanelWidth, isResizing, resizeRef, startResize } =
-    usePanelResize();
+  const { leftPanelWidth, resizeRef, startResize } = usePanelResize();
   const {
     logPanelHeight,
-    isResizing: isLogResizing,
     resizeRef: logResizeRef,
     startResize: startLogResize,
   } = useLogPanelResize();
@@ -67,7 +66,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
   // Calculate selection metrics from active workbench tab
   const activeWorkbenchTab = tabs[activeTabIndex];
-  const selectedFiles = activeWorkbenchTab?.selectedFiles || [];
+  const selectedFiles = activeWorkbenchTab?.selectedFiles ?? EMPTY_SELECTED_FILES;
   const selectedFileCount = selectedFiles.length;
   // We'll calculate the line count asynchronously and update as needed
   const [selectedLinesTotal, setSelectedLinesTotal] = useState(0);
@@ -78,7 +77,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       const count = await calculateSelectionTotals(selectedFiles, fileTree);
       setSelectedLinesTotal(count);
     };
-    updateLineCount();
+    void updateLineCount();
   }, [selectedFiles, fileTree]);
 
   const handleFileView = () => {
@@ -152,11 +151,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           old_code: diff.oldCode,
           new_code: diff.newCode,
           file_message: `Uncommitted change. Status: ${
-            diff.status === 'A'
-              ? 'Added'
-              : diff.status === 'D'
-              ? 'Deleted'
-              : 'Modified'
+            diff.status === 'A' ? 'Added' : diff.status === 'D' ? 'Deleted' : 'Modified'
           }`,
           accepted: false,
           rejected: false,
@@ -192,10 +187,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                 title="Open folder"
               >
-                <FolderOpen
-                  size={20}
-                  className="text-gray-600 dark:text-gray-300"
-                />
+                <FolderOpen size={20} className="text-gray-600 dark:text-gray-300" />
               </button>
               <button
                 onClick={() => onRefresh()}
@@ -231,25 +223,25 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 onClick={handleViewGitDiffs}
                 disabled={isLoadingDiffs || !currentDirectory || !isGitAvailable}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-              	title={
-              	  !currentDirectory
-              	    ? 'Open a project to view git changes'
-              	    : isGitAvailable
-              	    ? 'View uncommitted changes'
-              	    : 'Not a Git repository or Git is not available'
-            	  }
-             >
+                title={
+                  !currentDirectory
+                    ? 'Open a project to view git changes'
+                    : isGitAvailable
+                      ? 'View uncommitted changes'
+                      : 'Not a Git repository or Git is not available'
+                }
+              >
                 <GitCompare
-                	size={20}
-            	    className={`${
-                  	isLoadingDiffs
-                  	  ? 'animate-spin'
-                  	  : !isGitAvailable || !currentDirectory
-                  	  ? 'text-gray-400 dark:text-gray-500'
-                  	  : 'text-gray-600 dark:text-gray-300'
+                  size={20}
+                  className={`${
+                    isLoadingDiffs
+                      ? 'animate-spin'
+                      : !isGitAvailable || !currentDirectory
+                        ? 'text-gray-400 dark:text-gray-500'
+                        : 'text-gray-600 dark:text-gray-300'
                   }`}
-            	  />
-             </button>
+                />
+              </button>
               <button
                 onClick={handleCopySelectedFiles}
                 disabled={selectedFileCount === 0 || !currentDirectory}
@@ -268,9 +260,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             </div>
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-300 mb-0">
-            <div className="font-medium">
-              {effectiveConfig?.project_name || 'Loading...'}
-            </div>
+            <div className="font-medium">{effectiveConfig?.project_name || 'Loading...'}</div>
             <div
               className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate min-w-0"
               style={{ direction: 'rtl', textAlign: 'left' }}
@@ -293,28 +283,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         {/* Fixed bottom section */}
         <div className="border-t border-gray-200 dark:border-gray-700 p-2 bg-gray-50 dark:bg-gray-800 text-sm text-gray-600 dark:text-gray-300 flex items-center justify-between flex-none">
           <div className="flex items-center gap-4">
-            <div
-              className="flex items-center gap-1"
-              title="Number of selected files"
-            >
+            <div className="flex items-center gap-1" title="Number of selected files">
               <File size={14} className="text-gray-600 dark:text-gray-300" />
               <span>{selectedFileCount}</span>
             </div>
-            <div
-              className="flex items-center gap-1"
-              title="Total lines across selected files"
-            >
-              <FileText
-                size={14}
-                className="text-gray-600 dark:text-gray-300"
-              />
+            <div className="flex items-center gap-1" title="Total lines across selected files">
+              <FileText size={14} className="text-gray-600 dark:text-gray-300" />
               <span>{selectedLinesTotal}</span>
             </div>
           </div>
-          <div
-            className="text-gray-500 dark:text-gray-400"
-            title="Athanor application version"
-          >
+          <div className="text-gray-500 dark:text-gray-400" title="Athanor application version">
             {appVersion}
           </div>
         </div>
@@ -330,10 +308,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       {/* Right Panel */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top panel: tabs */}
-        <AthanorTabs
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-        />
+        <AthanorTabs activeTab={activeTab} onTabChange={onTabChange} />
 
         {/* Tab content */}
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 min-w-0">

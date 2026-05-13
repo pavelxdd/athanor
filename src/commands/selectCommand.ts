@@ -7,10 +7,7 @@ export interface SelectCommandParams {
   addLog: (message: string) => void;
 }
 
-export async function executeSelectCommand({
-  content,
-  addLog,
-}: SelectCommandParams): Promise<boolean> {
+export function executeSelectCommand({ content, addLog }: SelectCommandParams): Promise<boolean> {
   const { setSelection } = useWorkbenchStore.getState();
   const { fileTree } = useFileSystemStore.getState();
 
@@ -27,9 +24,7 @@ export async function executeSelectCommand({
       return false;
     }
     if (item.type === 'folder') {
-      console.warn(
-        `Select command: attempted to select a folder, which is not allowed: ${path}`
-      );
+      console.warn(`Select command: attempted to select a folder, which is not allowed: ${path}`);
       return false;
     }
     return true; // It's a file that exists in the tree
@@ -53,5 +48,5 @@ export async function executeSelectCommand({
     );
   }
 
-  return true;
+  return Promise.resolve(true);
 }

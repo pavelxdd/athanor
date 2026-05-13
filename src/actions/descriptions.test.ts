@@ -8,14 +8,14 @@ describe('getTaskTooltip', () => {
     label: 'Test Task',
     tooltip: 'Custom tooltip for test task',
     order: 1,
-    variants: []
+    variants: [],
   };
 
   const taskWithoutTooltip: TaskData = {
     id: 'test-task-2',
     label: 'Another Task',
     order: 2,
-    variants: []
+    variants: [],
   };
 
   describe('when not disabled', () => {

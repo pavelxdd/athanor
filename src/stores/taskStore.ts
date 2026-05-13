@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { TaskStore, TaskData, TaskVariant, DEFAULT_TASK_ORDER, ActiveVariants } from '../types/taskTypes';
+import { TaskStore, TaskData, DEFAULT_TASK_ORDER } from '../types/taskTypes';
 import { persist } from 'zustand/middleware';
 
 // Sort tasks by order (ascending) and then by ID (alphabetically)
@@ -8,7 +8,7 @@ function sortTasks(tasks: TaskData[]): TaskData[] {
     // First compare by order
     const orderDiff = (a.order ?? DEFAULT_TASK_ORDER) - (b.order ?? DEFAULT_TASK_ORDER);
     if (orderDiff !== 0) return orderDiff;
-    
+
     // If orders are equal, sort alphabetically by ID
     return a.id.localeCompare(b.id);
   });
@@ -21,27 +21,27 @@ export const useTaskStore = create<TaskStore>()(
       activeVariants: {},
 
       getTaskById: (id: string) => {
-        return get().tasks.find(t => t.id === id);
+        return get().tasks.find((t) => t.id === id);
       },
 
       getVariantById: (taskId: string, variantId: string) => {
-        const task = get().tasks.find(t => t.id === taskId);
-        return task?.variants.find(v => v.id === variantId);
+        const task = get().tasks.find((t) => t.id === taskId);
+        return task?.variants.find((v) => v.id === variantId);
       },
 
       getDefaultVariant: (taskId: string) => {
         // First check for active variant
         const activeVariant = get().getActiveVariant(taskId);
         if (activeVariant) return activeVariant;
-        
+
         // Fall back to default variant selection logic
-        const task = get().tasks.find(t => t.id === taskId);
+        const task = get().tasks.find((t) => t.id === taskId);
         if (!task) return undefined;
-        
+
         // Try to find variant with id "default"
-        const defaultVariant = task.variants.find(v => v.id === 'default');
+        const defaultVariant = task.variants.find((v) => v.id === 'default');
         if (defaultVariant) return defaultVariant;
-        
+
         // If no default variant, return the first variant
         return task.variants[0];
       },
@@ -49,7 +49,7 @@ export const useTaskStore = create<TaskStore>()(
       getActiveVariant: (taskId: string) => {
         const activeVariantId = get().activeVariants[taskId];
         if (!activeVariantId) return undefined;
-        
+
         return get().getVariantById(taskId, activeVariantId);
       },
 
@@ -57,16 +57,16 @@ export const useTaskStore = create<TaskStore>()(
         const variant = get().getVariantById(taskId, variantId);
         if (!variant) return; // Don't set if variant doesn't exist
 
-        set(state => ({
+        set((state) => ({
           activeVariants: {
             ...state.activeVariants,
-            [taskId]: variantId
-          }
+            [taskId]: variantId,
+          },
         }));
       },
 
       resetActiveVariant: (taskId: string) => {
-        set(state => {
+        set((state) => {
           const { [taskId]: _, ...rest } = state.activeVariants;
           return { activeVariants: rest };
         });
@@ -82,8 +82,8 @@ export const useTaskStore = create<TaskStore>()(
     {
       name: 'athanor-task-store',
       partialize: (state) => ({
-        activeVariants: state.activeVariants // Only persist active variants
-      })
+        activeVariants: state.activeVariants, // Only persist active variants
+      }),
     }
   )
 );

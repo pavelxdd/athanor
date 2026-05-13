@@ -44,10 +44,13 @@ codebase.md
 .athignore
 .ath_materials
 
+.agents
 .crush
 .claude
 .codex
 .gemini
+.opencode
+opencode.json
 .pi
 .factory
 .github

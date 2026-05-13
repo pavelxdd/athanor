@@ -2,15 +2,13 @@ import { FileOperation } from '../types/global';
 
 export interface ApplyChangesParams {
   operations: FileOperation[];
-  addLog: (
-    message: string | { message: string; onClick: () => Promise<void> }
-  ) => void;
+  addLog: (message: string | { message: string; onClick: () => Promise<void> }) => void;
   setOperations: (ops: FileOperation[]) => void;
   clearOperations: () => void;
   setActiveTab?: (tab: 'workbench' | 'viewer' | 'review') => void;
 }
 
-export async function executeApplyChangesCommand({
+export function executeApplyChangesCommand({
   operations,
   addLog,
   setOperations,
@@ -27,18 +25,14 @@ export async function executeApplyChangesCommand({
         setActiveTab('review');
       }
       addLog(`Staged ${operations.length} file operations for review.`);
-      return true;
+      return Promise.resolve(true);
     } else {
       addLog('No valid file operations found to apply.');
-      return false;
+      return Promise.resolve(false);
     }
   } catch (error) {
     console.error('Error executing apply changes command:', error);
-    addLog(
-      error instanceof Error
-        ? error.message
-        : 'Failed to execute apply changes command'
-    );
-    return false;
+    addLog(error instanceof Error ? error.message : 'Failed to execute apply changes command');
+    return Promise.resolve(false);
   }
 }

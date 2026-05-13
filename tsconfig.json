@@ -8,11 +8,7 @@
     "skipLibCheck": true,
     "jsx": "react",
     "resolveJsonModule": true,
-    "baseUrl": "./",
-    "paths": {
-      "@components/*": ["src/components/*"],
-      "@features/*": ["src/features/*"]
-    },
+    "types": ["node", "jest"],
     "outDir": "./.webpack",
     "sourceMap": true
   },

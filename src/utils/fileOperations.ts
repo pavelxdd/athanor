@@ -6,11 +6,7 @@ export function removeInitialEmptyLine(content: string): string {
   if (!content) return '';
 
   // Check if content starts with a single newline
-  if (
-    content.startsWith('\n') &&
-    !content.startsWith('\n ') &&
-    !content.startsWith('\n\t')
-  ) {
+  if (content.startsWith('\n') && !content.startsWith('\n ') && !content.startsWith('\n\t')) {
     return content.slice(1);
   }
 
@@ -36,9 +32,7 @@ export function parseDiffBlocks(content: string): DiffBlock[] {
     // Trim a single trailing newline from the replace block. This prevents an extra
     // newline from being inserted, as the original newline following the SEARCH
     // block is preserved during the string replacement operation.
-    const replaceContent = match[2].endsWith('\n')
-      ? match[2].slice(0, -1)
-      : match[2];
+    const replaceContent = match[2].endsWith('\n') ? match[2].slice(0, -1) : match[2];
 
     blocks.push({
       search: match[1],

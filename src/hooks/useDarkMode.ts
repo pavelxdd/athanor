@@ -23,10 +23,9 @@ const useDarkMode = (): boolean => {
     let isMounted = true;
 
     // Asynchronously get the initial state
-    (async () => {
+    void (async () => {
       try {
-        const initialDarkMode =
-          await window.nativeThemeBridge.getInitialDarkMode();
+        const initialDarkMode = await window.nativeThemeBridge.getInitialDarkMode();
         if (isMounted) {
           setSystemDark(initialDarkMode);
         }
@@ -40,11 +39,9 @@ const useDarkMode = (): boolean => {
     })();
 
     // Subscribe to theme updates
-    const unsubscribe = window.nativeThemeBridge.onNativeThemeUpdated(
-      (isDark: boolean) => {
-        setSystemDark(isDark);
-      }
-    );
+    const unsubscribe = window.nativeThemeBridge.onNativeThemeUpdated((isDark: boolean) => {
+      setSystemDark(isDark);
+    });
 
     // Cleanup subscription
     return () => {

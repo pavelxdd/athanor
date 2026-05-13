@@ -1,10 +1,7 @@
 import { create } from 'zustand';
 import { TaskTab, WorkbenchState } from '../types/global';
-import { SETTINGS } from '../utils/constants';
 import { getSelectableDescendants } from '../utils/fileSelection';
 import { FileItem, getFileItemById } from '../utils/fileTree';
-
-const PROMPT_GENERATION_TIMEOUT = 30000; // 30 seconds timeout
 
 // Default welcome message for new tabs
 const DEFAULT_WELCOME_MESSAGE =
@@ -49,7 +46,7 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
         // Inherit selected files from currently active tab
         const currentTab = state.tabs[state.activeTabIndex];
         const inheritedSelectedFiles = currentTab ? currentTab.selectedFiles : [];
-        
+
         return {
           tabs: [...state.tabs, createTaskTab(state.tabs, inheritedSelectedFiles)],
           activeTabIndex: state.tabs.length,
@@ -82,9 +79,10 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
         // If selection range is provided, insert/replace at that position
         if (selectionStart !== undefined) {
           const start = Math.max(0, Math.min(selectionStart, tab.content.length));
-          const end = selectionEnd !== undefined
-            ? Math.max(start, Math.min(selectionEnd, tab.content.length))
-            : start;
+          const end =
+            selectionEnd !== undefined
+              ? Math.max(start, Math.min(selectionEnd, tab.content.length))
+              : start;
           newContent = tab.content.slice(0, start) + text + tab.content.slice(end);
         }
 
@@ -92,24 +90,18 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
         if (newContent === tab.content) return state;
 
         return {
-          tabs: state.tabs.map((t, i) =>
-            i === index ? { ...t, content: newContent } : t
-          ),
+          tabs: state.tabs.map((t, i) => (i === index ? { ...t, content: newContent } : t)),
         };
       }),
 
     setTabOutput: (index: number, text: string) =>
       set((state) => ({
-        tabs: state.tabs.map((tab, i) =>
-          i === index ? { ...tab, output: text } : tab
-        ),
+        tabs: state.tabs.map((tab, i) => (i === index ? { ...tab, output: text } : tab)),
       })),
 
     setTabContext: (index: number, context: string) =>
       set((state) => ({
-        tabs: state.tabs.map((tab, i) =>
-          i === index ? { ...tab, context } : tab
-        ),
+        tabs: state.tabs.map((tab, i) => (i === index ? { ...tab, context } : tab)),
       })),
 
     // Per-tab file selection management
@@ -127,41 +119,39 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
           if (!folderItem) {
             // If we can't find the folder, fall back to simple toggle
             if (currentSelection.has(itemId)) {
-              newSelection = activeTab.selectedFiles.filter(id => id !== itemId);
+              newSelection = activeTab.selectedFiles.filter((id) => id !== itemId);
             } else {
-              newSelection = [itemId, ...activeTab.selectedFiles.filter(id => id !== itemId)];
+              newSelection = [itemId, ...activeTab.selectedFiles.filter((id) => id !== itemId)];
             }
           } else {
             // Get all selectable descendants of the folder
             const selectableIds = getSelectableDescendants(folderItem);
-            
-            const allSelected = selectableIds.every(id => currentSelection.has(id));
-            
+
+            const allSelected = selectableIds.every((id) => currentSelection.has(id));
+
             if (allSelected) {
               // Remove all selectable descendants
-              newSelection = activeTab.selectedFiles.filter(id => !selectableIds.includes(id));
+              newSelection = activeTab.selectedFiles.filter((id) => !selectableIds.includes(id));
             } else {
               // Add all unselected descendants to the beginning (highest priority)
-              const newItems = selectableIds.filter(id => !currentSelection.has(id));
-              const existingItems = activeTab.selectedFiles.filter(id => !newItems.includes(id));
+              const newItems = selectableIds.filter((id) => !currentSelection.has(id));
+              const existingItems = activeTab.selectedFiles.filter((id) => !newItems.includes(id));
               newSelection = [...newItems, ...existingItems];
             }
           }
         } else {
           // For files, simple toggle
           if (currentSelection.has(itemId)) {
-            newSelection = activeTab.selectedFiles.filter(id => id !== itemId);
+            newSelection = activeTab.selectedFiles.filter((id) => id !== itemId);
           } else {
             // Add to beginning of array (highest priority)
-            newSelection = [itemId, ...activeTab.selectedFiles.filter(id => id !== itemId)];
+            newSelection = [itemId, ...activeTab.selectedFiles.filter((id) => id !== itemId)];
           }
         }
 
         return {
           tabs: state.tabs.map((tab, i) =>
-            i === state.activeTabIndex 
-              ? { ...tab, selectedFiles: newSelection }
-              : tab
+            i === state.activeTabIndex ? { ...tab, selectedFiles: newSelection } : tab
           ),
         };
       }),
@@ -174,42 +164,42 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
         return {
           tabs: state.tabs.map((tab, i) =>
             i === state.activeTabIndex
-              ? { ...tab, selectedFiles: tab.selectedFiles.filter(id => id !== itemId) }
+              ? { ...tab, selectedFiles: tab.selectedFiles.filter((id) => id !== itemId) }
               : tab
           ),
         };
       }),
 
     clearFileSelection: () => {
-        set(state => {
-            const { tabs, activeTabIndex } = state;
-            if (!tabs[activeTabIndex] || tabs[activeTabIndex].selectedFiles.length === 0) {
-                return {};
-            }
-            const newTabs = [...tabs];
-            newTabs[activeTabIndex] = {
-                ...tabs[activeTabIndex],
-                selectedFiles: [],
-            };
-            return { tabs: newTabs };
-        });
+      set((state) => {
+        const { tabs, activeTabIndex } = state;
+        if (!tabs[activeTabIndex] || tabs[activeTabIndex].selectedFiles.length === 0) {
+          return {};
+        }
+        const newTabs = [...tabs];
+        newTabs[activeTabIndex] = {
+          ...tabs[activeTabIndex],
+          selectedFiles: [],
+        };
+        return { tabs: newTabs };
+      });
     },
 
     setSelection: (filePaths: string[]) => {
-        set(state => {
-            const { tabs, activeTabIndex } = state;
-            if (!tabs[activeTabIndex]) {
-                console.warn('setSelection called with no active tab.');
-                return {};
-            }
-            const validatedPaths = filePaths.filter(p => typeof p === 'string');
-            const newTabs = [...tabs];
-            newTabs[activeTabIndex] = {
-                ...tabs[activeTabIndex],
-                selectedFiles: validatedPaths,
-            };
-            return { tabs: newTabs };
-        });
+      set((state) => {
+        const { tabs, activeTabIndex } = state;
+        if (!tabs[activeTabIndex]) {
+          console.warn('setSelection called with no active tab.');
+          return {};
+        }
+        const validatedPaths = filePaths.filter((p) => typeof p === 'string');
+        const newTabs = [...tabs];
+        newTabs[activeTabIndex] = {
+          ...tabs[activeTabIndex],
+          selectedFiles: validatedPaths,
+        };
+        return { tabs: newTabs };
+      });
     },
 
     reorderFileSelection: (sourceIndex: number, destinationIndex: number) =>
@@ -223,9 +213,7 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
 
         return {
           tabs: state.tabs.map((tab, i) =>
-            i === state.activeTabIndex
-              ? { ...tab, selectedFiles: newSelectedFiles }
-              : tab
+            i === state.activeTabIndex ? { ...tab, selectedFiles: newSelectedFiles } : tab
           ),
         };
       }),
@@ -240,8 +228,7 @@ export const useWorkbenchStore = create<WorkbenchState>((set, get) => {
     // Additional state
     isGeneratingPrompt: false,
 
-    setIsGeneratingPrompt: (isGenerating: boolean) =>
-      set({ isGeneratingPrompt: isGenerating }),
+    setIsGeneratingPrompt: (isGenerating: boolean) => set({ isGeneratingPrompt: isGenerating }),
 
     resetGeneratingPrompt: () => {
       set({ isGeneratingPrompt: false });

@@ -19,26 +19,18 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   applicationDefaults,
 }) => {
   // Local state for application settings form inputs
-  const [uiTheme, setUiTheme] = useState<string>(
-    SETTINGS.defaults.application.uiTheme
-  );
+  const [uiTheme, setUiTheme] = useState<string>(SETTINGS.defaults.application.uiTheme);
   const [diffViewMode, setDiffViewMode] = useState<'compact' | 'full'>(
     SETTINGS.defaults.application.diffViewMode
   );
   const [isSavingApplication, setIsSavingApplication] = useState(false);
-  const [applicationSaveError, setApplicationSaveError] = useState<
-    string | null
-  >(null);
+  const [applicationSaveError, setApplicationSaveError] = useState<string | null>(null);
 
   // Update local state when applicationSettings changes
   useEffect(() => {
     const defaults = SETTINGS.defaults.application;
     if (applicationSettings) {
-      setUiTheme(
-        applicationSettings.uiTheme ??
-          applicationDefaults.uiTheme ??
-          defaults.uiTheme
-      );
+      setUiTheme(applicationSettings.uiTheme ?? applicationDefaults.uiTheme ?? defaults.uiTheme);
       setDiffViewMode(
         applicationSettings.diffViewMode ??
           applicationDefaults.diffViewMode ??
@@ -46,14 +38,8 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
       );
     } else {
       // Set default values when no application settings
-      setUiTheme(
-        applicationDefaults.uiTheme ??
-          defaults.uiTheme
-      );
-      setDiffViewMode(
-        applicationDefaults.diffViewMode ??
-          defaults.diffViewMode
-      );
+      setUiTheme(applicationDefaults.uiTheme ?? defaults.uiTheme);
+      setDiffViewMode(applicationDefaults.diffViewMode ?? defaults.diffViewMode);
     }
     // Clear any previous save errors when settings load
     setApplicationSaveError(null);
@@ -73,9 +59,7 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
         await saveApplicationSettings(updatedSettings);
       } catch (error) {
         const errorMessage =
-          error instanceof Error
-            ? error.message
-            : 'Failed to save application settings';
+          error instanceof Error ? error.message : 'Failed to save application settings';
         setApplicationSaveError(errorMessage);
         console.error('Error saving application settings:', error);
       } finally {
@@ -96,7 +80,7 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
 
   // Application save button handler
   const handleSaveApplicationSettings = () => {
-    saveApplicationSettingsCallback({
+    void saveApplicationSettingsCallback({
       uiTheme,
       diffViewMode,
     });
@@ -105,10 +89,7 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
   // Check if application settings have unsaved changes
   const defaults = SETTINGS.defaults.application;
   const hasUnsavedApplicationChanges =
-    uiTheme !==
-      (applicationSettings?.uiTheme ??
-        applicationDefaults.uiTheme ??
-        defaults.uiTheme) ||
+    uiTheme !== (applicationSettings?.uiTheme ?? applicationDefaults.uiTheme ?? defaults.uiTheme) ||
     diffViewMode !==
       (applicationSettings?.diffViewMode ??
         applicationDefaults.diffViewMode ??
@@ -234,8 +215,7 @@ const ApplicationSettingsPane: React.FC<ApplicationSettingsPaneProps> = ({
                         applicationSettings
                           ? JSON.stringify(applicationSettings, null, 2)
                           : 'No application settings file found or loaded.\n(Using default values or awaiting load)'
-                      }\n\n` +
-                      `Settings are stored in the application user data directory`
+                      }\n\n` + `Settings are stored in the application user data directory`
                     }
                   >
                     <Info className="w-5 h-5 text-gray-500 dark:text-gray-400 cursor-help hover:text-gray-700 dark:hover:text-gray-300" />

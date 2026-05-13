@@ -45,7 +45,13 @@ module.exports = {
       '@typescript-eslint/no-explicit-any': 'warn',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      'electron/no-ipc-sync': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.property.name='sendSync']",
+          message: 'Use async IPC instead of synchronous IPC.',
+        },
+      ],
     },
     overrides: [
       {

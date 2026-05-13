@@ -41,14 +41,14 @@ Object.defineProperty(navigator, 'clipboard', {
 // Mock window.fileSystem (Electron IPC)
 const mockWindowFsReadFile = jest.fn();
 const mockWindowFsReadMultiple = jest.fn();
-if (typeof window === 'undefined') {
-  (global as any).window = {};
-}
-(window as any).fileSystem = {
-  ...((window as any).fileSystem || {}),
-  readFile: mockWindowFsReadFile,
-  readMultiple: mockWindowFsReadMultiple,
-};
+Object.defineProperty(window, 'fileSystem', {
+  value: {
+    ...(window.fileSystem ?? {}),
+    readFile: mockWindowFsReadFile,
+    readMultiple: mockWindowFsReadMultiple,
+  },
+  writable: true,
+});
 
 // Mock console.error to avoid noise in test output
 let consoleErrorSpy: jest.SpyInstance;
@@ -91,7 +91,7 @@ describe('ManualCopyAction', () => {
     });
 
     (codebaseDocumentationUtils.formatSingleFile as jest.Mock).mockImplementation(
-      (filePath, content, rootPath, isSelected, formatType) =>
+      (filePath, content, _rootPath, _isSelected, _formatType) =>
         `# ${filePath}\n\`\`\`\n${content}\n\`\`\``
     );
 
@@ -229,7 +229,9 @@ describe('ManualCopyAction', () => {
 
       await copyToClipboard(params);
 
-      expect(mockAddLog).toHaveBeenCalledWith('Formatted content copied to clipboard (~150 tokens)');
+      expect(mockAddLog).toHaveBeenCalledWith(
+        'Formatted content copied to clipboard (~150 tokens)'
+      );
     });
 
     it('should handle filePath provided but empty content', async () => {
@@ -294,8 +296,12 @@ describe('ManualCopyAction', () => {
         '/project/root',
         DOC_FORMAT.XML // formatType from store
       );
-      expect(mockClipboardWriteText).toHaveBeenCalledWith('mocked file contents\nwith multiple lines');
-      expect(tokenCountUtils.countTokens).toHaveBeenCalledWith('mocked file contents\nwith multiple lines');
+      expect(mockClipboardWriteText).toHaveBeenCalledWith(
+        'mocked file contents\nwith multiple lines'
+      );
+      expect(tokenCountUtils.countTokens).toHaveBeenCalledWith(
+        'mocked file contents\nwith multiple lines'
+      );
       expect(mockAddLog).toHaveBeenCalledWith('Copied 2 files to clipboard (~150 tokens)');
     });
 
@@ -422,7 +428,9 @@ describe('ManualCopyAction', () => {
       await copyFailedDiffContent(params);
 
       expect(mockWindowFsReadMultiple).toHaveBeenCalledTimes(1);
-      expect(mockWindowFsReadMultiple).toHaveBeenCalledWith(['src/file1.ts', 'src/file2.js'], { encoding: 'utf8' });
+      expect(mockWindowFsReadMultiple).toHaveBeenCalledWith(['src/file1.ts', 'src/file2.js'], {
+        encoding: 'utf8',
+      });
       expect(mockWindowFsReadFile).not.toHaveBeenCalled();
 
       expect(codebaseDocumentationUtils.formatSingleFile).toHaveBeenCalledWith(
@@ -516,7 +524,10 @@ describe('ManualCopyAction', () => {
 
       await copyFailedDiffContent(params);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to copy failed diff content:', clipboardError);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Failed to copy failed diff content:',
+        clipboardError
+      );
       expect(mockAddLog).toHaveBeenCalledWith('Failed to copy failed diff content');
       expect(mockWindowFsReadFile).not.toHaveBeenCalled();
     });

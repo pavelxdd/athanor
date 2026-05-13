@@ -5,19 +5,16 @@ export interface TaskCommandParams {
   addLog: (message: string) => void;
 }
 
-export async function executeTaskCommand({
-  content,
-  addLog,
-}: TaskCommandParams): Promise<boolean> {
+export function executeTaskCommand({ content, addLog }: TaskCommandParams): Promise<boolean> {
   const workbenchStore = useWorkbenchStore.getState();
   const taskContent = content.trim();
 
   if (!taskContent) {
     addLog('Task command contains no content');
-    return false;
+    return Promise.resolve(false);
   }
 
   workbenchStore.resetTaskDescription(taskContent);
   addLog('Updated task description from command');
-  return true;
+  return Promise.resolve(true);
 }

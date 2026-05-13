@@ -86,9 +86,7 @@ export function getAllDescendantFolderIds(item: FileItem): string[] {
 export function isEmptyFolder(item: FileItem): boolean {
   if (item.type === 'file') return false;
   if (!item.children?.length) return true;
-  return item.children.every(
-    (child) => child.type === 'folder' && isEmptyFolder(child)
-  );
+  return item.children.every((child) => child.type === 'folder' && isEmptyFolder(child));
 }
 
 // Get all file IDs in a tree
@@ -102,9 +100,7 @@ export function getAllFileIds(item: FileItem): string[] {
 // Helper function to get base name from path
 export function getBaseName(path: string): string {
   const normalizedPath = path.replace(/\\/g, '/');
-  const cleanPath = normalizedPath.endsWith('/')
-    ? normalizedPath.slice(0, -1)
-    : normalizedPath;
+  const cleanPath = normalizedPath.endsWith('/') ? normalizedPath.slice(0, -1) : normalizedPath;
   const parts = cleanPath.split('/');
   return parts[parts.length - 1] || cleanPath;
 }

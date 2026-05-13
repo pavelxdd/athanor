@@ -25,9 +25,7 @@ const PromptContextMenu: React.FC<PromptContextMenuProps> = ({
   const handleVariantSelect = (variantId: string) => {
     const variant = prompt.variants.find((v) => v.id === variantId);
     if (variant) {
-      addLog(
-        `Selected variant '${variant.label}' for prompt '${prompt.label}'`
-      );
+      addLog(`Selected variant '${variant.label}' for prompt '${prompt.label}'`);
     }
     onSelectVariant(variantId);
   };

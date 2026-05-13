@@ -132,8 +132,7 @@ if (x === 7) {
 if (x === 7) {
   return true;
 }`);
-      expect(blocks[0].replace)
-        .toBe(`const result = a === b && c === d && e === f;
+      expect(blocks[0].replace).toBe(`const result = a === b && c === d && e === f;
 if (x === 7) {
   return true;
 }`);
@@ -182,17 +181,13 @@ const config = {
 new content
 >>>>>>> REPLACE`;
 
-      expect(() => parseDiffBlocks(content)).toThrow(
-        'Search block cannot be empty'
-      );
+      expect(() => parseDiffBlocks(content)).toThrow('Search block cannot be empty');
     });
 
     it('should throw error when no diff blocks found', () => {
       const content = 'This is just regular content';
 
-      expect(() => parseDiffBlocks(content)).toThrow(
-        'No valid diff blocks found in content'
-      );
+      expect(() => parseDiffBlocks(content)).toThrow('No valid diff blocks found in content');
     });
 
     it('should handle empty replace block', () => {
@@ -268,12 +263,7 @@ content to remove
 
   describe('processFileUpdate', () => {
     it('should return normalized content for UPDATE_FULL operation', () => {
-      const result = processFileUpdate(
-        'UPDATE_FULL',
-        'test.txt',
-        'new content\r\n',
-        'old content'
-      );
+      const result = processFileUpdate('UPDATE_FULL', 'test.txt', 'new content\r\n', 'old content');
 
       expect(result).toBe('new content\n');
     });
@@ -287,12 +277,7 @@ new line
 
       const currentContent = 'old line\nother content';
 
-      const result = processFileUpdate(
-        'UPDATE_DIFF',
-        'test.txt',
-        diffBlocks,
-        currentContent
-      );
+      const result = processFileUpdate('UPDATE_DIFF', 'test.txt', diffBlocks, currentContent);
 
       expect(result).toBe('new line\nother content');
     });
@@ -322,12 +307,7 @@ function oldFunc() {
 }
 other content`;
 
-      const result = processFileUpdate(
-        'UPDATE_DIFF',
-        'test.js',
-        diffBlocks,
-        currentContent
-      );
+      const result = processFileUpdate('UPDATE_DIFF', 'test.js', diffBlocks, currentContent);
 
       expect(result).toBe(`//=====================================
 // New Section
@@ -348,12 +328,7 @@ new content
       const currentContent = 'different content';
 
       expect(() =>
-        processFileUpdate(
-          'UPDATE_DIFF',
-          'test.txt',
-          diffBlocks,
-          currentContent
-        )
+        processFileUpdate('UPDATE_DIFF', 'test.txt', diffBlocks, currentContent)
       ).toThrow('Strict matching failed');
     });
   });

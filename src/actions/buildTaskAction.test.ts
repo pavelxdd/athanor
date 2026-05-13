@@ -59,6 +59,7 @@ describe('buildTaskAction', () => {
   let mockGetState: jest.Mock;
   let mockGetContextState: jest.Mock;
   let mockGetTaskState: jest.Mock;
+  let mockGetDefaultVariant: jest.Mock;
 
   let defaultTask: TaskData;
   let defaultRootItems: FileItem[];
@@ -114,22 +115,23 @@ describe('buildTaskAction', () => {
 
     // Mock task store
     mockGetTaskState = useTaskStore.getState as jest.Mock;
+    mockGetDefaultVariant = jest.fn((taskId: string) => {
+      if (taskId === 'test-task') {
+        return defaultTask.variants[0];
+      }
+      if (taskId === 'complex-task') {
+        // This task is defined inline in one of the tests. We'll hardcode its expected variant.
+        return {
+          id: 'variant1',
+          label: 'Variant One',
+          tooltip: 'First variant',
+          content: 'First variant content',
+        };
+      }
+      return undefined;
+    });
     mockGetTaskState.mockReturnValue({
-      getDefaultVariant: jest.fn((taskId: string) => {
-        if (taskId === 'test-task') {
-          return defaultTask.variants[0];
-        }
-        if (taskId === 'complex-task') {
-          // This task is defined inline in one of the tests. We'll hardcode its expected variant.
-          return {
-            id: 'variant1',
-            label: 'Variant One',
-            tooltip: 'First variant',
-            content: 'First variant content',
-          };
-        }
-        return undefined;
-      }),
+      getDefaultVariant: mockGetDefaultVariant,
     });
 
     // Mock buildDynamicPrompt
@@ -209,7 +211,9 @@ describe('buildTaskAction', () => {
 
       await buildTaskAction(params);
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Cannot build task "Test Task": No files selected');
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'Cannot build task "Test Task": No files selected'
+      );
       expect(mockSetIsLoading).not.toHaveBeenCalled();
       expect(mockSetIsGeneratingPrompt).not.toHaveBeenCalled();
       expect(mockBuildDynamicPrompt).not.toHaveBeenCalled();
@@ -295,7 +299,9 @@ describe('buildTaskAction', () => {
 
       await buildTaskAction(params);
 
-      expect(mockAddLog).toHaveBeenCalledWith('Custom Refactor Task task prompt loaded and processed');
+      expect(mockAddLog).toHaveBeenCalledWith(
+        'Custom Refactor Task task prompt loaded and processed'
+      );
     });
   });
 
@@ -306,8 +312,7 @@ describe('buildTaskAction', () => {
         variants: [],
       };
       const params = { ...defaultParams, task: taskWithNoVariants };
-      (useTaskStore.getState() as any).getDefaultVariant.mockReturnValue(undefined);
-
+      mockGetDefaultVariant.mockReturnValue(undefined);
 
       await buildTaskAction(params);
 
@@ -341,10 +346,7 @@ describe('buildTaskAction', () => {
 
       await buildTaskAction(defaultParams);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error processing Test Task task:',
-        promptError
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error processing Test Task task:', promptError);
       expect(mockAddLog).toHaveBeenCalledWith('Failed to process Test Task task');
       expect(mockResetGeneratingPrompt).toHaveBeenCalledTimes(1);
       expect(mockSetIsLoading).toHaveBeenCalledWith(false);
@@ -356,7 +358,7 @@ describe('buildTaskAction', () => {
         variants: [],
       };
       const params = { ...defaultParams, task: taskWithNoVariants };
-      (useTaskStore.getState() as any).getDefaultVariant.mockReturnValue(undefined);
+      mockGetDefaultVariant.mockReturnValue(undefined);
 
       // Make setTabContent also throw to test multiple error conditions
       mockSetTabContent.mockImplementation(() => {
@@ -445,7 +447,8 @@ describe('buildTaskAction', () => {
 
       expect(mockBuildDynamicPrompt).toHaveBeenCalledWith(
         complexTask,
-        { // from the mock
+        {
+          // from the mock
           id: 'variant1',
           label: 'Variant One',
           tooltip: 'First variant',

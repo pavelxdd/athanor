@@ -1,15 +1,7 @@
-interface AthanorDataTransfer extends DataTransfer {
-  setData(format: 'application/x-athanor-filepath', data: string): void;
-  getData(format: 'application/x-athanor-filepath'): string;
-}
-
-interface AthanorDragEvent extends DragEvent {
-  dataTransfer: AthanorDataTransfer;
-}
-
 export {};
 
 import type { GitDiffData } from '../../common/types/git-service';
+import type { FileItem } from '../utils/fileTree';
 
 export interface ProjectSettings {
   projectNameOverride?: string;
@@ -63,7 +55,12 @@ export interface WorkbenchState {
   createTab: () => void;
   removeTab: (index: number) => void;
   setActiveTab: (index: number) => void;
-  setTabContent: (index: number, text: string, selectionStart?: number, selectionEnd?: number) => void;
+  setTabContent: (
+    index: number,
+    text: string,
+    selectionStart?: number,
+    selectionEnd?: number
+  ) => void;
   setTabOutput: (index: number, text: string) => void;
   setTabContext: (index: number, context: string) => void; // Added context setter
 
@@ -81,9 +78,9 @@ export interface WorkbenchState {
   resetGeneratingPrompt: () => void;
 }
 
-declare const GIT_VERSION: string;
-
 declare global {
+  const GIT_VERSION: string;
+
   interface Window {
     app: {
       getVersion: () => Promise<string>;
@@ -93,8 +90,11 @@ declare global {
 
     // Electron bridge for basic IPC communication
     electron: {
-      send: (channel: string, data: any) => void;
-      receive: (channel: string, func: (...args: any[]) => void) => () => void;
+      send: (channel: string, data: unknown) => void;
+      receive: <Args extends unknown[]>(
+        channel: string,
+        func: (...args: Args) => void
+      ) => () => void;
     };
 
     // Native theme bridge for system theme detection
@@ -197,10 +197,7 @@ declare global {
       /**
        * Read directory contents
        */
-      readDirectory: (
-        path: string,
-        applyIgnores?: boolean
-      ) => Promise<string[]>;
+      readDirectory: (path: string, applyIgnores?: boolean) => Promise<string[]>;
 
       /**
        * Ensure directory exists, creating it if needed
@@ -210,7 +207,7 @@ declare global {
       /**
        * Get the full file tree structure
        */
-      getFileTree: (path: string) => Promise<any>;
+      getFileTree: (path: string) => Promise<FileItem>;
 
       // File operations
       /**
@@ -325,17 +322,12 @@ declare global {
       /**
        * Get project settings from project_settings.json
        */
-      getProjectSettings: (
-        projectPath: string
-      ) => Promise<ProjectSettings | null>;
+      getProjectSettings: (projectPath: string) => Promise<ProjectSettings | null>;
 
       /**
        * Save project settings to project_settings.json
        */
-      saveProjectSettings: (
-        projectPath: string,
-        settings: ProjectSettings
-      ) => Promise<void>;
+      saveProjectSettings: (projectPath: string, settings: ProjectSettings) => Promise<void>;
 
       /**
        * Get application settings from application_settings.json
@@ -351,10 +343,7 @@ declare global {
     // Legacy file system API (maintained for backward compatibility)
     fileSystem: {
       openFolder: () => Promise<string | null>;
-      readDirectory: (
-        path: string,
-        applyIgnores?: boolean
-      ) => Promise<string[]>;
+      readDirectory: (path: string, applyIgnores?: boolean) => Promise<string[]>;
       isDirectory: (path: string) => Promise<boolean>;
       getCurrentDirectory: () => Promise<string>;
       getResourcesPath: () => Promise<string>;
@@ -422,7 +411,7 @@ export interface AthanorConfig {
   project_info?: string;
   project_info_path?: string; // Path to the file from which project_info was loaded
   system_prompt?: string;
-  documentation?: {};
+  documentation?: Record<string, unknown>;
 }
 
 // File system store interface

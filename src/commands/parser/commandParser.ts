@@ -1,10 +1,7 @@
 import { FileOperation, FileOperationType } from '../../types/global';
 import { CommandType, COMMAND_TYPES } from '../types';
 import { parseStringPromise } from 'xml2js';
-import {
-  processFileUpdate,
-  normalizeLineEndings,
-} from '../../utils/fileOperations';
+import { normalizeLineEndings } from '../../utils/fileOperations';
 import { copyFailedDiffContent } from '../../actions/ManualCopyAction';
 import { useLogStore } from '../../stores/logStore';
 
@@ -14,13 +11,65 @@ export interface Command {
   fullContent?: string;
 }
 
+interface XmlTextNode {
+  _: string;
+}
+
+type XmlTextValue = string | XmlTextNode;
+
+interface XmlCommandBlock {
+  $?: {
+    type?: string;
+  };
+  _?: string;
+  file?: XmlFileBlock[];
+  file_path?: XmlTextValue[];
+}
+
+interface XmlFileBlock {
+  file_code?: XmlTextValue[];
+  file_message?: XmlTextValue[];
+  file_operation?: XmlTextValue[];
+  file_path?: XmlTextValue[];
+  file_path_new?: XmlTextValue[];
+}
+
+interface ParsedAthanorXml {
+  athanor?: {
+    command?: XmlCommandBlock[];
+  };
+}
+
+const FILE_OPERATION_TYPES = [
+  'CREATE',
+  'UPDATE_FULL',
+  'UPDATE_DIFF',
+  'DELETE',
+  'RENAME',
+  'APPEND',
+  'PREPEND',
+] as const satisfies readonly FileOperationType[];
+
+function getXmlText(value: XmlTextValue | undefined): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value?._ ?? '';
+}
+
+function isCommandType(value: string): value is CommandType {
+  return Object.values(COMMAND_TYPES).includes(value as CommandType);
+}
+
+function isFileOperationType(value: string): value is FileOperationType {
+  return FILE_OPERATION_TYPES.includes(value as FileOperationType);
+}
+
 /**
  * Parses the content of an <command type="apply changes"> block.
  * This is a helper function for the main parseCommand function.
  */
-async function parseApplyChangesContent(
-  commandContent: any // Parsed XML object from xml2js
-): Promise<FileOperation[]> {
+async function parseApplyChangesContent(commandContent: XmlCommandBlock): Promise<FileOperation[]> {
   const { addLog } = useLogStore.getState();
 
   const fileBlocks = commandContent.file;
@@ -51,32 +100,37 @@ async function parseApplyChangesContent(
 
   for (const block of fileBlocks) {
     try {
-      const path = block.file_path?.[0]?._;
-      const rawOperation = block.file_operation?.[0]?._;
-      
+      const path = getXmlText(block.file_path?.[0]);
+      const rawOperation = getXmlText(block.file_operation?.[0]);
+
       if (!path || !rawOperation) {
         addLog('Skipping malformed file block: missing path or operation.');
         continue;
       }
 
-      let operation: FileOperationType = rawOperation.toUpperCase() as FileOperationType;
-      const message = block.file_message?.[0]?._ || '';
-      const newPath = block.file_path_new?.[0]?._;
-      const code = block.file_code?.[0]?._ || block.file_code?.[0] || '';
-      let warning: string | undefined;
+      const operationText = rawOperation.toUpperCase();
+      if (!isFileOperationType(operationText)) {
+        addLog(`Skipping file block with unsupported operation: ${rawOperation}`);
+        continue;
+      }
+
+      const message = getXmlText(block.file_message?.[0]);
+      const newPath = getXmlText(block.file_path_new?.[0]) || undefined;
+      const code = getXmlText(block.file_code?.[0]);
+      const warning: string | undefined = undefined;
 
       // For CREATE operations, we need to check if file exists
-      if (operation === 'CREATE') {
+      if (operationText === 'CREATE') {
         pathsToCheckExistence.push(path);
       }
 
-      const needOldCode = operation !== 'CREATE';
-      const ignoreReadError = operation === 'DELETE' || operation === 'RENAME';
+      const needOldCode = operationText !== 'CREATE';
+      const ignoreReadError = operationText === 'DELETE' || operationText === 'RENAME';
 
       fileDataList.push({
         path,
         rawOperation,
-        operation,
+        operation: operationText,
         message,
         newPath,
         code,
@@ -85,8 +139,8 @@ async function parseApplyChangesContent(
         ignoreReadError,
       });
     } catch (error) {
-      const filePath = block.file_path?.[0] || 'unknown file';
-      addLog(`Failed to process file block: ${filePath} - ${error}`);
+      const filePath = getXmlText(block.file_path?.[0]) || 'unknown file';
+      addLog(`Failed to process file block: ${filePath} - ${String(error)}`);
     }
   }
 
@@ -97,7 +151,7 @@ async function parseApplyChangesContent(
       pathsToCheckExistence.map(async (path) => {
         try {
           existenceResults[path] = await window.fileService.exists(path);
-        } catch (error) {
+        } catch {
           // If exists check fails, assume file doesn't exist
           existenceResults[path] = false;
         }
@@ -117,11 +171,9 @@ async function parseApplyChangesContent(
 
   // Collect paths that need old code reading
   const pathsToRead: string[] = [];
-  const fileDataForPath: Record<string, FileData> = {};
   for (const fileData of fileDataList) {
     if (fileData.needOldCode) {
       pathsToRead.push(fileData.path);
-      fileDataForPath[fileData.path] = fileData;
     }
   }
 
@@ -132,7 +184,7 @@ async function parseApplyChangesContent(
       pathsToRead.map(async (path) => {
         try {
           directoryChecks[path] = await window.fileService.isDirectory(path);
-        } catch (error) {
+        } catch {
           // If isDirectory check fails, assume it's not a directory
           directoryChecks[path] = false;
         }
@@ -180,9 +232,7 @@ async function parseApplyChangesContent(
         processedNewCode = normalizeLineEndings(fileData.code);
       } else if (fileData.operation === 'UPDATE_DIFF') {
         // For UPDATE_DIFF, we parse the blocks but don't apply them yet.
-        const { parseDiffBlocks } = await import(
-          '../../utils/fileOperations'
-        );
+        const { parseDiffBlocks } = await import('../../utils/fileOperations');
         try {
           const diffBlocks = parseDiffBlocks(fileData.code);
           operations.push({
@@ -198,7 +248,7 @@ async function parseApplyChangesContent(
             warning: fileData.warning,
           });
         } catch (error) {
-          addLog(`Error parsing diff blocks for ${fileData.path}: ${error}`);
+          addLog(`Error parsing diff blocks for ${fileData.path}: ${String(error)}`);
           failedDiffPaths.push(fileData.path);
         }
         continue;
@@ -216,7 +266,7 @@ async function parseApplyChangesContent(
         warning: fileData.warning,
       });
     } catch (error) {
-      addLog(`Failed to process file: ${fileData.path} - ${error}`);
+      addLog(`Failed to process file: ${fileData.path} - ${String(error)}`);
     }
   }
 
@@ -224,8 +274,8 @@ async function parseApplyChangesContent(
     const currentDir = await window.fileService.getCurrentDirectory();
     addLog({
       message: `${failedDiffPaths.length} UPDATE_DIFF operation(s) failed - Click to copy files`,
-      onClick: async () => {
-        await copyFailedDiffContent({
+      onClick: () => {
+        void copyFailedDiffContent({
           filePaths: failedDiffPaths,
           addLog,
           rootPath: currentDir,
@@ -242,9 +292,7 @@ async function parseApplyChangesContent(
  * Extracts the first <athanor>...</athanor> block from the text and parses it.
  * Legacy formats without the root tag are no longer supported.
  */
-export async function parseCommand(
-  clipboardContent: string
-): Promise<Command[] | null> {
+export async function parseCommand(clipboardContent: string): Promise<Command[] | null> {
   const { addLog } = useLogStore.getState();
   const normalizedContent = normalizeLineEndings(clipboardContent.trim());
 
@@ -260,15 +308,16 @@ export async function parseCommand(
   const xmlToParse = athanorMatch[0];
 
   try {
-    const parsedJs = await parseStringPromise(xmlToParse, {
+    const parsedXml = (await parseStringPromise(xmlToParse, {
       explicitArray: true,
       explicitCharkey: true,
       trim: true,
       charkey: '_',
       attrkey: '$',
-    });
+    })) as unknown;
+    const parsedJs = parsedXml as ParsedAthanorXml;
 
-    if (!parsedJs.athanor || !parsedJs.athanor.command) {
+    if (!parsedJs.athanor?.command) {
       return null;
     }
 
@@ -276,8 +325,8 @@ export async function parseCommand(
     const commands: Command[] = [];
 
     for (const block of athBlocks) {
-      const commandType = block.$?.type as CommandType;
-      if (!commandType || !Object.values(COMMAND_TYPES).includes(commandType)) {
+      const commandType = block.$?.type;
+      if (!commandType || !isCommandType(commandType)) {
         continue;
       }
 
@@ -292,13 +341,15 @@ export async function parseCommand(
       } else if (commandType === COMMAND_TYPES.SELECT) {
         // Parse select command: new format with <file_path> tags (old plain text format not supported)
         if (!block.file_path || !Array.isArray(block.file_path)) {
-          addLog('Select command ignored: missing <file_path> tags. Please use the new format with <file_path> tags.');
+          addLog(
+            'Select command ignored: missing <file_path> tags. Please use the new format with <file_path> tags.'
+          );
           continue; // Skip this command entirely
         }
         // Collect paths from <file_path> tags
         const paths = block.file_path
-          .map((fp: any) => fp._ || '')
-          .filter((path: string) => path.trim().length > 0);
+          .map((filePathNode) => getXmlText(filePathNode))
+          .filter((path) => path.trim().length > 0);
         // Join with Unit Separator (ASCII 31) to preserve paths with spaces
         const content = paths.join('\x1F');
         commands.push({
@@ -306,7 +357,7 @@ export async function parseCommand(
           content: content.trim(),
         });
       } else {
-        const content = block._ || '';
+        const content = block._ ?? '';
         commands.push({
           type: commandType,
           content: content.trim(),
@@ -316,7 +367,7 @@ export async function parseCommand(
 
     return commands.length > 0 ? commands : null;
   } catch (error) {
-    addLog(`XML parsing failed: ${error}`);
+    addLog(`XML parsing failed: ${String(error)}`);
     console.error('Full XML parsing error:', error);
     return null;
   }

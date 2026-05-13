@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { UI } from '../../utils/constants';
-import { useLogStore } from '../../stores/logStore';
 
 export interface Variant {
   id: string;
@@ -28,7 +27,6 @@ const VariantsContextMenu: React.FC<VariantsContextMenuProps> = ({
   onSelectVariant,
 }) => {
   const [position, setPosition] = useState({ x, y });
-  const { addLog } = useLogStore();
 
   // Calculate menu position accounting for viewport boundaries
   useEffect(() => {
@@ -37,9 +35,7 @@ const VariantsContextMenu: React.FC<VariantsContextMenuProps> = ({
     const windowHeight = window.innerHeight;
 
     // Get menu dimensions once it's rendered
-    const menu = document.querySelector(
-      '.variants-context-menu'
-    ) as HTMLElement;
+    const menu = document.querySelector('.variants-context-menu') as HTMLElement;
     if (!menu) return;
 
     const menuWidth = menu.offsetWidth;
@@ -82,11 +78,9 @@ const VariantsContextMenu: React.FC<VariantsContextMenuProps> = ({
 
         let nextIndex: number;
         if (event.key === 'ArrowDown') {
-          nextIndex =
-            currentIndex < menuItems.length - 1 ? currentIndex + 1 : 0;
+          nextIndex = currentIndex < menuItems.length - 1 ? currentIndex + 1 : 0;
         } else {
-          nextIndex =
-            currentIndex > 0 ? currentIndex - 1 : menuItems.length - 1;
+          nextIndex = currentIndex > 0 ? currentIndex - 1 : menuItems.length - 1;
         }
 
         (menuItems[nextIndex] as HTMLElement).focus();
@@ -122,7 +116,9 @@ const VariantsContextMenu: React.FC<VariantsContextMenuProps> = ({
           <button
             key={variant.id}
             className={`variant-menu-item w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none ${
-              variant.id === activeVariantId ? 'bg-blue-50 dark:bg-blue-900 font-medium dark:text-blue-200' : 'dark:text-gray-200'
+              variant.id === activeVariantId
+                ? 'bg-blue-50 dark:bg-blue-900 font-medium dark:text-blue-200'
+                : 'dark:text-gray-200'
             }`}
             onClick={() => handleSelectVariant(variant)}
             onKeyPress={(e) => {

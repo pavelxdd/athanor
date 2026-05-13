@@ -1,12 +1,7 @@
 import { FileItem } from './fileTree';
 import { generateCodebaseDocumentation } from './codebaseDocumentation';
-import { DOC_FORMAT, FILE_SYSTEM, SETTINGS } from './constants';
-import {
-  loadTemplateContent,
-  extractTaskDescription,
-} from './promptTemplates';
-// @ts-ignore - webpack module resolution issue
-import { PromptData, PromptVariant } from '../types/promptTypes';
+import { DOC_FORMAT } from './constants';
+import type { PromptData, PromptVariant } from '../types/promptTypes';
 import { useFileSystemStore } from '../stores/fileSystemStore';
 import { AthanorConfig } from '../types/global';
 
@@ -24,16 +19,13 @@ export interface PromptVariables {
 }
 
 // Simple template renderer to replace {{variable}} with values from an object.
-function renderTemplate(
-  template: string,
-  variables: Record<string, any>
-): string {
+function renderTemplate(template: string, variables: PromptVariables): string {
   // Use a regex to find all instances of {{variableName}}
   return template.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (match, key) => {
     // Check if the key exists in the variables object.
     // Using Object.prototype.hasOwnProperty.call for safety.
     if (Object.prototype.hasOwnProperty.call(variables, key)) {
-      const value = variables[key];
+      const value = variables[key as keyof PromptVariables];
       // If the value is null or undefined, return an empty string to clear the placeholder.
       if (value === null || value === undefined) {
         return '';
@@ -49,8 +41,7 @@ function renderTemplate(
 // Get list of selected files with relative paths and line counts, preserving order
 async function getSelectedFilesWithInfo(
   items: FileItem[],
-  selectedFiles: string[],
-  rootPath: string
+  selectedFiles: string[]
 ): Promise<string> {
   const filesWithInfo: string[] = [];
 
@@ -81,13 +72,14 @@ async function getSelectedFilesWithInfo(
           const content = await window.fileService.read(item.path, { encoding: 'utf8' });
           // Count lines after normalizing line endings
           const contentStr = content as string;
-          const normalizedContent = contentStr
-            .replace(/\r\n/g, '\n') // Convert Windows line endings to Unix
-            .replace(/\r/g, '\n') // Convert old Mac line endings to Unix
-            .split('\n')
-            .map((line) => line.trimEnd()) // Remove trailing whitespace from each line
-            .join('\n')
-            .trim() + '\n'; // Ensure single trailing newline
+          const normalizedContent =
+            contentStr
+              .replace(/\r\n/g, '\n') // Convert Windows line endings to Unix
+              .replace(/\r/g, '\n') // Convert old Mac line endings to Unix
+              .split('\n')
+              .map((line) => line.trimEnd()) // Remove trailing whitespace from each line
+              .join('\n')
+              .trim() + '\n'; // Ensure single trailing newline
           lineCount = normalizedContent.split('\n').length;
         } catch (error) {
           console.error(`Error counting lines in file ${item.path}:`, error);
@@ -103,15 +95,11 @@ async function getSelectedFilesWithInfo(
 }
 
 // Get list of selected files with relative paths only, preserving order
-function getSelectedFilesList(
-  items: FileItem[],
-  selectedFiles: string[],
-  rootPath: string
-): string {
+function getSelectedFilesList(selectedFiles: string[]): string {
   const filesList: string[] = [];
 
   // Process selected files in order, just clean up the paths
-  selectedFiles.forEach(fileId => {
+  selectedFiles.forEach((fileId) => {
     // Use fileId which is already relative path, just remove leading slash
     const relativePath = fileId.replace(/^\//, '');
     filesList.push(relativePath);
@@ -142,8 +130,7 @@ export async function buildDynamicPrompt(
   } = useFileSystemStore.getState();
 
   // Determine the actual format type to use for documentation
-  const actualFormatType =
-    passedFormatTypeOverride || storeFormatType || DOC_FORMAT.DEFAULT;
+  const actualFormatType = passedFormatTypeOverride || storeFormatType || DOC_FORMAT.DEFAULT;
 
   // Use effective config from store, with fallback for safety
   let config: AthanorConfig;
@@ -161,9 +148,7 @@ export async function buildDynamicPrompt(
   if (includeProjectInfo && config.project_info && config.project_info.trim()) {
     if (config.project_info_path) {
       // Convert absolute path to project-relative path
-      const relativePath = config.project_info_path
-        .replace(rootPath, '')
-        .replace(/^[/\\]/, '');
+      const relativePath = config.project_info_path.replace(rootPath, '').replace(/^[/\\]/, '');
       // If project_info came from a file, add header with relative file path
       projectInfoForPrompt = `# Project info from: ${relativePath}\n\n${config.project_info}`;
     } else {
@@ -173,8 +158,8 @@ export async function buildDynamicPrompt(
   }
 
   // Partition selected files into regular and supplementary
-  const regularSelectedIds = selectedFiles.filter(id => !id.startsWith('materials:'));
-  const supplementarySelectedIds = selectedFiles.filter(id => id.startsWith('materials:'));
+  const regularSelectedIds = selectedFiles.filter((id) => !id.startsWith('materials:'));
+  const supplementarySelectedIds = selectedFiles.filter((id) => id.startsWith('materials:'));
 
   // Convert file arrays to Sets for efficient lookup
   const selectedItemsSet = new Set(regularSelectedIds);
@@ -223,12 +208,8 @@ export async function buildDynamicPrompt(
     task_description: taskDescription,
     task_context: formattedTaskContext,
     task_tab_name: formattedTabName,
-    selected_files: getSelectedFilesList(items, selectedFiles, rootPath),
-    selected_files_with_info: await getSelectedFilesWithInfo(
-      items,
-      selectedFiles,
-      rootPath
-    ),
+    selected_files: getSelectedFilesList(selectedFiles),
+    selected_files_with_info: await getSelectedFilesWithInfo(items, selectedFiles),
     supplementary_section: supplementarySection,
     ...codebaseContent, // Contains file_contents and modified file_tree
   };

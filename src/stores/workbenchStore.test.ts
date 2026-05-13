@@ -47,7 +47,7 @@ describe('workbenchStore', () => {
       // Set some selected files in the current tab
       useWorkbenchStore.getState().setTabContent(0, 'test content');
       // Update state immutably instead of direct mutation
-      useWorkbenchStore.setState(state => {
+      useWorkbenchStore.setState((state) => {
         const newTabs = [...state.tabs];
         newTabs[0] = { ...newTabs[0], selectedFiles: ['file1.ts', 'file2.ts'] };
         return { tabs: newTabs };
@@ -68,7 +68,7 @@ describe('workbenchStore', () => {
       useWorkbenchStore.getState().createTab();
       useWorkbenchStore.getState().createTab();
 
-      let state = useWorkbenchStore.getState();
+      const state = useWorkbenchStore.getState();
       expect(state.tabs).toHaveLength(3);
       expect(state.activeTabIndex).toBe(2);
 
@@ -132,7 +132,10 @@ describe('workbenchStore', () => {
 
       // Select another file (should be added to beginning)
       useWorkbenchStore.getState().toggleFileSelection('/src/file1.ts', false, mockFileTree);
-      expect(useWorkbenchStore.getState().tabs[0].selectedFiles).toEqual(['/src/file1.ts', '/readme.md']);
+      expect(useWorkbenchStore.getState().tabs[0].selectedFiles).toEqual([
+        '/src/file1.ts',
+        '/readme.md',
+      ]);
 
       // Deselect first file
       useWorkbenchStore.getState().toggleFileSelection('/src/file1.ts', false, mockFileTree);
@@ -140,23 +143,32 @@ describe('workbenchStore', () => {
     });
 
     it('should select all descendants when selecting a folder', () => {
-      const mockGetSelectableDescendants = getSelectableDescendants as jest.MockedFunction<typeof getSelectableDescendants>;
+      const mockGetSelectableDescendants = getSelectableDescendants as jest.MockedFunction<
+        typeof getSelectableDescendants
+      >;
       mockGetSelectableDescendants.mockReturnValue(['/src/file1.ts', '/src/file2.ts']);
 
       // Select the folder
       useWorkbenchStore.getState().toggleFileSelection('/src', true, mockFileTree);
 
-      expect(useWorkbenchStore.getState().tabs[0].selectedFiles).toEqual(['/src/file1.ts', '/src/file2.ts']);
+      expect(useWorkbenchStore.getState().tabs[0].selectedFiles).toEqual([
+        '/src/file1.ts',
+        '/src/file2.ts',
+      ]);
       expect(mockGetSelectableDescendants).toHaveBeenCalledWith(mockFileTree[0]);
     });
 
     it('should deselect all descendants when deselecting a folder with all children selected', () => {
-      const mockGetSelectableDescendants = getSelectableDescendants as jest.MockedFunction<typeof getSelectableDescendants>;
+      const mockGetSelectableDescendants = getSelectableDescendants as jest.MockedFunction<
+        typeof getSelectableDescendants
+      >;
       mockGetSelectableDescendants.mockReturnValue(['/src/file1.ts', '/src/file2.ts']);
 
       // Pre-select all files in the folder
-      useWorkbenchStore.setState(state => ({
-        tabs: state.tabs.map((t, i) => (i === 0 ? { ...t, selectedFiles: ['/src/file1.ts', '/src/file2.ts'] } : t)),
+      useWorkbenchStore.setState((state) => ({
+        tabs: state.tabs.map((t, i) =>
+          i === 0 ? { ...t, selectedFiles: ['/src/file1.ts', '/src/file2.ts'] } : t
+        ),
       }));
 
       // Deselect the folder
@@ -166,18 +178,23 @@ describe('workbenchStore', () => {
     });
 
     it('should select remaining descendants when selecting a folder with some children selected', () => {
-      const mockGetSelectableDescendants = getSelectableDescendants as jest.MockedFunction<typeof getSelectableDescendants>;
+      const mockGetSelectableDescendants = getSelectableDescendants as jest.MockedFunction<
+        typeof getSelectableDescendants
+      >;
       mockGetSelectableDescendants.mockReturnValue(['/src/file1.ts', '/src/file2.ts']);
 
       // Pre-select one file
-      useWorkbenchStore.setState(state => ({
+      useWorkbenchStore.setState((state) => ({
         tabs: state.tabs.map((t, i) => (i === 0 ? { ...t, selectedFiles: ['/src/file1.ts'] } : t)),
       }));
 
       // Select the folder
       useWorkbenchStore.getState().toggleFileSelection('/src', true, mockFileTree);
 
-      expect(useWorkbenchStore.getState().tabs[0].selectedFiles).toEqual(['/src/file2.ts', '/src/file1.ts']);
+      expect(useWorkbenchStore.getState().tabs[0].selectedFiles).toEqual([
+        '/src/file2.ts',
+        '/src/file1.ts',
+      ]);
     });
 
     it('should handle folder selection when folder item is not found', () => {
@@ -192,20 +209,27 @@ describe('workbenchStore', () => {
 
     it('should remove file from selection', () => {
       // Set up some selected files
-      useWorkbenchStore.setState(state => ({
-        tabs: state.tabs.map((t, i) => (i === 0 ? { ...t, selectedFiles: ['/src/file1.ts', '/readme.md', '/src/file2.ts'] } : t)),
+      useWorkbenchStore.setState((state) => ({
+        tabs: state.tabs.map((t, i) =>
+          i === 0 ? { ...t, selectedFiles: ['/src/file1.ts', '/readme.md', '/src/file2.ts'] } : t
+        ),
       }));
 
       // Remove middle file
       useWorkbenchStore.getState().removeFileFromSelection('/readme.md');
 
-      expect(useWorkbenchStore.getState().tabs[0].selectedFiles).toEqual(['/src/file1.ts', '/src/file2.ts']);
+      expect(useWorkbenchStore.getState().tabs[0].selectedFiles).toEqual([
+        '/src/file1.ts',
+        '/src/file2.ts',
+      ]);
     });
 
     it('should clear all file selections', () => {
       // Set up some selected files
-      useWorkbenchStore.setState(state => ({
-        tabs: state.tabs.map((t, i) => (i === 0 ? { ...t, selectedFiles: ['/src/file1.ts', '/readme.md', '/src/file2.ts'] } : t)),
+      useWorkbenchStore.setState((state) => ({
+        tabs: state.tabs.map((t, i) =>
+          i === 0 ? { ...t, selectedFiles: ['/src/file1.ts', '/readme.md', '/src/file2.ts'] } : t
+        ),
       }));
 
       // Clear selection
@@ -216,20 +240,28 @@ describe('workbenchStore', () => {
 
     it('should reorder file selection', () => {
       // Set up some selected files
-      useWorkbenchStore.setState(state => ({
-        tabs: state.tabs.map((t, i) => (i === 0 ? { ...t, selectedFiles: ['/src/file1.ts', '/readme.md', '/src/file2.ts'] } : t)),
+      useWorkbenchStore.setState((state) => ({
+        tabs: state.tabs.map((t, i) =>
+          i === 0 ? { ...t, selectedFiles: ['/src/file1.ts', '/readme.md', '/src/file2.ts'] } : t
+        ),
       }));
 
       // Move first item to last position
       useWorkbenchStore.getState().reorderFileSelection(0, 2);
 
-      expect(useWorkbenchStore.getState().tabs[0].selectedFiles).toEqual(['/readme.md', '/src/file2.ts', '/src/file1.ts']);
+      expect(useWorkbenchStore.getState().tabs[0].selectedFiles).toEqual([
+        '/readme.md',
+        '/src/file2.ts',
+        '/src/file1.ts',
+      ]);
     });
 
     it('should not reorder when source and destination are the same', () => {
       const originalSelection = ['/src/file1.ts', '/readme.md', '/src/file2.ts'];
-      useWorkbenchStore.setState(state => ({
-        tabs: state.tabs.map((t, i) => (i === 0 ? { ...t, selectedFiles: [...originalSelection] } : t)),
+      useWorkbenchStore.setState((state) => ({
+        tabs: state.tabs.map((t, i) =>
+          i === 0 ? { ...t, selectedFiles: [...originalSelection] } : t
+        ),
       }));
 
       // Try to move item to same position
