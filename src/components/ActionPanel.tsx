@@ -49,13 +49,26 @@ interface ActionPanelProps {
 // Stable default values to prevent reference equality issues
 const EMPTY_ARRAY: string[] = [];
 
+function isLucideIcon(icon: unknown): icon is LucideIcon {
+  if (typeof icon === 'function') {
+    return true;
+  }
+
+  if (typeof icon !== 'object' || icon === null) {
+    return false;
+  }
+
+  const maybeIcon = icon as { render?: unknown };
+  return '$$typeof' in icon && typeof maybeIcon.render === 'function';
+}
+
 function getIconComponent(iconName?: string): LucideIcon | null {
   if (!iconName) {
     return null;
   }
 
-  const icon = Icons[iconName as keyof typeof Icons];
-  return typeof icon === 'function' ? (icon as LucideIcon) : null;
+  const icon = Icons[iconName as keyof typeof Icons] as unknown;
+  return isLucideIcon(icon) ? icon : null;
 }
 
 const ActionPanel: React.FC<ActionPanelProps> = ({ rootItems }) => {
